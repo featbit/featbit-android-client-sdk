@@ -13,7 +13,7 @@
 
 1. [实施计划](../plan.md)：阶段边界；下一步阶段 3。
 2. [架构](../architecture.md)：状态、会话、缓存与身份持久化规则。
-3. [阶段 2](./phase-2.md)：当前运行时、未接入能力、输入限额及性能探针。
+3. [阶段 2](./phase-2.md)：当前运行时、未接入能力、输入校验及性能探针。
 4. [验证记录](./verification.md)：本次结果与历史结果分开。
 5. [阶段 1](./phase-1.md)：工具链、API 决策及初始默认参数。
 
@@ -31,6 +31,8 @@
 - `consumer-tests/*/.../RuntimeSmoke.*`：实际 AAR 的 Android 运行验证。验证页面仍是测试入口，不是 samples。
 
 ## 不可遗漏的边界
+
+- 2026-10-01 按用户决定移除 Flag 输入大小、数量和元数据预算限制，覆盖 Bootstrap、Full/Patch、Custom/TestData 和 JSON 文本。保留重复 key 等有效性检查；JSON 解析深度/节点数及线程、回调、事件、缓存容量约束不属于本次变更。`Limits` 已替换为只负责 Bootstrap 校验和转换的 `BootstrapRecords`。本次 40 个单元测试、Release AAR、lint、API/Java 11 检查及本地 Maven 发布通过；未重跑消费者或模拟器，详见 verification.md。
 
 - 真实内置网络、事件、缓存及匿名持久化尚未接入。在线内置来源返回 DISABLED；
   Custom 当前需关闭事件；缓存清除/匿名持久化不可用会返回明确结果，不伪造成功。

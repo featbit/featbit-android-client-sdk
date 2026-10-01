@@ -155,7 +155,6 @@ public class ClientOptions private constructor(builder: Builder) {
             if (automaticAttributes && user?.attributes?.keys?.any { it.startsWith("featbit.sdk.") } == true) return Outcome.invalid("reserved_attribute_prefix")
             if (source != null && (explicitTransport || mode != SyncMode.STREAMING || streamingUrl != null || pollingUrl != null || pollingFallback || backgroundPolling || syncHeaders.isNotEmpty())) return Outcome.invalid("custom_source_conflict")
             if (source is co.featbit.android.internal.LocalTestData && (!disableEvents || cacheEnabled)) return Outcome.invalid("test_data_configuration_conflict")
-            if (bootstrap != null && co.featbit.android.internal.Limits.bootstrap(bootstrap!!) == null) return Outcome.invalid("input_resource_limit")
             if (source == null && mode == SyncMode.CUSTOM) return Outcome.invalid("source_required")
             if (pollingFallback && mode != SyncMode.STREAMING) return Outcome.invalid("fallback_requires_streaming")
             if (!offline) {

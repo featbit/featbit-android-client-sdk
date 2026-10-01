@@ -9,7 +9,7 @@ internal class LocalTestData(initial: List<BootstrapFlag>, private val clock: Cl
     private val lock = Any()
     private val budget = CallbackBudget()
     private var flags = initial.associateBy { it.key }
-    private var records = Limits.bootstrap(initial)!!.associate { flag ->
+    private var records = BootstrapRecords.create(initial)!!.associate { flag ->
         flag.key to FlagRecord.builder(flag.key, flag.variation, flag.variationType, clock.wall().coerceAtLeast(0)).build().value!!
     }
     private var binding: Any? = null
@@ -50,7 +50,7 @@ internal class LocalTestData(initial: List<BootstrapFlag>, private val clock: Cl
     }
     private fun done(outcome: Outcome<TestDataResult>): Operation<TestDataResult> = ResultOperation<TestDataResult>(dispatch, budget, clock).apply { settle(outcome) }
     private fun submit(next: Map<String, BootstrapFlag>): Operation<TestDataResult> {
-        val raw = Limits.bootstrap(next.values.toList()) ?: return done(Outcome.invalid("input_resource_limit"))
+        val raw = BootstrapRecords.create(next.values.toList()) ?: return done(Outcome.invalid("duplicate_flag_key"))
         // Full replacement orders mutations independently of wall-clock rollback/equal milliseconds.
         val timestamp = clock.wall().coerceAtLeast(0)
         val prepared = raw.map { flag ->
@@ -80,7 +80,7 @@ internal class LocalTestData(initial: List<BootstrapFlag>, private val clock: Cl
         return result
     }
     override fun replace(flags: List<BootstrapFlag>): Operation<TestDataResult> {
-        if (Limits.bootstrap(flags) == null) return done(Outcome.invalid("input_resource_limit"))
+        if (BootstrapRecords.create(flags) == null) return done(Outcome.invalid("duplicate_flag_key"))
         return synchronized(lock) { submit(flags.associateBy { it.key }) }
     }
     override fun update(flag: BootstrapFlag): Operation<TestDataResult> = synchronized(lock) { submit(flags + (flag.key to flag)) }
@@ -90,7 +90,7 @@ internal class LocalTestData(initial: List<BootstrapFlag>, private val clock: Cl
 }
 internal object LocalTestDataFactory : TestDataFactory {
     override fun create(initialFlags: List<BootstrapFlag>): Outcome<TestData> {
-        if (Limits.bootstrap(initialFlags) == null) return Outcome.invalid("input_resource_limit")
+        if (BootstrapRecords.create(initialFlags) == null) return Outcome.invalid("duplicate_flag_key")
         // Lazy main dispatch also permits constructing TestData before Android initialization.
         val dispatch = Dispatch { mainDispatch().post(it) }
         return Outcome.success(LocalTestData(initialFlags, AndroidClock, dispatch))

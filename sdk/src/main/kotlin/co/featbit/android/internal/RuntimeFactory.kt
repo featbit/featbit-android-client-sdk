@@ -11,8 +11,8 @@ internal object RuntimeFactory : ClientFactory {
         val dispatch = mainDispatch()
         val result = ResultOperation<FeatBitClient>(dispatch, CallbackBudget(), AndroidClock)
         if (context == null) { result.settle(Outcome.invalid("application_context_required")); return result }
-        if (Limits.bootstrap(options.bootstrap ?: emptyList()) == null) {
-            result.settle(Outcome.invalid("input_resource_limit")); return result
+        if (BootstrapRecords.create(options.bootstrap ?: emptyList()) == null) {
+            result.settle(Outcome.invalid("duplicate_flag_key")); return result
         }
         if (!options.offline) onlineError(options)?.let {
             result.settle(Outcome.failure(it.first, Diagnostic(it.second))); return result

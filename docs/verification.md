@@ -1,5 +1,22 @@
 # Verification record
 
+## Flag input limit removal — 2026-10-01
+
+Removed SDK-imposed Flag byte/count limits, including JSON text size. Duplicate-key
+validation and JSON parsing depth/node limits remain. Regression checks cover values
+above 1 MiB, Full data above the former 8 MiB budget, a 50,001-record Patch, large
+keys/types/reasons/options, Bootstrap, TestData replacement and parsed JSON.
+
+- SDK unit tests: 40 passed (11 model + 29 runtime/fixture), no failures/errors/skips.
+- Release AAR, release lint and local Maven publication: passed.
+- API baseline and Java 11 bytecode: passed, 78 public types.
+- Independent consumer builds and emulator runs were not repeated for this change.
+
+Commands: `gradlew.bat :sdk:testDebugUnitTest :sdk:assembleRelease :sdk:lintRelease :sdk:publishReleasePublicationToLocalTestRepository`, then `python tools/check_api.py`.
+
+The Phase 2 evidence below predates this change; its oversized-rejection test has
+been replaced by acceptance coverage, and its device results are historical.
+
 ## Phase 2 — 2026-10-01
 
 Current implementation scope: [local runtime and boundaries](./phase-2.md).

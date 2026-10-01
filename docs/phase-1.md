@@ -164,7 +164,7 @@ Internal starting policies, documented rather than adding configuration knobs:
 | Transition flush | disabled; when enabled, 2 s total from background entry |
 | Event memory | 8 MiB total and at most 256 groups; overflow drops new unique work observably |
 | Cache | 5 contexts / 10 MiB per namespace, 7-day age, LRU; backup-excluded private atomic files |
-| Input protection | 8 MiB update, 50,000 records/update, 1 MiB/value, 1 KiB/key, 64 JSON depth; bound expansion/scratch during Phase 2 measurement |
+| Input protection | Updated 2026-10-01: no Flag byte/count caps; retain validity checks and JSON parsing depth/node limits. See phase-2.md. |
 | Operations / subscriptions | 256 pending ordinary operations and 256 registrations/client; close independent; 32 additional close registrations |
 | Extensions | 2 worker threads, 64 queued invocations/client; 2 s stop wait, no replacement threads for hung calls |
 | Diagnostics | repeated code at most once per 60 s, 128 code buckets / queued log messages; loss counters are not rate limited |

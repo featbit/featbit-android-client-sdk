@@ -421,22 +421,37 @@ public class LocalRuntimeTest {
         h.client.lifecycle(true, true); h.workers.drain(); assertEquals(2, source.sinks.size)
         h.close()
     }
-    @Test public fun oversizedUpdateIsAtomicAndDoesNotShadowBootstrapOrConfirm() {
+    @Test public fun largeFullAndPatchCommitWithoutResourceLimits() {
         val source = ControlledSource(); val h = Harness(source, bootstrap = listOf(flag("local", "default")))
         val sink = source.sinks.single(); val wait = h.client.awaitReady(100)
-        val rejected = sink.full(record("local", "overwritten"), record("big", "x".repeat(Limits.VALUE + 1)))
-        assertEquals(SourceUpdateCode.INVALID, rejected.code)
-        assertEquals("input_resource_limit", rejected.error!!.code)
-        assertEquals("default", h.client.stringVariation("local", "fallback")); assertNull(wait.getResult())
-        sink.full(); assertEquals("default", h.client.stringVariation("local", "fallback"))
-        val baseline = sink.patch(record("f", "initial", 3)).baseline!!
-        val tooMany = List(50_001) { record("k$it", "x", 4) }
-        val bad = sink.submit(PatchUpdate.create(tooMany).value!!).getResult()!!.value!!
-        assertEquals(SourceUpdateCode.INVALID, bad.code)
-        assertEquals(SourceUpdateCode.COMMITTED, sink.submit(NoChange(baseline)).getResult()!!.value!!.code)
+        val large = "x".repeat(1024 * 1024 + 1)
+        val full = sink.submit(FullUpdate.create(List(9) { record("big$it", large) } + record("local", "overwritten")).value!!).getResult()!!.value!!
+        assertEquals(SourceUpdateCode.COMMITTED, full.code)
+        assertTrue(wait.getResult()!!.isSuccess)
+        assertEquals(large, h.client.stringVariation("big0", "fallback"))
+        assertEquals("overwritten", h.client.stringVariation("local", "fallback"))
+        val many = List(50_001) { record("k$it", "x", 4) }
+        val patch = sink.submit(PatchUpdate.create(many).value!!).getResult()!!.value!!
+        assertEquals(SourceUpdateCode.COMMITTED, patch.code)
+        assertEquals("x", h.client.stringVariation("k50000", "fallback"))
+        assertEquals(SourceUpdateCode.COMMITTED, sink.submit(NoChange(patch.baseline!!)).getResult()!!.value!!.code)
+        sink.full(record("f", "initial", 3))
         repeat(500) { sink.patch(record("f", "$it", 3)) }
         assertEquals(1, sink.patch(record("f", "last", 3)).baseline!!.records.size)
         h.close()
+    }
+    @Test public fun largeBootstrapMetadataAndJsonRemainReadable() {
+        val text = "x".repeat(1024 * 1024 + 1)
+        val key = "k".repeat(1025)
+        val h = Harness(ControlledSource(), bootstrap = listOf(flag(key, text)))
+        assertEquals(text, h.client.stringVariation(key, "fallback"))
+        val source = ControlledSource(); val custom = Harness(source)
+        val item = FlagRecord.builder(key, text, "t".repeat(1025), 1).reason(text)
+            .variationOptions(List(50_001) { VariationOption("id$it", "v") }).build().value!!
+        assertEquals(SourceUpdateCode.COMMITTED, source.sinks.single().full(item).code)
+        assertEquals(text, custom.client.stringVariation(key, "fallback"))
+        assertEquals(text, Conversion.json("\"$text\"")!!.asString())
+        h.close(); custom.close()
     }
     @Test public fun testDataMutationsReadinessOfflineAndClockRollback() {
         val clock = FakeClock(); val dispatch = ManualDispatch()
@@ -457,11 +472,18 @@ public class LocalRuntimeTest {
         h.client.identify(user("B"), 10); h.workers.drain(); assertEquals("saved", h.client.stringVariation("f", "fallback"))
         h.close(); data.unbind(owner); assertTrue(data.bind(Any()))
     }
-    @Test public fun testDataRejectsResourceLimitsWithoutChangingSavedSnapshot() {
+    @Test public fun testDataAcceptsLargeValuesAndRejectsDuplicateKeys() {
         val data = LocalTestData(listOf(flag("f", "good")), FakeClock(), ManualDispatch()); val h = Harness(data)
-        assertEquals(OutcomeCode.INVALID, data.replace(listOf(flag("f", "x".repeat(Limits.VALUE + 1)))).getResult()!!.code)
+        val large = "x".repeat(1024 * 1024 + 1)
+        assertEquals(TestDataResult.COMMITTED, data.replace(listOf(flag("f", large))).getResult()!!.value)
+        val duplicate = data.replace(listOf(flag("f", "one"), flag("f", "two"))).getResult()!!
+        assertEquals(OutcomeCode.INVALID, duplicate.code)
+        assertEquals("duplicate_flag_key", duplicate.diagnostic!!.code)
         h.client.identify(user("B"), 10); h.workers.drain()
-        assertEquals("good", h.client.stringVariation("f", "fallback")); h.close()
+        assertEquals(large, h.client.stringVariation("f", "fallback"))
+        assertEquals("invalid_configuration", ClientOptions.builder().user(user("A")).offline(true)
+            .bootstrap(listOf(flag("f", "one"), flag("f", "two"))).build().diagnostic!!.code)
+        h.close()
     }
     @Test public fun flowCompletesAndCancellationDetachesOnlyWait(): Unit = runBlocking {
         val source = ControlledSource(); val h = Harness(source)

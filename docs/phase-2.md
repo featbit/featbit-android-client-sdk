@@ -82,7 +82,7 @@ Cache clearing returns `DISABLED / cache_persistence_unavailable`. Initial anony
 creation and public anonymous transitions without a repository return
 `anonymous_persistence_unavailable`; disabled anonymous mode returns `anonymous_disabled`.
 Actual cache/anonymous persistence belongs to Phase 3. Cache-hit/valid-empty-cache races
-and oversized persisted input remain Phase 3 tests, not passed by the local fixtures.
+and persisted-input corruption remain Phase 3 tests, not passed by the local fixtures.
 
 Built-in transport, grace/background-polling execution, real lifecycle observers, event
 collection/sending and event-admission revalidation belong to Phases 4–6. Local lifecycle
@@ -99,10 +99,11 @@ IEEE-754 precision; complete decimal grammar rejects hexadecimal, suffixes and n
 results. The dependency-free JSON reader accepts objects, arrays, scalars and null, with
 64 levels and 50,000 parsed nodes; duplicate object properties use their last value.
 
-Input policies remain 8 MiB/update, 50,000 records/update, 1 MiB/value or metadata, and
-1 KiB/key. UTF-8 size counting avoids constructing an encoded copy. Oversized commits are
-rejected atomically with `input_resource_limit`, retaining values, shadow state, cursor
-and confirmation. Unknown types and malformed selected strings remain raw readable data;
+Flag inputs have no SDK-imposed byte or record-count caps, including Bootstrap,
+Full/Patch updates, TestData, metadata and JSON text. Duplicate Bootstrap keys remain
+invalid; TestData reports `duplicate_flag_key`, and the configuration builder retains
+`invalid_configuration`. Update envelopes retain their existing validity checks.
+JSON parsing retains the depth and node limits above. Unknown types and malformed selected strings remain raw readable data;
 conversion failure is local to the requested read. There is no whole-store history or
 tombstone eviction policy; patch replaces current records.
 
@@ -115,8 +116,8 @@ GC occurred between samples: these are noisy whole-process observations, **not**
 SDK heap sizes or a benchmark guarantee. They support avoiding mandatory eager parsing;
 hot-read caching could reduce repeated cost but would need its own bounded policy and
 representative device measurements. The JVM probe provides a repeatable comparison entry
-point, not Android performance evidence. Input limits remain provisional, not optimized
-for every device or validated against live service workloads.
+point, not Android performance evidence. These observations do not establish a maximum supported data size or guarantee
+performance on every device or live service workload.
 
 ## Fixtures and verification
 

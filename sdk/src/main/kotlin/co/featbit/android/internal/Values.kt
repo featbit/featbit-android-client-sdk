@@ -4,52 +4,11 @@ import co.featbit.android.api.*
 import co.featbit.android.datasource.FlagRecord
 import java.util.Collections
 
-internal object Limits {
-    const val VALUE = 1024 * 1024
-    const val UPDATE = 8 * VALUE
-    const val RECORDS = 50_000
-    fun bytes(text: String): Int {
-        if (text.length > UPDATE) return UPDATE + 1
-        var size = 0
-        var i = 0
-        while (i < text.length) {
-            val c = text[i++]
-            size += when {
-                c.code < 128 -> 1
-                c.code < 2048 -> 2
-                c.isHighSurrogate() && i < text.length && text[i].isLowSurrogate() -> { i++; 4 }
-                else -> 3
-            }
-            if (size > UPDATE) return size
-        }
-        return size
-    }
-    fun records(records: List<FlagRecord>): Boolean {
-        if (records.size > RECORDS) return false
-        var total = 0L
-        for (r in records) {
-            val key = bytes(r.key); val value = bytes(r.variation)
-            val type = bytes(r.variationType); val reason = bytes(r.reason ?: "")
-            if (key > 1024 || value > VALUE || type > 1024 || reason > VALUE) return false
-            total += key + value + type + reason + 64L
-            val options = r.variationOptions
-            if (options != null) {
-                if (options.size > RECORDS) return false
-                var metadata = 0L
-                for (o in options) {
-                    metadata += bytes(o.id) + bytes(o.value) + 16L
-                    if (metadata > VALUE) return false
-                }
-                total += metadata
-            }
-            if (total > UPDATE) return false
-        }
-        return true
-    }
-    fun bootstrap(flags: List<BootstrapFlag>): List<FlagRecord>? {
-        if (flags.size > RECORDS) return null
-        val records = flags.map { FlagRecord.builder(it.key, it.value, it.type.name.lowercase(java.util.Locale.ROOT), 0).build().value!! }
-        return records.takeIf { records(it) && it.map { r -> r.key }.distinct().size == it.size }
+internal object BootstrapRecords {
+    fun create(flags: List<BootstrapFlag>): List<FlagRecord>? {
+        val keys = HashSet<String>()
+        if (flags.any { !keys.add(it.key) }) return null
+        return flags.map { FlagRecord.builder(it.key, it.value, it.type.name.lowercase(java.util.Locale.ROOT), 0).build().value!! }
     }
 }
 internal fun <K, V> frozen(map: Map<K, V>): Map<K, V> = Collections.unmodifiableMap(LinkedHashMap(map))
@@ -72,7 +31,7 @@ internal object Conversion {
         else -> null
     }
     fun json(raw: String): FbValue? = try {
-        if (Limits.bytes(raw) > Limits.VALUE) null else JsonReader(raw).parse()
+        JsonReader(raw).parse()
     } catch (_: IllegalArgumentException) { null }
 }
 

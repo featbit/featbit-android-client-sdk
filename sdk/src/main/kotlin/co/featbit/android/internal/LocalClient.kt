@@ -60,7 +60,7 @@ internal class LocalClient(
     private var closeDeadline = Long.MAX_VALUE
     private var cleanupFailed = false
     private var cleanupSettled = false
-    private val bootstrapRecords = frozen(Limits.bootstrap(options.bootstrap ?: emptyList())!!.associateBy { it.key })
+    private val bootstrapRecords = frozen(BootstrapRecords.create(options.bootstrap ?: emptyList())!!.associateBy { it.key })
     @Volatile private var view = initialView()
     @Volatile private var information = status()
 
@@ -309,7 +309,6 @@ internal class LocalClient(
 
     private fun commit(session: Session, update: SourceUpdate): Operation<SourceUpdateResult> {
         val records = when (update) { is FullUpdate -> update.records; is PatchUpdate -> update.records; is NoChange -> emptyList() }
-        val validSize = Limits.records(records)
         // Preparation may enumerate large snapshots; commits retry if another view won meanwhile.
         while (true) {
             val before = view
@@ -317,7 +316,7 @@ internal class LocalClient(
             var accepted = 0; var skipped = 0
             val newRecords = if (update is FullUpdate) LinkedHashMap() else LinkedHashMap(before.records)
             val defaults = LinkedHashMap(before.defaults)
-            if (validSize && update !is NoChange) for (record in records) {
+            if (update !is NoChange) for (record in records) {
                 if (update is PatchUpdate && (newRecords[record.key]?.timestamp ?: -1) > record.timestamp) { skipped++; continue }
                 newRecords[record.key] = record
                 defaults.remove(record.key)
@@ -333,7 +332,6 @@ internal class LocalClient(
             val changes = changeKeys(before, after)
             synchronized(gate) {
                 if (!authorized(session)) return sourceResult(if (closed) SourceUpdateCode.CLOSED else SourceUpdateCode.INACTIVE)
-                if (!validSize) { sourceFailure("input_resource_limit", false); return sourceResult(SourceUpdateCode.INVALID, error = "input_resource_limit") }
                 if (update is NoChange && (!remote || update.baseline !== before.baseline))
                     return sourceResult(SourceUpdateCode.INVALID, error = "invalid_baseline")
                 if (view !== before) return@synchronized
