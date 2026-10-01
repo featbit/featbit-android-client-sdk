@@ -7,9 +7,12 @@ import co.featbit.android.api.ClientOptions
 import co.featbit.android.api.User
 import co.featbit.android.datasource.DataSourceFactory
 
-/** Public contract only in Phase 1; Phase 2 adds the factory and local source implementation. */
+/** In-memory source for local API tests; no server targeting or analytics. */
 public interface TestDataFactory {
     public fun create(initialFlags: List<BootstrapFlag>): Outcome<TestData>
+    public companion object {
+        @JvmStatic public fun getDefault(): TestDataFactory = co.featbit.android.internal.LocalTestDataFactory
+    }
 }
 
 public interface TestData : DataSourceFactory {

@@ -1,9 +1,9 @@
-# Device model checks
+# Device model and local runtime checks
 
 完整中文步骤、常见问题与已验证范围：[手动验证指南](../docs/manual-verification.md)。
 
 These Java/Kotlin consumers use the real Maven-staged SDK AAR. They are test fixtures,
-not SDK samples; no runtime client or network connection is created.
+not SDK samples. They create local TestData and Custom clients, without network connections.
 
 1. In the SDK root, run `./gradlew :sdk:publishReleasePublicationToLocalTestRepository`
    (Windows: `.\gradlew.bat :sdk:publishReleasePublicationToLocalTestRepository`).
@@ -13,12 +13,15 @@ not SDK samples; no runtime client or network connection is created.
 4. Choose the `java` or `kotlin` Android App run configuration, use the `debug` build
    variant, select the device, and click Run. If there is no run configuration, create an
    Android App configuration for the corresponding module with Launch: Default Activity.
-5. The page automatically executes `ModelSmoke.verify()` and displays **PASS** or **FAIL**.
+5. The page executes `ModelSmoke.verify()` followed by asynchronous `RuntimeSmoke.verify()` and displays **PASS** or **FAIL**.
    Use the retry button to run again; the check count and completion time update on each run.
    Search Logcat for `FeatBitConsumer` for results and
    failure stack traces. Run both modules to check both consumer languages.
 
-The checks cover only the public models used by each existing consumer smoke test.
+The checks cover models, TestData/Custom sources, evaluation, Identify, online/offline,
+subscriptions and Close. Kotlin additionally exercises suspend/Flow and logs a 5,000-record
+conversion/heap probe. JVM consumer tests cover models and inactive TestData mutations;
+the Android runtime checks require launching the Activity.
 A PASS does not establish network, caching, event delivery or complete SDK conformance.
 
 Debug APKs are signed automatically for device installation. Release builds still run R8,

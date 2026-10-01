@@ -69,7 +69,7 @@ afterEvaluate {
                 artifactId = "featbit-client-android"
                 pom {
                     name.set("FeatBit Android Client SDK")
-                    description.set("Phase 1 API and model foundation; not a functional SDK runtime.")
+                    description.set("FeatBit Android local client runtime; online transport and persistence are not yet available.")
                     url.set("https://github.com/featbit/featbit-android-client-sdk")
                     licenses { license { name.set("MIT License"); url.set("https://opensource.org/licenses/MIT") } }
                     scm { url.set("https://github.com/featbit/featbit-android-client-sdk") }

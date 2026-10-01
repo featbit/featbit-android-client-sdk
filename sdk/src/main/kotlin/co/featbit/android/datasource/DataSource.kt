@@ -60,11 +60,15 @@ public class FlagRecord private constructor(
         private var archived: Boolean = false
         private var reason: String? = null
         private var variationOptions: List<VariationOption>? = null
+        private var invalidOptions = false
         public fun archived(value: Boolean): Builder = apply { archived = value }
         public fun reason(value: String?): Builder = apply { reason = value }
-        public fun variationOptions(value: List<VariationOption>?): Builder = apply { variationOptions = value?.let { ArrayList(it) } }
+        public fun variationOptions(value: List<VariationOption?>?): Builder = apply {
+            invalidOptions = value?.any { it == null } == true
+            variationOptions = value?.filterNotNull()
+        }
         public fun build(): Outcome<FlagRecord> =
-            if (key.isNullOrEmpty() || variation == null || variationType == null || timestamp < 0) Outcome.invalid("invalid_flag_record")
+            if (key.isNullOrEmpty() || variation == null || variationType == null || timestamp < 0 || invalidOptions) Outcome.invalid("invalid_flag_record")
             else Outcome.success(FlagRecord(key, variation, variationType, timestamp, archived, reason, variationOptions))
     }
     public companion object {

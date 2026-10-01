@@ -22,6 +22,9 @@ public final class ModelSmoke {
         if (!record.getVariation().equals("true") || !record.getVariationType().equals("boolean")) throw new AssertionError("flag fields");
         if (!record.getVariationOptions().get(0).getId().equals("on")) throw new AssertionError("variation metadata");
         if (!FullUpdate.create(Collections.singletonList(record)).isSuccess()) throw new AssertionError("source model");
+        co.featbit.android.testing.TestData data = co.featbit.android.testing.TestDataFactory.getDefault().create(Collections.emptyList()).getValue();
+        if (data.update(BootstrapFlag.create("saved", "1", ValueType.NUMBER).getValue()).getResult().getValue() != co.featbit.android.testing.TestDataResult.SAVED_FOR_NEXT_START) throw new AssertionError("saved TestData");
+        if (!data.clientOptions(user).getValue().getDisableEvents() || data.clientOptions(user).getValue().getCacheEnabled()) throw new AssertionError("TestData gates");
     }
 
     // Independent Java implementation proves the public extension does not require Kotlin internals.

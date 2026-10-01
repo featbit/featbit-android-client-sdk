@@ -1,4 +1,58 @@
-# Phase 1 verification
+# Verification record
+
+## Phase 2 — 2026-10-01
+
+Current implementation scope: [local runtime and boundaries](./phase-2.md).
+Phase 1 evidence below is historical and does not substitute for these checks.
+
+| Check | Result |
+| --- | --- |
+| SDK debug/release AAR | Passed with JDK 17, AGP 8.5.2, Kotlin 1.9.25 |
+| SDK unit tests | 39 passed: 11 model tests + 28 runtime/fixture tests; no failures/errors/skips |
+| SDK release lint | Passed |
+| Binary API and Java 11 bytecode | Passed; 78 public types; three additive static factory entries reviewed |
+| Local Maven staging | Passed; AAR/source JAR/POM/module metadata in `build/test-repository` |
+| Independent Java consumer | Debug/release, JUnit and R8 passed against the final staged AAR |
+| Independent Kotlin 1.9.24 / 1.9.25 consumers | Debug/release, JUnit and R8 passed against the final staged AAR |
+| Independent Kotlin 2.2.10 consumer | Debug/release, JUnit and R8 passed; analyzer limitation below remains |
+| API 34 emulator debug runtime | Java and Kotlin 1.9.25 Activities displayed PASS; TestData, independent Custom factories, evaluation, Identify, mode changes, Close; Kotlin additionally suspend/Flow |
+| Conversion/resource probe | 5,000 JSON records on the emulator and JVM; observations and limitations in phase-2.md |
+
+Both final debug APKs were installed and launched on `emulator-5554` (API 34). The
+retry button was exercised in each app: PASS persisted and the completed run count
+advanced from 1 to 2 with updated completion times. These runs used Kotlin 1.9.25;
+the other consumer compiler versions were built/tested but not launched on the device.
+
+Runtime tests include immutable/coherent reads, bootstrap shadowing, equal/stale patches,
+archive/restoration, exact baselines, same-key and A→B→A identity changes, elapsed deadlines,
+mode supersession, callback reentry/detach/capacity, Flow cancellation/close, source failures,
+physically blocked extension workers, stop timeout, safe logging, oversized atomic rejection,
+anonymous preparation/adoption fencing and TestData clock rollback/unchanged timestamps.
+Fake lifecycle/network inputs are covered; real Android lifecycle observers are not installed.
+
+Commands used on the SDK root (set the JDK 17/Android SDK paths first):
+
+```powershell
+.\gradlew.bat :sdk:assembleDebug :sdk:assembleRelease :sdk:testDebugUnitTest :sdk:lintRelease :sdk:publishReleasePublicationToLocalTestRepository
+python tools/check_api.py
+.\gradlew.bat -p consumer-tests '-PconsumerKotlinVersion=1.9.25' :java:assembleDebug :java:assembleRelease :java:testDebugUnitTest :kotlin:assembleDebug :kotlin:assembleRelease :kotlin:testDebugUnitTest
+```
+
+Local build logs are retained in ignored `build/phase-2-sdk.log` and
+`build/phase-2-consumer-<version>.log`. Runtime launchers execute additional Android checks;
+consumer JUnit covers models and saved-only TestData, not a mocked Android client runtime.
+Hosted CI has not been observed; its existing SDK test command automatically includes the
+new runtime suite and versioned fixtures. No network, persistent-cache, anonymous-storage,
+real-device or post-R8 device conformance is implied. Release APKs remain unsigned.
+
+Kotlin 2.2.10 consumer builds exposed an AGP 8.5.2 lint-analyzer limitation: stderr reported
+Kotlin metadata 2.2.0 while the analyzer expected 2.0.0 during `lintVitalAnalyzeRelease`.
+The build returned success, but this consumer lint analysis is **not** recorded as fully
+verified. SDK release lint uses 1.9.25 and passed separately. No metadata bypass or lint
+suppression was added; correcting the consumer analyzer/toolchain is a later compatibility
+task, not evidence of a runtime failure or a reason to change the SDK compiler silently.
+
+## Phase 1 historical verification
 
 For repeatable Android Studio and device steps, see the [manual verification guide](./manual-verification.md).
 

@@ -22,7 +22,7 @@ class SmokeActivity : Activity() {
             setPadding(padding, padding, padding, padding)
         }
         content.addView(TextView(this).apply {
-            text = "Kotlin · SDK 公共模型检查"
+            text = "Kotlin · SDK 本地运行时检查"
             textSize = 22f
         })
         result = TextView(this).apply {
@@ -38,7 +38,7 @@ class SmokeActivity : Activity() {
             setOnClickListener { runChecks() }
         })
         content.addView(TextView(this).apply {
-            text = "仅验证独立 AAR 的公共模型调用。\n不验证网络同步、缓存或事件发送。"
+            text = "验证独立 AAR 的模型与阶段 2 本地运行时。\n不验证网络同步、持久化或事件发送。"
         })
         setContentView(ScrollView(this).apply { addView(content) })
         runChecks()
@@ -46,24 +46,32 @@ class SmokeActivity : Activity() {
 
     private fun runChecks() {
         runCount++
+        lastRun.text = "正在进行第 $runCount 次检查…"
         try {
             ModelSmoke.verify()
-            result.text = "PASS · 检查通过\n\n用户与配置、空 Bootstrap、JSON 值、非法数值、版本及自定义数据源声明。"
-            Log.i("FeatBitConsumer", "Kotlin model checks PASS")
+            result.text = "模型 PASS · 正在检查本地运行时…"
+            val run = runCount
+            RuntimeSmoke.verify(applicationContext) { message -> runOnUiThread {
+                if (run == runCount && !isFinishing) {
+                    result.text = message
+                    Log.i("FeatBitConsumer", message)
+                    val time = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.getDefault()).format(java.util.Date())
+                    lastRun.text = "已完成第 $run 次检查 · $time"
+                }
+            } }
         } catch (failure: AssertionError) {
             showFailure(failure)
         } catch (failure: RuntimeException) {
             showFailure(failure)
         } catch (failure: LinkageError) {
             showFailure(failure)
-        } finally {
-            val time = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.getDefault()).format(java.util.Date())
-            lastRun.text = "已完成第 $runCount 次检查 · $time"
         }
     }
 
     private fun showFailure(failure: Throwable) {
         result.text = "FAIL · 检查失败\n\n$failure\n\n在 Logcat 中搜索 FeatBitConsumer 查看堆栈。"
         Log.e("FeatBitConsumer", "Kotlin model checks FAIL", failure)
+        val time = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.getDefault()).format(java.util.Date())
+        lastRun.text = "已完成第 $runCount 次检查 · $time"
     }
 }

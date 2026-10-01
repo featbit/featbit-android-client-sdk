@@ -21,7 +21,7 @@ public final class SmokeActivity extends Activity {
         int padding = Math.round(24 * getResources().getDisplayMetrics().density);
         content.setPadding(padding, padding, padding, padding);
         TextView title = new TextView(this);
-        title.setText("Java · SDK 公共模型检查");
+        title.setText("Java · SDK 本地运行时检查");
         title.setTextSize(22);
         content.addView(title);
         result = new TextView(this);
@@ -36,7 +36,7 @@ public final class SmokeActivity extends Activity {
         retry.setOnClickListener(view -> runChecks());
         content.addView(retry);
         TextView scope = new TextView(this);
-        scope.setText("仅验证独立 AAR 的公共模型调用。\n不验证网络同步、缓存或事件发送。");
+        scope.setText("验证独立 AAR 的模型与阶段 2 本地运行时。\n不验证网络同步、持久化或事件发送。");
         content.addView(scope);
         ScrollView scroll = new ScrollView(this);
         scroll.addView(content);
@@ -46,14 +46,21 @@ public final class SmokeActivity extends Activity {
 
     private void runChecks() {
         runCount++;
+        lastRun.setText("正在进行第 " + runCount + " 次检查…");
         try {
             ModelSmoke.verify();
-            result.setText("PASS · 检查通过\n\n用户与配置、Bootstrap、JSON 值、非法数值、版本及数据源更新模型。");
-            Log.i("FeatBitConsumer", "Java model checks PASS");
+            result.setText("模型 PASS · 正在检查本地运行时…");
+            final int run = runCount;
+            RuntimeSmoke.verify(getApplicationContext(), message -> {
+                if (run != runCount || isFinishing()) return;
+                result.setText(message);
+                Log.i("FeatBitConsumer", message);
+                String time = new java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.getDefault()).format(new java.util.Date());
+                lastRun.setText("已完成第 " + run + " 次检查 · " + time);
+            });
         } catch (AssertionError | RuntimeException | LinkageError failure) {
             result.setText("FAIL · 检查失败\n\n" + failure + "\n\n在 Logcat 中搜索 FeatBitConsumer 查看堆栈。");
             Log.e("FeatBitConsumer", "Java model checks FAIL", failure);
-        } finally {
             String time = new java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.getDefault()).format(new java.util.Date());
             lastRun.setText("已完成第 " + runCount + " 次检查 · " + time);
         }

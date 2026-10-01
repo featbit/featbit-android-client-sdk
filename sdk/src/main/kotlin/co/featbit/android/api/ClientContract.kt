@@ -1,9 +1,12 @@
 package co.featbit.android.api
 
-/** Implementations arrive in subsequent phases; no nonfunctional client factory is shipped. */
+/** Creates the local runtime. Built-in networking and persistence arrive in later phases. */
 public interface ClientFactory {
     /** Implementations retain only applicationContext; creation never waits for network readiness. */
     public fun create(applicationContext: android.content.Context, options: ClientOptions): Operation<FeatBitClient>
+    public companion object {
+        @JvmStatic public fun getDefault(): ClientFactory = co.featbit.android.internal.RuntimeFactory
+    }
 }
 
 public interface FeatBitClient {

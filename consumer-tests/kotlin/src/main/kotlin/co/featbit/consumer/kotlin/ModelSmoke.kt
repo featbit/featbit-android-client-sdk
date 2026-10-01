@@ -26,6 +26,9 @@ object ModelSmoke {
         check(record.variationOptions?.single()?.id == "on")
         check(FullUpdate.create(listOf(record)).isSuccess)
         check(LocalFactory().capabilities().provenance == Provenance.LOCAL)
+        val data = co.featbit.android.testing.TestDataFactory.getDefault().create(emptyList()).value!!
+        check(data.update(BootstrapFlag.create("saved", "1", ValueType.NUMBER).value!!).getResult()!!.value == co.featbit.android.testing.TestDataResult.SAVED_FOR_NEXT_START)
+        check(data.clientOptions(user).value!!.disableEvents && !data.clientOptions(user).value!!.cacheEnabled)
     }
     class LocalFactory : DataSourceFactory {
         override fun capabilities() = SourceCapabilities(Provenance.LOCAL, false)

@@ -28,6 +28,7 @@ try:
     with zipfile.ZipFile(jar) as archive:
         classes = sorted(n[:-6].replace("/", ".") for n in archive.namelist()
                          if n.endswith(".class") and n.startswith("co/featbit/android/")
+                         and not n.startswith("co/featbit/android/internal/")
                          and not n.endswith("/BuildConfig.class"))
         for name in archive.namelist():
             if name.endswith(".class"):

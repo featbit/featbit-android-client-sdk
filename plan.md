@@ -1,8 +1,8 @@
 # FeatBit Android Client SDK Development Plan
 
-Date: 2026-09-30. Status: Phase 1 build/API foundation implemented and locally verified; Phases 2–7 remain planned.
+Date: 2026-10-01. Status: Phase 1 foundation and Phase 2 local runtime implemented; Phases 3–7 remain planned. See [Phase 2 scope and remaining integration checks](./docs/phase-2.md).
 
-The repository now contains the Library build, immutable public models, runtime interface contracts, independent AAR consumers and CI configuration. See [Phase 1 decisions](./docs/phase-1.md) and [verification evidence](./docs/verification.md). Runtime behavior below remains planned unless explicitly listed as verified; no functional client, samples, live-service validation or publication is included in Phase 1.
+The repository contains the Library build, immutable models, a local client runtime, independent AAR consumers and CI configuration. See [Phase 1 decisions](./docs/phase-1.md), [Phase 2 implementation](./docs/phase-2.md) and [verification evidence](./docs/verification.md). Later-phase behavior below remains planned unless explicitly listed as verified; no samples, live-service validation or remote publication is included.
 
 ## 1. Goals and agreed boundaries
 

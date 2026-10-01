@@ -1,0 +1,12 @@
+# Requested converter, raw string, expected validity. SDK-spec 3f08faa; local v1 fixtures.
+number	-1.25e2	valid
+number	1e309	invalid
+number	0x10	invalid
+number	1.0f	invalid
+boolean	TrUe	valid
+boolean	1	invalid
+json	{"items":[null,true,1,"x"]}	valid
+json	null	valid
+json	[1,]	invalid
+json	01	invalid
+json	"\u0061"	valid

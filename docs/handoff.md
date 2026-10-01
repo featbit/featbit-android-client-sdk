@@ -1,120 +1,72 @@
 # Android SDK 开发交接
 
-更新时间：2026-10-01（Europe/Berlin）。本文件供新的 session 接续工作；具体行为契约以实施计划、架构和共享 spec 为准。
+更新时间：2026-10-01（Europe/Berlin）。
 
-## 当前状态
+## 当前进度
 
-**阶段 1 的构建/API 基础已实现并完成对应验证；阶段 2 尚未开始。** 用户已进行 Android Studio 手动操作；我们随后在连接的 API 34 模拟器上确认 Java、Kotlin 验证页面均显示 PASS，重新检查后次数和时间更新。
+阶段 1 基础和阶段 2 本地运行时已实现。阶段 3–7 尚未实施。
+本次从旧交接继续阶段 2，没有提交、推送或远程发布，也未修改相邻仓库。
+详细实现、使用方式及边界见 [phase-2.md](./phase-2.md)，实际验证见
+[verification.md](./verification.md)。不要把本地运行时验证解释为完整线上 SDK 已可用。
 
-本次请求仅整理交接，不继续实现阶段 2。新 session 应根据用户的新指令决定继续范围。不要把阶段 1 验证解释为完整 SDK 已可用。
+## 先读
 
-## 先读这些文件
+1. [实施计划](../plan.md)：阶段边界；下一步阶段 3。
+2. [架构](../architecture.md)：状态、会话、缓存与身份持久化规则。
+3. [阶段 2](./phase-2.md)：当前运行时、未接入能力、输入限额及性能探针。
+4. [验证记录](./verification.md)：本次结果与历史结果分开。
+5. [阶段 1](./phase-1.md)：工具链、API 决策及初始默认参数。
 
-1. [实施计划](../plan.md)：阶段 1–7 的边界和验收条件，下一步重点是 Phase 2。
-2. [架构](../architecture.md)：状态协调、会话隔离、数据源、异步操作及持久化契约。
-3. [阶段 1 决策](./phase-1.md)：实际 API、工具链、默认参数、初始资源策略、协议待验证事项。
-4. [验证记录](./verification.md)：区分实际通过、历史结果和未执行项目。
-5. [手动验证指南](./manual-verification.md)：Android Studio、JDK、构建、本地发布、独立消费、模拟器及故障排查。
-6. [LaunchDarkly 比较](../launchdarkly-feature-comparison.md)：已接受的范围和差异，仅作参照，不替代 FeatBit spec。
+## 当前代码入口
 
-架构中的部分表格保留原始决策清单；已落地的阶段 1 选择及验证边界见 `phase-1.md`、`verification.md` 和当前代码，不要把所有“待验证”条目误判为从未处理，也不要把初始参数当成已完成设备测量。
+- `ClientFactory.getDefault()`：异步创建本地客户端；只保留 application context。
+- `TestDataFactory.getDefault()`：可用的本地 TestData 工厂。
+- `ClientAdapters.getDefault()`：Operation suspend 与订阅 Flow 适配。
+- `sdk/src/main/kotlin/co/featbit/android/internal/LocalClient.kt`：原子视图、读取、Identify、模式、来源会话、订阅与 Close。
+- `internal/Execution.kt`：有界 worker、结果回调、elapsed deadline 和诊断。
+- `internal/Values.kt`：输入保护、decimal/JSON 转换与不可变结果。
+- `internal/LocalTestData.kt`：全量本地提交、单客户端绑定、暂停时保存、时间回退处理。
+- `internal/RuntimeFactory.kt`：异步验证/创建、自动属性；尚无真实缓存和匿名存储。
+- `sdk/src/test/kotlin/co/featbit/android/internal/LocalRuntimeTest.kt` 与 `sdk/src/test/resources/fixtures/v1/`：可控时钟、生命周期、来源、匿名仓库及转换 fixture。
+- `consumer-tests/*/.../RuntimeSmoke.*`：实际 AAR 的 Android 运行验证。验证页面仍是测试入口，不是 samples。
 
-## 工作区与 Git
+## 不可遗漏的边界
 
-主目录：`D:\Workspace\FeatBit\featbit-android-client-sdk`。
+- 真实内置网络、事件、缓存及匿名持久化尚未接入。在线内置来源返回 DISABLED；
+  Custom 当前需关闭事件；缓存清除/匿名持久化不可用会返回明确结果，不伪造成功。
+- TestData 固定关闭 events/cache，不做网络请求；普通 offline 本地客户端可使用 Bootstrap。
+- 初建 Bootstrap 优先。阶段 3 的 Identify 应先查目标完整上下文缓存（有效空缓存也是命中），
+  miss 才使用 Bootstrap；不能直接沿用现在“缓存不可用”的本地路径来替代缓存仲裁。
+- Full 替换、相等 timestamp Patch 接受、旧 Patch 忽略、archived tombstone 保留。
+  已覆盖过的 Bootstrap key 不因后续 Full 遗漏而复活；不同 generation 重置遮蔽。
+- 每次 Identify、新来源、pause/offline/close 均隔离旧 sink。匿名准备与已提交上下文的 wait 分离。
+  内部 AnonymousRepository.withCurrent 在仓库 metadata gate 下验证 revision 再采用；阶段 3 实现不能在该 gate 做 I/O。
+- Close 的清理不依赖普通 waiter 或主线程回调容量；超时后不能声称杀死了阻塞的第三方线程。
+- 同步读取不做磁盘/网络 I/O；Phase 5 加事件时必须保持同一上下文/记录/资格的线性化边界。
+- 日志只输出 SDK 自有诊断码，不转发扩展提供的字符串或 Throwable。
 
-本次交接时 HEAD 为 `c0730f3f70d62a76a1a37bcb556783b58d3c6a6e`。**本 session 没有提交或推送**，主要工作仍在工作区：`README.md` 为已跟踪修改，`sdk/`、`consumer-tests/`、`docs/`、Gradle、CI、API 检查工具和设计文档等均显示为未跟踪。它们包含已完成工作，不能当作可清理的临时文件。新 session 先检查 `git status`，保留这些内容。
+## 工作区和规范
 
-相邻仓库及此前核对的基线（继续工作时重新核对是否变化）：
+主目录 `D:\Workspace\FeatBit\featbit-android-client-sdk`。本次开始时 HEAD 为 `ab973d1`，
+工作区干净（旧交接所写“全部未跟踪”已经过时）。现在的改动均为阶段 2 工作；先检查 git status，保留它们。
+用户禁止批量/递归删除文件，只可一次删除一个明确路径文件。
 
-| 仓库 | 基线 |
-| --- | --- |
-| `D:\Workspace\FeatBit\sdk-spec` | `3f08faa77dbf70bea208bd8ab946c2aa0b38ffad`；使用英文 spec，本地中文补充不作为规范 |
-| `D:\Workspace\FeatBit\featbit-js-client-sdk` | `210f4e6d4c032fd73d5bf9f16920507d645c2711` |
-| `D:\Workspace\FeatBit\featbit\modules\evaluation-server` | `7ecc24aac0a5ad766f6843faabf0eaeb71f1b753` |
+共享 spec HEAD 仍为 `3f08faa77dbf70bea208bd8ab946c2aa0b38ffad`；其英文
+conformance/identity/public-api 有预先存在的未提交修改，中文 mobile 文档未跟踪。
+本次未修改这些文件。规范以英文内容、当前 plan/architecture 及已接受决策为准。
 
-用户的文件安全约束：**禁止批量/递归删除文件或目录**。只能一次删除一个明确路径的文件；需要批量删除时请用户手动处理。不要用清理命令丢弃上述工作区成果。
+JDK `C:\Program Files\Microsoft\jdk-17.0.11.9-hotspot`；Android SDK
+`C:\Users\Falcon\AppData\Local\Android\Sdk`；Gradle 8.7 / AGP 8.5.2，
+SDK Kotlin 1.9.25，Java 11 字节码，minSdk 21 / compileSdk 34。
+本地 Maven 坐标 `co.featbit:featbit-client-android:0.1.0-SNAPSHOT`，输出到 `build/test-repository`。
 
-## 已实现的内容与入口
+## 下一步：阶段 3
 
-| 位置 | 内容 |
-| --- | --- |
-| `sdk/build.gradle.kts` | 单一 Android Library、本地 Maven 发布、候选依赖解析 |
-| `sdk/src/main/kotlin/co/featbit/android/api/` | 不可变用户、配置、Bootstrap、FbValue、Outcome、状态/评估模型；客户端/异步操作契约 |
-| `sdk/src/main/kotlin/co/featbit/android/datasource/` | 自定义源 factory/lifecycle/sink 契约及 Full/Patch/NoChange 模型 |
-| `sdk/src/main/kotlin/co/featbit/android/kotlin/` | 协程/Flow 适配接口，尚无实现 |
-| `sdk/src/main/kotlin/co/featbit/android/testing/` | TestDataFactory、TestData 契约，尚无实现 |
-| `sdk/src/test/` | 8 项模型测试，覆盖不可变输入、普通错误、配置条件等 |
-| `sdk/api/public-api.txt`、`tools/check_api.py` | 实际 release AAR 的 JVM API 基线、Java 11 字节码及依赖泄漏检查 |
-| `consumer-tests/` | 独立构建，通过本地 Maven AAR 消费，Java/Kotlin 各一个 smoke 测试及最小验证 Activity |
-| `.github/workflows/build.yml` | Library、API 检查、三种消费者 Kotlin 版本、R8 的 CI 定义，尚未观察到托管 CI 执行 |
+按 plan 完成真实缓存/匿名持久化：backup-excluded 存储、完整上下文 namespace、
+有效空缓存、Bootstrap 优先级、迟到缓存与远端/Identify/clear/Close 隔离、
+原子替换与按提交顺序写入、epoch 清除、过期/LRU/容量和损坏输入处理。
+匿名 key 需持久化成功后采用，跨实例 revision/有序写与失败保留旧身份。
+不要提前加入真实网络、事件或 Android observers。
 
-`ClientFactory`、`FeatBitClient`、Operation、数据源协调、协程适配及 TestData 当前为契约，不是可运行 SDK。没有伪造成功的 factory 或抛 `NotImplementedError` 的运行时占位实现。
-
-TestData 接口接受 `BootstrapFlag`，调用方不管理版本；`clientOptions(user)` 的契约固定禁用事件和生产缓存。阶段 2 需实现这些行为，而非仅保留配置开关。
-
-## 已接受的关键决策
-
-- Kotlin **1.9.25** 实现，公共 API 兼容 Java；单一核心 AAR 坐标 **`co.featbit:featbit-client-android`**，包名 `co.featbit.android`。用户拥有 `co.featbit` namespace。
-- OpenFeature Provider 是独立产品/仓库，不加入核心 SDK。当前不做 samples；消费者中的最小检查页面只是验证入口。
-- `bootstrap(flags)` 提供适用于所有用户的默认值，不引入 `ApplicationDefaults` / `ExactContext` 公共类型。
-- 初次创建时：已配置 Bootstrap（包括显式空集合）优先于缓存。Identify/匿名切换后：目标完整上下文的有效缓存优先，包括有效空缓存；只有未命中/不可用才用 Bootstrap，不能按 key 混合补齐。
-- 保持 Identify 的会话隔离和完成语义；缓存待决时不能读到旧用户数据，迟到缓存结果不能覆盖远端已提交结果。
-- Patch 覆盖当前记录，不保留增量历史。不要因假设历史增长而重新引入 whole-store 容量状态机，超大数据也不能靠 require-full 解决。保留有界输入/队列及原子拒绝。
-- 状态核心、缓存、网络、事件、Android 平台集成按阶段推进，不要一次实现阶段 1–3，也不要将所有验证推迟到最后。
-
-## 工具链与本机运行
-
-| 项目 | 当前配置 |
-| --- | --- |
-| Gradle / AGP | 8.7 / 8.5.2 |
-| 构建 JDK / 字节码 | 17 / Java 11 |
-| minSdk / compileSdk / Build Tools | 21 / 34 / 34.0.0 |
-| 核心编译器 / stdlib | Kotlin 1.9.25 / 1.9.25 |
-| 当前开发产物 | `co.featbit:featbit-client-android:0.1.0-SNAPSHOT` |
-| 本地发布目录 | `build/test-repository/`，不上传远端 |
-
-本机 JDK：`C:\Program Files\Microsoft\jdk-17.0.11.9-hotspot`。
-Android SDK：`C:\Users\Falcon\AppData\Local\Android\Sdk`。
-用户已安装 Android Studio。IDE 的 Gradle JDK 和 Terminal 的 `JAVA_HOME` 独立；两个工程都应检查 JDK 设置。
-
-当前 Gradle/AGP 组合超出 Kotlin 1.9.25 官方完整支持范围，但实际构建已通过；不能把实测成功说成官方完整支持。JDK 21 消费者未验证。
-
-只有 Coroutines core 为当前公开 Flow 契约所需运行依赖；OkHttp、Serialization、Coroutines Android、Lifecycle 在候选配置中解析，尚未由 SDK 运行时采用。解析成功不代表对应子系统已验证。
-
-SDK 根目录常用命令：
-
-```powershell
-.\gradlew.bat :sdk:assembleDebug :sdk:assembleRelease :sdk:testDebugUnitTest :sdk:lintRelease :sdk:publishReleasePublicationToLocalTestRepository :sdk:resolveCandidateRuntime
-python tools/check_api.py
-.\gradlew.bat -p consumer-tests '-PconsumerKotlinVersion=1.9.25' :java:assembleDebug :java:assembleRelease :java:testDebugUnitTest :kotlin:assembleDebug :kotlin:assembleRelease :kotlin:testDebugUnitTest
-```
-
-PowerShell 中版本属性参数整体加引号；曾发生未加引号时版本被错误解析。API 改动经审查后才使用 `python tools/check_api.py --update`，不要只为通过检查覆盖基线。
-
-## 验证证据与限制
-
-- Library debug/release AAR、8 项模型测试、release lint、API/字节码检查通过。
-- 初始 API 基础的 Java、Kotlin 1.9.24/1.9.25/2.2.10 独立 AAR 消费、模型测试和 R8 构建通过。1.9.24 消费者实际 stdlib 由依赖解析为 1.9.25；2.2.10 消费者使用 stdlib 2.2.10。
-- 增加 Activity 后，Java 与 Kotlin 1.9.25 debug/release、R8、模型测试通过；其他编译器未为该 UI 更新重跑。
-- 最近增加“检查次数/完成时间”反馈后，只重跑了两者 debug 构建，并在 API 34 模拟器 `emulator-5554` 实际安装、启动、点击验证。两者 PASS 且次数 1 → 2；模拟器连接状态是当时快照，新 session 需重新检查。
-- 按钮之前不是没有调用检查，而是重复显示同样文字；当前 `SmokeActivity` 显示次数与毫秒时间。检查从 Application 启动移到 Activity，失败可显示并写入 `FeatBitConsumer` Logcat。
-- release APK 当前未签名，未进行 R8 后的设备运行；真机、服务端联调、Android 内存测量、托管 CI 和 Maven Central 发布都未完成。
-- SDK 模型测试与消费者 smoke 测试不等于完整 spec conformance。默认参数/资源限额部分是待实现测量的初始策略。
-
-阶段 4 已记录的协议问题：当前服务端对 Track 名称限制为最多 128 个 ASCII 字母/数字/下划线/连字符，而共享 spec 要求非空；不要静默收紧公共 API 或修改服务端。`Android-Client-SDK` appType 已作源代码级兼容检查，未验证部署后的端到端接收。
-
-## 下一阶段如何接续
-
-用户先前已询问下一步，我们建议阶段 2；本次没有要求开始实施。收到阶段 2 指令后，从现有构建/API 基础继续，不重建工程。严格逐项核对 `plan.md` 的 Phase 2，以下是工作重点，不替代完整清单：
-
-1. 实现客户端创建、状态协调及有界 Operation/回调完成路径；补齐实现所需的可测试时钟、调度和生命周期输入。
-2. 实现本地记录提交、Bootstrap、类型/详细/全量/通用/JSON 读取，以及与 spec 一致的错误和回退。
-3. 实现本地 Identify/匿名上下文边界、online/offline 意图、等待结果与基本 Close，验证并发及迟到工作隔离；不接入真实网络或事件发送。
-4. 实现受控数据源 sink、TestData、全局/单 key/状态订阅及协程适配；不可用接口不能静默成功。
-5. 实现安全诊断，并用有意义的测试覆盖顺序、取消、不可变快照、回调重入、资源限制等。
-6. 扩展独立消费者的真实 API 用例，必要时扩展最小验证页面；运行对应测试并更新 API 基线、状态说明和验证记录。
-
-阶段 3 才加入真实缓存/匿名身份持久化；阶段 4 接入在线同步；阶段 5 事件；阶段 6 平台观察；阶段 7 综合验收/发布准备。正式发布是另行授权的任务。
-
-不要继承上次“验证通过”作为新改动的证明；根据本次影响范围重新运行检查，并明确未执行项。
+继续沿用现有项目、三个工厂和独立消费者，不要重建工程。根据本次实际改动重新验证，
+不要继承历史 PASS。阶段 4 的 Track 名称限制、appType 和事件协议兼容问题仍待服务端联调。

@@ -1,6 +1,6 @@
 # FeatBit Android Client SDK Architecture
 
-Date: 2026-09-30. Status: Phase 1 build and public-model foundation implemented; runtime architecture remains to be implemented in Phases 2–7. See [Phase 1 decisions](./docs/phase-1.md) and [verification](./docs/verification.md) for the tested boundary.
+Date: 2026-10-01. Status: Phase 1 foundation and Phase 2 local runtime implemented; Phases 3–7 remain planned. See [Phase 2 implementation](./docs/phase-2.md) and [verification](./docs/verification.md) for actual tested boundaries.
 
 This document turns the accepted scope in [the development plan](./plan.md) into component boundaries, state ownership, concurrency rules, and implementation checkpoints. Names and additional design choices below are proposals. They do not silently resolve pending product decisions or establish tested behavior.
 
@@ -14,10 +14,10 @@ Local planning documents evolve together and use relative links rather than manu
 
 | Source | Baseline |
 | --- | --- |
-| Android repository | Implementation started from HEAD `c0730f3f70d62a76a1a37bcb556783b58d3c6a6e`; Phase 1 changes are in the working tree |
+| Android repository | Phase 1 started from `c0730f3f70d62a76a1a37bcb556783b58d3c6a6e`; Phase 2 started from `ab973d1` and remains in the working tree |
 | Development scope | [Development plan](./plan.md); evolving working document |
 | Comparison/scope decisions | [Feature comparison and scope decisions](./launchdarkly-feature-comparison.md); evolving working document |
-| Shared specifications | `sdk-spec` HEAD `3f08faa77dbf70bea208bd8ab946c2aa0b38ffad`; English specification files have no working-tree changes; local untracked Chinese supplements are excluded |
+| Shared specifications | `sdk-spec` HEAD `3f08faa77dbf70bea208bd8ab946c2aa0b38ffad`; Phase 2 observed existing English changes in conformance/identity/public-api; local untracked Chinese supplements are excluded |
 
 Read together: [core specification](../sdk-spec/client-side/README.md), [protocol](../sdk-spec/client-side/reference/protocol.md), [mobile supplement](../sdk-spec/client-side/mobile/README.md), [Android requirements](../sdk-spec/client-side/mobile/android.md), and [feature decisions](./launchdarkly-feature-comparison.md). The plan adds Android-specific capabilities such as runtime online transitions and recovery after post-connection Streaming failures. When a genuine conflict is found, record it and resolve the behavioral contract before implementing that path.
 

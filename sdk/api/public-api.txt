@@ -64,7 +64,13 @@ public final class co.featbit.android.api.ChangeSubscription {
 }
 
 public interface co.featbit.android.api.ClientFactory {
+  public static final co.featbit.android.api.ClientFactory$Companion Companion;
   public abstract co.featbit.android.api.Operation<co.featbit.android.api.FeatBitClient> create(android.content.Context, co.featbit.android.api.ClientOptions);
+  public static co.featbit.android.api.ClientFactory getDefault();
+}
+
+public final class co.featbit.android.api.ClientFactory$Companion {
+  public final co.featbit.android.api.ClientFactory getDefault();
 }
 
 public final class co.featbit.android.api.ClientOptions {
@@ -737,10 +743,16 @@ public final class co.featbit.android.datasource.VariationOption {
 }
 
 public interface co.featbit.android.kotlin.ClientAdapters {
+  public static final co.featbit.android.kotlin.ClientAdapters$Companion Companion;
   public abstract <T> java.lang.Object await(co.featbit.android.api.Operation<T>, long, kotlin.coroutines.Continuation<? super co.featbit.android.api.Outcome<T>>);
   public abstract kotlinx.coroutines.flow.Flow<co.featbit.android.api.FlagChange> changes(co.featbit.android.api.FeatBitClient);
   public abstract kotlinx.coroutines.flow.Flow<co.featbit.android.api.FlagChange> flagChanges(co.featbit.android.api.FeatBitClient, java.lang.String);
   public abstract kotlinx.coroutines.flow.Flow<co.featbit.android.api.ConnectionInformation> status(co.featbit.android.api.FeatBitClient);
+  public static co.featbit.android.kotlin.ClientAdapters getDefault();
+}
+
+public final class co.featbit.android.kotlin.ClientAdapters$Companion {
+  public final co.featbit.android.kotlin.ClientAdapters getDefault();
 }
 
 public interface co.featbit.android.testing.TestData extends co.featbit.android.datasource.DataSourceFactory {
@@ -751,7 +763,13 @@ public interface co.featbit.android.testing.TestData extends co.featbit.android.
 }
 
 public interface co.featbit.android.testing.TestDataFactory {
+  public static final co.featbit.android.testing.TestDataFactory$Companion Companion;
   public abstract co.featbit.android.api.Outcome<co.featbit.android.testing.TestData> create(java.util.List<co.featbit.android.api.BootstrapFlag>);
+  public static co.featbit.android.testing.TestDataFactory getDefault();
+}
+
+public final class co.featbit.android.testing.TestDataFactory$Companion {
+  public final co.featbit.android.testing.TestDataFactory getDefault();
 }
 
 public final class co.featbit.android.testing.TestDataResult extends java.lang.Enum<co.featbit.android.testing.TestDataResult> {

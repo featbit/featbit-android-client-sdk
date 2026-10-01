@@ -101,17 +101,18 @@ public class ClientOptions private constructor(builder: Builder) {
         @get:JvmSynthetic
         internal val privateAttributes: MutableSet<String> = LinkedHashSet()
         private var invalid: Boolean = false
+        private var explicitTransport: Boolean = false
         public fun sdkKey(value: String?): Builder = apply { sdkKey = value }
         public fun user(value: User?): Builder = apply { user = value }
         public fun streamingUrl(value: String?): Builder = apply { streamingUrl = value }
         public fun pollingUrl(value: String?): Builder = apply { pollingUrl = value }
         public fun eventsUrl(value: String?): Builder = apply { eventsUrl = value }
-        public fun mode(value: SyncMode): Builder = apply { mode = value }
+        public fun mode(value: SyncMode): Builder = apply { mode = value; explicitTransport = true }
         public fun offline(value: Boolean): Builder = apply { offline = value }
         public fun disableEvents(value: Boolean): Builder = apply { disableEvents = value }
         public fun anonymousEnabled(value: Boolean): Builder = apply { anonymous = value }
         public fun automaticAttributes(value: Boolean): Builder = apply { automaticAttributes = value }
-        public fun backgroundPolling(value: Boolean): Builder = apply { backgroundPolling = value }
+        public fun backgroundPolling(value: Boolean): Builder = apply { backgroundPolling = value; explicitTransport = true }
         public fun pollingFallback(value: Boolean): Builder = apply { pollingFallback = value }
         public fun cacheEnabled(value: Boolean): Builder = apply { cacheEnabled = value }
         public fun transitionFlush(value: Boolean): Builder = apply { transitionFlush = value }
@@ -119,8 +120,8 @@ public class ClientOptions private constructor(builder: Builder) {
         public fun eventCapacity(value: Int): Builder = apply { eventCapacity = value }
         public fun startupWaitMillis(value: Long): Builder = apply { startupWaitMillis = value }
         public fun requestTimeoutMillis(value: Long): Builder = apply { requestTimeoutMillis = value }
-        public fun pollingIntervalMillis(value: Long): Builder = apply { pollingIntervalMillis = value }
-        public fun backgroundPollingIntervalMillis(value: Long): Builder = apply { backgroundPollingIntervalMillis = value }
+        public fun pollingIntervalMillis(value: Long): Builder = apply { pollingIntervalMillis = value; explicitTransport = true }
+        public fun backgroundPollingIntervalMillis(value: Long): Builder = apply { backgroundPollingIntervalMillis = value; explicitTransport = true }
         public fun closeTimeoutMillis(value: Long): Builder = apply { closeTimeoutMillis = value }
         public fun flagGraceMillis(value: Long): Builder = apply { flagGraceMillis = value }
         public fun logLevel(value: LogLevel): Builder = apply { logLevel = value }
@@ -152,7 +153,9 @@ public class ClientOptions private constructor(builder: Builder) {
                 closeTimeoutMillis !in 1..300_000 || flagGraceMillis !in 0..30_000) return Outcome.invalid("invalid_limit")
             if (user == null && !anonymous) return Outcome.invalid("user_required", "user")
             if (automaticAttributes && user?.attributes?.keys?.any { it.startsWith("featbit.sdk.") } == true) return Outcome.invalid("reserved_attribute_prefix")
-            if (source != null && (mode != SyncMode.STREAMING || streamingUrl != null || pollingUrl != null || pollingFallback || backgroundPolling || syncHeaders.isNotEmpty())) return Outcome.invalid("custom_source_conflict")
+            if (source != null && (explicitTransport || mode != SyncMode.STREAMING || streamingUrl != null || pollingUrl != null || pollingFallback || backgroundPolling || syncHeaders.isNotEmpty())) return Outcome.invalid("custom_source_conflict")
+            if (source is co.featbit.android.internal.LocalTestData && (!disableEvents || cacheEnabled)) return Outcome.invalid("test_data_configuration_conflict")
+            if (bootstrap != null && co.featbit.android.internal.Limits.bootstrap(bootstrap!!) == null) return Outcome.invalid("input_resource_limit")
             if (source == null && mode == SyncMode.CUSTOM) return Outcome.invalid("source_required")
             if (pollingFallback && mode != SyncMode.STREAMING) return Outcome.invalid("fallback_requires_streaming")
             if (!offline) {

@@ -1,5 +1,7 @@
 # Phase 1: implementation baseline
 
+Historical phase record. The current local runtime is documented in [Phase 2](./phase-2.md).
+
 Date: 2026-09-30. This is the build and public-model foundation, not a functional flag client.
 Phases 2–7 supply runtime behavior. No placeholder factory throws `NotImplementedError`,
 returns invented success, or silently ignores configured switches. Client/source/coroutine
