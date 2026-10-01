@@ -1,0 +1,769 @@
+public final class co.featbit.android.api.AttributeValue {
+  public static final co.featbit.android.api.AttributeValue$Companion Companion;
+  public final co.featbit.android.api.AttributeValue$Kind getKind();
+  public final java.lang.String getText();
+  public static final co.featbit.android.api.Outcome<co.featbit.android.api.AttributeValue> text(java.lang.String);
+  public static final co.featbit.android.api.AttributeValue nullValue();
+  public static final co.featbit.android.api.AttributeValue omittedValue();
+  public co.featbit.android.api.AttributeValue(co.featbit.android.api.AttributeValue$Kind, java.lang.String, kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.api.AttributeValue$Companion {
+  public final co.featbit.android.api.Outcome<co.featbit.android.api.AttributeValue> text(java.lang.String);
+  public final co.featbit.android.api.AttributeValue nullValue();
+  public final co.featbit.android.api.AttributeValue omittedValue();
+  public co.featbit.android.api.AttributeValue$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.api.AttributeValue$Kind extends java.lang.Enum<co.featbit.android.api.AttributeValue$Kind> {
+  public static final co.featbit.android.api.AttributeValue$Kind TEXT;
+  public static final co.featbit.android.api.AttributeValue$Kind NULL;
+  public static final co.featbit.android.api.AttributeValue$Kind OMITTED;
+  public static co.featbit.android.api.AttributeValue$Kind[] values();
+  public static co.featbit.android.api.AttributeValue$Kind valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.api.AttributeValue$Kind> getEntries();
+}
+
+public final class co.featbit.android.api.BootstrapFlag {
+  public static final co.featbit.android.api.BootstrapFlag$Companion Companion;
+  public final java.lang.String getKey();
+  public final java.lang.String getValue();
+  public final co.featbit.android.api.ValueType getType();
+  public static final co.featbit.android.api.Outcome<co.featbit.android.api.BootstrapFlag> create(java.lang.String, java.lang.String, co.featbit.android.api.ValueType);
+  public co.featbit.android.api.BootstrapFlag(java.lang.String, java.lang.String, co.featbit.android.api.ValueType, kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.api.BootstrapFlag$Companion {
+  public final co.featbit.android.api.Outcome<co.featbit.android.api.BootstrapFlag> create(java.lang.String, java.lang.String, co.featbit.android.api.ValueType);
+  public co.featbit.android.api.BootstrapFlag$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.api.CacheClearResult extends java.lang.Enum<co.featbit.android.api.CacheClearResult> {
+  public static final co.featbit.android.api.CacheClearResult CLEARED;
+  public static co.featbit.android.api.CacheClearResult[] values();
+  public static co.featbit.android.api.CacheClearResult valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.api.CacheClearResult> getEntries();
+}
+
+public final class co.featbit.android.api.CacheScope extends java.lang.Enum<co.featbit.android.api.CacheScope> {
+  public static final co.featbit.android.api.CacheScope CURRENT_CONTEXT;
+  public static final co.featbit.android.api.CacheScope NAMESPACE;
+  public static co.featbit.android.api.CacheScope[] values();
+  public static co.featbit.android.api.CacheScope valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.api.CacheScope> getEntries();
+}
+
+public interface co.featbit.android.api.ChangeListener {
+  public abstract void onChange(co.featbit.android.api.FlagChange);
+}
+
+public final class co.featbit.android.api.ChangeSubscription {
+  public co.featbit.android.api.ChangeSubscription(co.featbit.android.api.Registration, java.util.Map<java.lang.String, co.featbit.android.api.EvaluationDetail<java.lang.String>>);
+  public final co.featbit.android.api.Registration getRegistration();
+  public final java.util.Map<java.lang.String, co.featbit.android.api.EvaluationDetail<java.lang.String>> getInitialValues();
+}
+
+public interface co.featbit.android.api.ClientFactory {
+  public abstract co.featbit.android.api.Operation<co.featbit.android.api.FeatBitClient> create(android.content.Context, co.featbit.android.api.ClientOptions);
+}
+
+public final class co.featbit.android.api.ClientOptions {
+  public static final co.featbit.android.api.ClientOptions$Companion Companion;
+  public final java.lang.String getSdkKey();
+  public final co.featbit.android.api.User getInitialUser();
+  public final java.lang.String getStreamingUrl();
+  public final java.lang.String getPollingUrl();
+  public final java.lang.String getEventsUrl();
+  public final co.featbit.android.api.SyncMode getMode();
+  public final boolean getOffline();
+  public final boolean getDisableEvents();
+  public final boolean getAnonymousEnabled();
+  public final boolean getAutomaticAttributes();
+  public final boolean getBackgroundPolling();
+  public final boolean getPollingFallback();
+  public final boolean getCacheEnabled();
+  public final boolean getTransitionFlush();
+  public final long getFlushIntervalMillis();
+  public final int getEventCapacity();
+  public final long getStartupWaitMillis();
+  public final long getRequestTimeoutMillis();
+  public final long getPollingIntervalMillis();
+  public final long getBackgroundPollingIntervalMillis();
+  public final long getCloseTimeoutMillis();
+  public final long getFlagGraceMillis();
+  public final co.featbit.android.api.LogLevel getLogLevel();
+  public final co.featbit.android.api.Logger getLogger();
+  public final co.featbit.android.datasource.DataSourceFactory getSource();
+  public final java.util.List<co.featbit.android.api.BootstrapFlag> getBootstrap();
+  public final java.util.Map<java.lang.String, java.lang.String> getSynchronizationHeaders();
+  public final java.util.Map<java.lang.String, java.lang.String> getEventHeaders();
+  public final java.util.Set<java.lang.String> getPrivateAttributes();
+  public final boolean getAllAttributesPrivate();
+  public static final co.featbit.android.api.ClientOptions$Builder builder();
+  public co.featbit.android.api.ClientOptions(co.featbit.android.api.ClientOptions$Builder, kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.api.ClientOptions$Builder {
+  public co.featbit.android.api.ClientOptions$Builder();
+  public final java.lang.String getSdkKey$sdk_release();
+  public final void setSdkKey$sdk_release(java.lang.String);
+  public final co.featbit.android.api.User getUser$sdk_release();
+  public final void setUser$sdk_release(co.featbit.android.api.User);
+  public final java.lang.String getStreamingUrl$sdk_release();
+  public final void setStreamingUrl$sdk_release(java.lang.String);
+  public final java.lang.String getPollingUrl$sdk_release();
+  public final void setPollingUrl$sdk_release(java.lang.String);
+  public final java.lang.String getEventsUrl$sdk_release();
+  public final void setEventsUrl$sdk_release(java.lang.String);
+  public final co.featbit.android.api.SyncMode getMode$sdk_release();
+  public final void setMode$sdk_release(co.featbit.android.api.SyncMode);
+  public final boolean getOffline$sdk_release();
+  public final void setOffline$sdk_release(boolean);
+  public final boolean getDisableEvents$sdk_release();
+  public final void setDisableEvents$sdk_release(boolean);
+  public final boolean getAnonymous$sdk_release();
+  public final void setAnonymous$sdk_release(boolean);
+  public final boolean getAutomaticAttributes$sdk_release();
+  public final void setAutomaticAttributes$sdk_release(boolean);
+  public final boolean getBackgroundPolling$sdk_release();
+  public final void setBackgroundPolling$sdk_release(boolean);
+  public final boolean getPollingFallback$sdk_release();
+  public final void setPollingFallback$sdk_release(boolean);
+  public final boolean getCacheEnabled$sdk_release();
+  public final void setCacheEnabled$sdk_release(boolean);
+  public final boolean getTransitionFlush$sdk_release();
+  public final void setTransitionFlush$sdk_release(boolean);
+  public final long getFlushIntervalMillis$sdk_release();
+  public final void setFlushIntervalMillis$sdk_release(long);
+  public final int getEventCapacity$sdk_release();
+  public final void setEventCapacity$sdk_release(int);
+  public final long getStartupWaitMillis$sdk_release();
+  public final void setStartupWaitMillis$sdk_release(long);
+  public final long getRequestTimeoutMillis$sdk_release();
+  public final void setRequestTimeoutMillis$sdk_release(long);
+  public final long getPollingIntervalMillis$sdk_release();
+  public final void setPollingIntervalMillis$sdk_release(long);
+  public final long getBackgroundPollingIntervalMillis$sdk_release();
+  public final void setBackgroundPollingIntervalMillis$sdk_release(long);
+  public final long getCloseTimeoutMillis$sdk_release();
+  public final void setCloseTimeoutMillis$sdk_release(long);
+  public final long getFlagGraceMillis$sdk_release();
+  public final void setFlagGraceMillis$sdk_release(long);
+  public final co.featbit.android.api.LogLevel getLogLevel$sdk_release();
+  public final void setLogLevel$sdk_release(co.featbit.android.api.LogLevel);
+  public final co.featbit.android.api.Logger getLogger$sdk_release();
+  public final void setLogger$sdk_release(co.featbit.android.api.Logger);
+  public final boolean getAllPrivate$sdk_release();
+  public final void setAllPrivate$sdk_release(boolean);
+  public final co.featbit.android.datasource.DataSourceFactory getSource$sdk_release();
+  public final void setSource$sdk_release(co.featbit.android.datasource.DataSourceFactory);
+  public final java.util.List getBootstrap$sdk_release();
+  public final void setBootstrap$sdk_release(java.util.List);
+  public final java.util.Map getSyncHeaders$sdk_release();
+  public final java.util.Map getEventHeaders$sdk_release();
+  public final java.util.Set getPrivateAttributes$sdk_release();
+  public final co.featbit.android.api.ClientOptions$Builder sdkKey(java.lang.String);
+  public final co.featbit.android.api.ClientOptions$Builder user(co.featbit.android.api.User);
+  public final co.featbit.android.api.ClientOptions$Builder streamingUrl(java.lang.String);
+  public final co.featbit.android.api.ClientOptions$Builder pollingUrl(java.lang.String);
+  public final co.featbit.android.api.ClientOptions$Builder eventsUrl(java.lang.String);
+  public final co.featbit.android.api.ClientOptions$Builder mode(co.featbit.android.api.SyncMode);
+  public final co.featbit.android.api.ClientOptions$Builder offline(boolean);
+  public final co.featbit.android.api.ClientOptions$Builder disableEvents(boolean);
+  public final co.featbit.android.api.ClientOptions$Builder anonymousEnabled(boolean);
+  public final co.featbit.android.api.ClientOptions$Builder automaticAttributes(boolean);
+  public final co.featbit.android.api.ClientOptions$Builder backgroundPolling(boolean);
+  public final co.featbit.android.api.ClientOptions$Builder pollingFallback(boolean);
+  public final co.featbit.android.api.ClientOptions$Builder cacheEnabled(boolean);
+  public final co.featbit.android.api.ClientOptions$Builder transitionFlush(boolean);
+  public final co.featbit.android.api.ClientOptions$Builder flushIntervalMillis(long);
+  public final co.featbit.android.api.ClientOptions$Builder eventCapacity(int);
+  public final co.featbit.android.api.ClientOptions$Builder startupWaitMillis(long);
+  public final co.featbit.android.api.ClientOptions$Builder requestTimeoutMillis(long);
+  public final co.featbit.android.api.ClientOptions$Builder pollingIntervalMillis(long);
+  public final co.featbit.android.api.ClientOptions$Builder backgroundPollingIntervalMillis(long);
+  public final co.featbit.android.api.ClientOptions$Builder closeTimeoutMillis(long);
+  public final co.featbit.android.api.ClientOptions$Builder flagGraceMillis(long);
+  public final co.featbit.android.api.ClientOptions$Builder logLevel(co.featbit.android.api.LogLevel);
+  public final co.featbit.android.api.ClientOptions$Builder logger(co.featbit.android.api.Logger);
+  public final co.featbit.android.api.ClientOptions$Builder allAttributesPrivate(boolean);
+  public final co.featbit.android.api.ClientOptions$Builder source(co.featbit.android.datasource.DataSourceFactory);
+  public final co.featbit.android.api.ClientOptions$Builder privateAttribute(java.lang.String);
+  public final co.featbit.android.api.ClientOptions$Builder bootstrap(java.util.List<co.featbit.android.api.BootstrapFlag>);
+  public final co.featbit.android.api.ClientOptions$Builder synchronizationHeader(java.lang.String, java.lang.String);
+  public final co.featbit.android.api.ClientOptions$Builder eventHeader(java.lang.String, java.lang.String);
+  public final co.featbit.android.api.Outcome<co.featbit.android.api.ClientOptions> build();
+}
+
+public final class co.featbit.android.api.ClientOptions$Companion {
+  public final co.featbit.android.api.ClientOptions$Builder builder();
+  public co.featbit.android.api.ClientOptions$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.api.CloseResult {
+  public co.featbit.android.api.CloseResult(long, boolean);
+  public final long getUndeliveredEvents();
+  public final boolean getCleanupComplete();
+  public final long component1();
+  public final boolean component2();
+  public final co.featbit.android.api.CloseResult copy(long, boolean);
+  public static co.featbit.android.api.CloseResult copy$default(co.featbit.android.api.CloseResult, long, boolean, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+
+public interface co.featbit.android.api.Completion<T> {
+  public abstract void onComplete(co.featbit.android.api.Outcome<T>);
+}
+
+public final class co.featbit.android.api.ConnectionInformation {
+  public co.featbit.android.api.ConnectionInformation(co.featbit.android.api.SyncMode, co.featbit.android.api.SyncMode, co.featbit.android.api.SyncStatus, java.util.Set<? extends co.featbit.android.api.PauseReason>, boolean, boolean, java.lang.Long, java.lang.Long, co.featbit.android.api.Diagnostic, co.featbit.android.api.RecoveryStatus, co.featbit.android.api.Diagnostic);
+  public final co.featbit.android.api.SyncMode getConfiguredMode();
+  public final co.featbit.android.api.SyncMode getEffectiveMode();
+  public final co.featbit.android.api.SyncStatus getStatus();
+  public final boolean getLocalDataAvailable();
+  public final boolean getRemoteConfirmed();
+  public final java.lang.Long getLastSuccessAtMillis();
+  public final java.lang.Long getLastFailureAtMillis();
+  public final co.featbit.android.api.Diagnostic getFailure();
+  public final co.featbit.android.api.RecoveryStatus getRecovery();
+  public final co.featbit.android.api.Diagnostic getCandidateFailure();
+  public final java.util.Set<co.featbit.android.api.PauseReason> getPauseReasons();
+}
+
+public final class co.featbit.android.api.Diagnostic {
+  public co.featbit.android.api.Diagnostic(java.lang.String, java.lang.String);
+  public co.featbit.android.api.Diagnostic(java.lang.String, java.lang.String, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final java.lang.String getCode();
+  public final java.lang.String getField();
+  public final java.lang.String component1();
+  public final java.lang.String component2();
+  public final co.featbit.android.api.Diagnostic copy(java.lang.String, java.lang.String);
+  public static co.featbit.android.api.Diagnostic copy$default(co.featbit.android.api.Diagnostic, java.lang.String, java.lang.String, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+
+public final class co.featbit.android.api.EvaluationDetail<T> {
+  public co.featbit.android.api.EvaluationDetail(java.lang.String, T, co.featbit.android.api.EvaluationReason, java.lang.String);
+  public co.featbit.android.api.EvaluationDetail(java.lang.String, java.lang.Object, co.featbit.android.api.EvaluationReason, java.lang.String, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final java.lang.String getKey();
+  public final T getValue();
+  public final co.featbit.android.api.EvaluationReason getReason();
+  public final java.lang.String getExplanation();
+  public final java.lang.String component1();
+  public final T component2();
+  public final co.featbit.android.api.EvaluationReason component3();
+  public final java.lang.String component4();
+  public final co.featbit.android.api.EvaluationDetail<T> copy(java.lang.String, T, co.featbit.android.api.EvaluationReason, java.lang.String);
+  public static co.featbit.android.api.EvaluationDetail copy$default(co.featbit.android.api.EvaluationDetail, java.lang.String, java.lang.Object, co.featbit.android.api.EvaluationReason, java.lang.String, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+
+public final class co.featbit.android.api.EvaluationReason extends java.lang.Enum<co.featbit.android.api.EvaluationReason> {
+  public static final co.featbit.android.api.EvaluationReason MATCH;
+  public static final co.featbit.android.api.EvaluationReason CLIENT_NOT_READY;
+  public static final co.featbit.android.api.EvaluationReason FLAG_NOT_FOUND;
+  public static final co.featbit.android.api.EvaluationReason WRONG_TYPE;
+  public static final co.featbit.android.api.EvaluationReason ERROR;
+  public static co.featbit.android.api.EvaluationReason[] values();
+  public static co.featbit.android.api.EvaluationReason valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.api.EvaluationReason> getEntries();
+}
+
+public abstract class co.featbit.android.api.FbValue {
+  public static final co.featbit.android.api.FbValue$Companion Companion;
+  public abstract co.featbit.android.api.FbValue$Kind getKind();
+  public final java.lang.Boolean asBoolean();
+  public final java.lang.Double asNumber();
+  public final java.lang.String asString();
+  public final java.util.List<co.featbit.android.api.FbValue> asArray();
+  public final java.util.Map<java.lang.String, co.featbit.android.api.FbValue> asObject();
+  public static final co.featbit.android.api.FbValue ofBoolean(boolean);
+  public static final co.featbit.android.api.Outcome<co.featbit.android.api.FbValue> ofNumber(double);
+  public static final co.featbit.android.api.Outcome<co.featbit.android.api.FbValue> ofString(java.lang.String);
+  public static final co.featbit.android.api.FbValue jsonNull();
+  public static final co.featbit.android.api.Outcome<co.featbit.android.api.FbValue> ofArray(java.util.List<? extends co.featbit.android.api.FbValue>);
+  public static final co.featbit.android.api.Outcome<co.featbit.android.api.FbValue> ofObject(java.util.Map<java.lang.String, ? extends co.featbit.android.api.FbValue>);
+  public co.featbit.android.api.FbValue(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.api.FbValue$Companion {
+  public final co.featbit.android.api.FbValue ofBoolean(boolean);
+  public final co.featbit.android.api.Outcome<co.featbit.android.api.FbValue> ofNumber(double);
+  public final co.featbit.android.api.Outcome<co.featbit.android.api.FbValue> ofString(java.lang.String);
+  public final co.featbit.android.api.FbValue jsonNull();
+  public final co.featbit.android.api.Outcome<co.featbit.android.api.FbValue> ofArray(java.util.List<? extends co.featbit.android.api.FbValue>);
+  public final co.featbit.android.api.Outcome<co.featbit.android.api.FbValue> ofObject(java.util.Map<java.lang.String, ? extends co.featbit.android.api.FbValue>);
+  public co.featbit.android.api.FbValue$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.api.FbValue$Kind extends java.lang.Enum<co.featbit.android.api.FbValue$Kind> {
+  public static final co.featbit.android.api.FbValue$Kind BOOLEAN;
+  public static final co.featbit.android.api.FbValue$Kind NUMBER;
+  public static final co.featbit.android.api.FbValue$Kind STRING;
+  public static final co.featbit.android.api.FbValue$Kind ARRAY;
+  public static final co.featbit.android.api.FbValue$Kind OBJECT;
+  public static final co.featbit.android.api.FbValue$Kind NULL;
+  public static co.featbit.android.api.FbValue$Kind[] values();
+  public static co.featbit.android.api.FbValue$Kind valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.api.FbValue$Kind> getEntries();
+}
+
+public interface co.featbit.android.api.FeatBitClient {
+  public abstract java.lang.String getVersion();
+  public abstract co.featbit.android.api.ConnectionInformation getConnectionInformation();
+  public abstract boolean isOffline();
+  public abstract co.featbit.android.api.Operation<co.featbit.android.api.ReadyResult> awaitReady(long);
+  public abstract co.featbit.android.api.Operation<co.featbit.android.api.ReadyResult> identify(co.featbit.android.api.User, long);
+  public abstract co.featbit.android.api.Operation<co.featbit.android.api.ReadyResult> identifyAnonymous(long);
+  public abstract co.featbit.android.api.Operation<co.featbit.android.api.ReadyResult> resetAnonymousIdentity(long);
+  public abstract co.featbit.android.api.Operation<co.featbit.android.api.ModeResult> setOffline(long);
+  public abstract co.featbit.android.api.Operation<co.featbit.android.api.ModeResult> setOnline(long);
+  public abstract boolean boolVariation(java.lang.String, boolean);
+  public abstract co.featbit.android.api.EvaluationDetail<java.lang.Boolean> boolVariationDetail(java.lang.String, boolean);
+  public abstract double numberVariation(java.lang.String, double);
+  public abstract co.featbit.android.api.EvaluationDetail<java.lang.Double> numberVariationDetail(java.lang.String, double);
+  public abstract java.lang.String stringVariation(java.lang.String, java.lang.String);
+  public abstract co.featbit.android.api.EvaluationDetail<java.lang.String> stringVariationDetail(java.lang.String, java.lang.String);
+  public abstract co.featbit.android.api.FbValue variation(java.lang.String, co.featbit.android.api.FbValue);
+  public abstract co.featbit.android.api.EvaluationDetail<co.featbit.android.api.FbValue> variationDetail(java.lang.String, co.featbit.android.api.FbValue);
+  public abstract co.featbit.android.api.FbValue jsonVariation(java.lang.String, co.featbit.android.api.FbValue);
+  public abstract co.featbit.android.api.EvaluationDetail<co.featbit.android.api.FbValue> jsonVariationDetail(java.lang.String, co.featbit.android.api.FbValue);
+  public abstract java.lang.String jsonTextVariation(java.lang.String, java.lang.String);
+  public abstract co.featbit.android.api.EvaluationDetail<java.lang.String> jsonTextVariationDetail(java.lang.String, java.lang.String);
+  public abstract java.util.Map<java.lang.String, co.featbit.android.api.EvaluationDetail<java.lang.String>> allVariations();
+  public abstract co.featbit.android.api.Outcome<co.featbit.android.api.TrackResult> track(java.lang.String);
+  public abstract co.featbit.android.api.Outcome<co.featbit.android.api.TrackResult> track(java.lang.String, double);
+  public abstract co.featbit.android.api.Operation<co.featbit.android.api.FlushResult> flush();
+  public abstract co.featbit.android.api.Operation<co.featbit.android.api.CacheClearResult> clearCache(co.featbit.android.api.CacheScope, long);
+  public abstract co.featbit.android.api.Outcome<co.featbit.android.api.ChangeSubscription> subscribeChanges(co.featbit.android.api.ChangeListener);
+  public abstract co.featbit.android.api.Outcome<co.featbit.android.api.ChangeSubscription> subscribeFlag(java.lang.String, co.featbit.android.api.ChangeListener);
+  public abstract co.featbit.android.api.Outcome<co.featbit.android.api.Registration> subscribeStatus(co.featbit.android.api.StatusListener);
+  public abstract co.featbit.android.api.Operation<co.featbit.android.api.CloseResult> close();
+}
+
+public final class co.featbit.android.api.FlagChange {
+  public co.featbit.android.api.FlagChange(java.util.Set<java.lang.String>, boolean);
+  public final boolean getAllFlagsChanged();
+  public final java.util.Set<java.lang.String> getKeys();
+}
+
+public final class co.featbit.android.api.FlushResult extends java.lang.Enum<co.featbit.android.api.FlushResult> {
+  public static final co.featbit.android.api.FlushResult EMPTY;
+  public static final co.featbit.android.api.FlushResult ALL_DELIVERED;
+  public static final co.featbit.android.api.FlushResult PROCESSED_WITH_LOSS;
+  public static co.featbit.android.api.FlushResult[] values();
+  public static co.featbit.android.api.FlushResult valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.api.FlushResult> getEntries();
+}
+
+public final class co.featbit.android.api.LogLevel extends java.lang.Enum<co.featbit.android.api.LogLevel> {
+  public static final co.featbit.android.api.LogLevel NONE;
+  public static final co.featbit.android.api.LogLevel ERROR;
+  public static final co.featbit.android.api.LogLevel WARN;
+  public static final co.featbit.android.api.LogLevel INFO;
+  public static final co.featbit.android.api.LogLevel DEBUG;
+  public static co.featbit.android.api.LogLevel[] values();
+  public static co.featbit.android.api.LogLevel valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.api.LogLevel> getEntries();
+}
+
+public interface co.featbit.android.api.Logger {
+  public abstract void log(co.featbit.android.api.LogLevel, co.featbit.android.api.Diagnostic);
+}
+
+public final class co.featbit.android.api.ModeResult extends java.lang.Enum<co.featbit.android.api.ModeResult> {
+  public static final co.featbit.android.api.ModeResult ONLINE;
+  public static final co.featbit.android.api.ModeResult OFFLINE;
+  public static co.featbit.android.api.ModeResult[] values();
+  public static co.featbit.android.api.ModeResult valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.api.ModeResult> getEntries();
+}
+
+public interface co.featbit.android.api.Operation<T> {
+  public abstract co.featbit.android.api.Outcome<T> getResult();
+  public abstract co.featbit.android.api.Outcome<co.featbit.android.api.Registration> observe(co.featbit.android.api.Completion<T>);
+}
+
+public final class co.featbit.android.api.Outcome<T> {
+  public static final co.featbit.android.api.Outcome$Companion Companion;
+  public final co.featbit.android.api.OutcomeCode getCode();
+  public final T getValue();
+  public final co.featbit.android.api.Diagnostic getDiagnostic();
+  public final boolean isSuccess();
+  public static final <T> co.featbit.android.api.Outcome<T> success(T);
+  public static final <T> co.featbit.android.api.Outcome<T> invalid(java.lang.String, java.lang.String);
+  public static final <T> co.featbit.android.api.Outcome<T> failure(co.featbit.android.api.OutcomeCode, co.featbit.android.api.Diagnostic);
+  public co.featbit.android.api.Outcome(co.featbit.android.api.OutcomeCode, java.lang.Object, co.featbit.android.api.Diagnostic, kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.api.Outcome$Companion {
+  public final <T> co.featbit.android.api.Outcome<T> success(T);
+  public final <T> co.featbit.android.api.Outcome<T> invalid(java.lang.String, java.lang.String);
+  public static co.featbit.android.api.Outcome invalid$default(co.featbit.android.api.Outcome$Companion, java.lang.String, java.lang.String, int, java.lang.Object);
+  public final <T> co.featbit.android.api.Outcome<T> failure(co.featbit.android.api.OutcomeCode, co.featbit.android.api.Diagnostic);
+  public co.featbit.android.api.Outcome$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.api.OutcomeCode extends java.lang.Enum<co.featbit.android.api.OutcomeCode> {
+  public static final co.featbit.android.api.OutcomeCode SUCCESS;
+  public static final co.featbit.android.api.OutcomeCode INVALID;
+  public static final co.featbit.android.api.OutcomeCode SUPERSEDED;
+  public static final co.featbit.android.api.OutcomeCode TIMED_OUT;
+  public static final co.featbit.android.api.OutcomeCode CLOSED;
+  public static final co.featbit.android.api.OutcomeCode TERMINAL_FAILURE;
+  public static final co.featbit.android.api.OutcomeCode DEFERRED;
+  public static final co.featbit.android.api.OutcomeCode DISABLED;
+  public static final co.featbit.android.api.OutcomeCode CAPACITY_EXCEEDED;
+  public static final co.featbit.android.api.OutcomeCode CLEANUP_FAILED;
+  public static final co.featbit.android.api.OutcomeCode STORAGE_FAILED;
+  public static co.featbit.android.api.OutcomeCode[] values();
+  public static co.featbit.android.api.OutcomeCode valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.api.OutcomeCode> getEntries();
+}
+
+public final class co.featbit.android.api.PauseReason extends java.lang.Enum<co.featbit.android.api.PauseReason> {
+  public static final co.featbit.android.api.PauseReason OFFLINE;
+  public static final co.featbit.android.api.PauseReason BACKGROUND;
+  public static final co.featbit.android.api.PauseReason NETWORK_UNAVAILABLE;
+  public static final co.featbit.android.api.PauseReason CLOSING;
+  public static co.featbit.android.api.PauseReason[] values();
+  public static co.featbit.android.api.PauseReason valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.api.PauseReason> getEntries();
+}
+
+public final class co.featbit.android.api.ReadyResult extends java.lang.Enum<co.featbit.android.api.ReadyResult> {
+  public static final co.featbit.android.api.ReadyResult REMOTE_CONFIRMED;
+  public static final co.featbit.android.api.ReadyResult OFFLINE_LOCAL;
+  public static final co.featbit.android.api.ReadyResult CUSTOM_LOCAL;
+  public static co.featbit.android.api.ReadyResult[] values();
+  public static co.featbit.android.api.ReadyResult valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.api.ReadyResult> getEntries();
+}
+
+public final class co.featbit.android.api.RecoveryStatus extends java.lang.Enum<co.featbit.android.api.RecoveryStatus> {
+  public static final co.featbit.android.api.RecoveryStatus NONE;
+  public static final co.featbit.android.api.RecoveryStatus COOLING_DOWN;
+  public static final co.featbit.android.api.RecoveryStatus PROBING;
+  public static co.featbit.android.api.RecoveryStatus[] values();
+  public static co.featbit.android.api.RecoveryStatus valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.api.RecoveryStatus> getEntries();
+}
+
+public interface co.featbit.android.api.Registration {
+  public abstract void close();
+}
+
+public final class co.featbit.android.api.SdkInfo {
+  public static final co.featbit.android.api.SdkInfo INSTANCE;
+  public static final java.lang.String getVersion();
+}
+
+public interface co.featbit.android.api.StatusListener {
+  public abstract void onStatus(co.featbit.android.api.ConnectionInformation);
+}
+
+public final class co.featbit.android.api.SyncMode extends java.lang.Enum<co.featbit.android.api.SyncMode> {
+  public static final co.featbit.android.api.SyncMode STREAMING;
+  public static final co.featbit.android.api.SyncMode POLLING;
+  public static final co.featbit.android.api.SyncMode CUSTOM;
+  public static co.featbit.android.api.SyncMode[] values();
+  public static co.featbit.android.api.SyncMode valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.api.SyncMode> getEntries();
+}
+
+public final class co.featbit.android.api.SyncStatus extends java.lang.Enum<co.featbit.android.api.SyncStatus> {
+  public static final co.featbit.android.api.SyncStatus WAITING;
+  public static final co.featbit.android.api.SyncStatus READY;
+  public static final co.featbit.android.api.SyncStatus STALE;
+  public static final co.featbit.android.api.SyncStatus TERMINAL;
+  public static final co.featbit.android.api.SyncStatus CLOSED;
+  public static co.featbit.android.api.SyncStatus[] values();
+  public static co.featbit.android.api.SyncStatus valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.api.SyncStatus> getEntries();
+}
+
+public final class co.featbit.android.api.TrackResult extends java.lang.Enum<co.featbit.android.api.TrackResult> {
+  public static final co.featbit.android.api.TrackResult ACCEPTED;
+  public static final co.featbit.android.api.TrackResult DEDUPLICATED;
+  public static final co.featbit.android.api.TrackResult SUPPRESSED;
+  public static co.featbit.android.api.TrackResult[] values();
+  public static co.featbit.android.api.TrackResult valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.api.TrackResult> getEntries();
+}
+
+public final class co.featbit.android.api.User {
+  public static final co.featbit.android.api.User$Companion Companion;
+  public final java.lang.String getKey();
+  public final java.lang.String getName();
+  public final java.util.Map<java.lang.String, co.featbit.android.api.AttributeValue> getAttributes();
+  public static final co.featbit.android.api.User$Builder builder(java.lang.String);
+  public co.featbit.android.api.User(java.lang.String, java.lang.String, java.util.Map, kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.api.User$Builder {
+  public co.featbit.android.api.User$Builder(java.lang.String);
+  public final co.featbit.android.api.User$Builder name(java.lang.String);
+  public final co.featbit.android.api.User$Builder attribute(java.lang.String, co.featbit.android.api.AttributeValue);
+  public final co.featbit.android.api.Outcome<co.featbit.android.api.User> build();
+}
+
+public final class co.featbit.android.api.User$Companion {
+  public final co.featbit.android.api.User$Builder builder(java.lang.String);
+  public co.featbit.android.api.User$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.api.ValueType extends java.lang.Enum<co.featbit.android.api.ValueType> {
+  public static final co.featbit.android.api.ValueType BOOLEAN;
+  public static final co.featbit.android.api.ValueType NUMBER;
+  public static final co.featbit.android.api.ValueType STRING;
+  public static final co.featbit.android.api.ValueType JSON;
+  public static co.featbit.android.api.ValueType[] values();
+  public static co.featbit.android.api.ValueType valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.api.ValueType> getEntries();
+}
+
+public final class co.featbit.android.datasource.AnalyticsMetadata {
+  public co.featbit.android.datasource.AnalyticsMetadata(java.util.List<co.featbit.android.datasource.VariationOption>, java.lang.Boolean);
+  public final java.lang.Boolean getSendToExperiment();
+  public final java.util.List<co.featbit.android.datasource.VariationOption> getOptions();
+}
+
+public interface co.featbit.android.datasource.Baseline {
+  public abstract java.util.Map<java.lang.String, co.featbit.android.datasource.FlagRecord> getRecords();
+  public abstract long getCursor();
+}
+
+public interface co.featbit.android.datasource.DataSource {
+  public abstract void start(co.featbit.android.api.Completion<co.featbit.android.datasource.SourceStarted>);
+  public abstract void stop(co.featbit.android.api.Completion<co.featbit.android.datasource.SourceStopped>);
+}
+
+public interface co.featbit.android.datasource.DataSourceFactory {
+  public abstract co.featbit.android.datasource.SourceCapabilities capabilities();
+  public abstract co.featbit.android.api.Outcome<co.featbit.android.datasource.SourceValidation> validate();
+  public abstract co.featbit.android.api.Outcome<co.featbit.android.datasource.DataSource> create(co.featbit.android.datasource.SourceSessionContext, co.featbit.android.datasource.SourceUpdateSink);
+}
+
+public final class co.featbit.android.datasource.DataSourceKt {
+  public static final java.util.List access$immutableRecords(java.util.List);
+}
+
+public final class co.featbit.android.datasource.FlagRecord {
+  public static final co.featbit.android.datasource.FlagRecord$Companion Companion;
+  public final java.lang.String getKey();
+  public final java.lang.String getValue();
+  public final java.lang.String getDeclaredType();
+  public final long getVersion();
+  public final boolean getArchived();
+  public final java.lang.String getReason();
+  public final co.featbit.android.datasource.AnalyticsMetadata getAnalytics();
+  public static final co.featbit.android.datasource.FlagRecord$Builder builder(java.lang.String, java.lang.String, java.lang.String, long);
+  public co.featbit.android.datasource.FlagRecord(java.lang.String, java.lang.String, java.lang.String, long, boolean, java.lang.String, co.featbit.android.datasource.AnalyticsMetadata, kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.datasource.FlagRecord$Builder {
+  public co.featbit.android.datasource.FlagRecord$Builder(java.lang.String, java.lang.String, java.lang.String, long);
+  public final co.featbit.android.datasource.FlagRecord$Builder archived(boolean);
+  public final co.featbit.android.datasource.FlagRecord$Builder reason(java.lang.String);
+  public final co.featbit.android.datasource.FlagRecord$Builder analytics(co.featbit.android.datasource.AnalyticsMetadata);
+  public final co.featbit.android.api.Outcome<co.featbit.android.datasource.FlagRecord> build();
+}
+
+public final class co.featbit.android.datasource.FlagRecord$Companion {
+  public final co.featbit.android.datasource.FlagRecord$Builder builder(java.lang.String, java.lang.String, java.lang.String, long);
+  public co.featbit.android.datasource.FlagRecord$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.datasource.FullUpdate extends co.featbit.android.datasource.SourceUpdate {
+  public static final co.featbit.android.datasource.FullUpdate$Companion Companion;
+  public final java.util.List<co.featbit.android.datasource.FlagRecord> getRecords();
+  public static final co.featbit.android.api.Outcome<co.featbit.android.datasource.FullUpdate> create(java.util.List<co.featbit.android.datasource.FlagRecord>);
+  public co.featbit.android.datasource.FullUpdate(java.util.List, kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.datasource.FullUpdate$Companion {
+  public final co.featbit.android.api.Outcome<co.featbit.android.datasource.FullUpdate> create(java.util.List<co.featbit.android.datasource.FlagRecord>);
+  public co.featbit.android.datasource.FullUpdate$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.datasource.NoChange extends co.featbit.android.datasource.SourceUpdate {
+  public co.featbit.android.datasource.NoChange(co.featbit.android.datasource.Baseline);
+  public final co.featbit.android.datasource.Baseline getBaseline();
+}
+
+public final class co.featbit.android.datasource.PatchUpdate extends co.featbit.android.datasource.SourceUpdate {
+  public static final co.featbit.android.datasource.PatchUpdate$Companion Companion;
+  public final java.util.List<co.featbit.android.datasource.FlagRecord> getRecords();
+  public static final co.featbit.android.api.Outcome<co.featbit.android.datasource.PatchUpdate> create(java.util.List<co.featbit.android.datasource.FlagRecord>);
+  public co.featbit.android.datasource.PatchUpdate(java.util.List, kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.datasource.PatchUpdate$Companion {
+  public final co.featbit.android.api.Outcome<co.featbit.android.datasource.PatchUpdate> create(java.util.List<co.featbit.android.datasource.FlagRecord>);
+  public co.featbit.android.datasource.PatchUpdate$Companion(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.datasource.Provenance extends java.lang.Enum<co.featbit.android.datasource.Provenance> {
+  public static final co.featbit.android.datasource.Provenance REMOTE;
+  public static final co.featbit.android.datasource.Provenance LOCAL;
+  public static co.featbit.android.datasource.Provenance[] values();
+  public static co.featbit.android.datasource.Provenance valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.datasource.Provenance> getEntries();
+}
+
+public final class co.featbit.android.datasource.SourceCapabilities {
+  public co.featbit.android.datasource.SourceCapabilities(co.featbit.android.datasource.Provenance, boolean, java.lang.String);
+  public co.featbit.android.datasource.SourceCapabilities(co.featbit.android.datasource.Provenance, boolean, java.lang.String, int, kotlin.jvm.internal.DefaultConstructorMarker);
+  public final co.featbit.android.datasource.Provenance getProvenance();
+  public final boolean getNetworkDependent();
+  public final java.lang.String getCacheDiscriminator();
+  public final co.featbit.android.datasource.Provenance component1();
+  public final boolean component2();
+  public final java.lang.String component3();
+  public final co.featbit.android.datasource.SourceCapabilities copy(co.featbit.android.datasource.Provenance, boolean, java.lang.String);
+  public static co.featbit.android.datasource.SourceCapabilities copy$default(co.featbit.android.datasource.SourceCapabilities, co.featbit.android.datasource.Provenance, boolean, java.lang.String, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+
+public final class co.featbit.android.datasource.SourceSessionContext {
+  public co.featbit.android.datasource.SourceSessionContext(co.featbit.android.api.User, co.featbit.android.datasource.Baseline);
+  public final co.featbit.android.api.User getUser();
+  public final co.featbit.android.datasource.Baseline getBaseline();
+}
+
+public final class co.featbit.android.datasource.SourceStarted extends java.lang.Enum<co.featbit.android.datasource.SourceStarted> {
+  public static final co.featbit.android.datasource.SourceStarted STARTED;
+  public static co.featbit.android.datasource.SourceStarted[] values();
+  public static co.featbit.android.datasource.SourceStarted valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.datasource.SourceStarted> getEntries();
+}
+
+public final class co.featbit.android.datasource.SourceState extends java.lang.Enum<co.featbit.android.datasource.SourceState> {
+  public static final co.featbit.android.datasource.SourceState CONNECTING;
+  public static final co.featbit.android.datasource.SourceState INTERRUPTED;
+  public static final co.featbit.android.datasource.SourceState TERMINAL;
+  public static co.featbit.android.datasource.SourceState[] values();
+  public static co.featbit.android.datasource.SourceState valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.datasource.SourceState> getEntries();
+}
+
+public final class co.featbit.android.datasource.SourceStatus {
+  public co.featbit.android.datasource.SourceStatus(co.featbit.android.datasource.SourceState, co.featbit.android.api.Diagnostic);
+  public final co.featbit.android.datasource.SourceState getState();
+  public final co.featbit.android.api.Diagnostic getError();
+  public final co.featbit.android.datasource.SourceState component1();
+  public final co.featbit.android.api.Diagnostic component2();
+  public final co.featbit.android.datasource.SourceStatus copy(co.featbit.android.datasource.SourceState, co.featbit.android.api.Diagnostic);
+  public static co.featbit.android.datasource.SourceStatus copy$default(co.featbit.android.datasource.SourceStatus, co.featbit.android.datasource.SourceState, co.featbit.android.api.Diagnostic, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+
+public final class co.featbit.android.datasource.SourceStopped extends java.lang.Enum<co.featbit.android.datasource.SourceStopped> {
+  public static final co.featbit.android.datasource.SourceStopped STOPPED;
+  public static co.featbit.android.datasource.SourceStopped[] values();
+  public static co.featbit.android.datasource.SourceStopped valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.datasource.SourceStopped> getEntries();
+}
+
+public abstract class co.featbit.android.datasource.SourceUpdate {
+  public co.featbit.android.datasource.SourceUpdate(kotlin.jvm.internal.DefaultConstructorMarker);
+}
+
+public final class co.featbit.android.datasource.SourceUpdateCode extends java.lang.Enum<co.featbit.android.datasource.SourceUpdateCode> {
+  public static final co.featbit.android.datasource.SourceUpdateCode COMMITTED;
+  public static final co.featbit.android.datasource.SourceUpdateCode INVALID;
+  public static final co.featbit.android.datasource.SourceUpdateCode INACTIVE;
+  public static final co.featbit.android.datasource.SourceUpdateCode BACKPRESSURED;
+  public static final co.featbit.android.datasource.SourceUpdateCode SUPERSEDED;
+  public static final co.featbit.android.datasource.SourceUpdateCode CLOSED;
+  public static co.featbit.android.datasource.SourceUpdateCode[] values();
+  public static co.featbit.android.datasource.SourceUpdateCode valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.datasource.SourceUpdateCode> getEntries();
+}
+
+public final class co.featbit.android.datasource.SourceUpdateResult {
+  public co.featbit.android.datasource.SourceUpdateResult(co.featbit.android.datasource.SourceUpdateCode, int, int, co.featbit.android.datasource.Baseline, co.featbit.android.api.Diagnostic);
+  public final co.featbit.android.datasource.SourceUpdateCode getCode();
+  public final int getAcceptedRecords();
+  public final int getSkippedRecords();
+  public final co.featbit.android.datasource.Baseline getBaseline();
+  public final co.featbit.android.api.Diagnostic getError();
+  public final co.featbit.android.datasource.SourceUpdateCode component1();
+  public final int component2();
+  public final int component3();
+  public final co.featbit.android.datasource.Baseline component4();
+  public final co.featbit.android.api.Diagnostic component5();
+  public final co.featbit.android.datasource.SourceUpdateResult copy(co.featbit.android.datasource.SourceUpdateCode, int, int, co.featbit.android.datasource.Baseline, co.featbit.android.api.Diagnostic);
+  public static co.featbit.android.datasource.SourceUpdateResult copy$default(co.featbit.android.datasource.SourceUpdateResult, co.featbit.android.datasource.SourceUpdateCode, int, int, co.featbit.android.datasource.Baseline, co.featbit.android.api.Diagnostic, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+
+public interface co.featbit.android.datasource.SourceUpdateSink {
+  public abstract co.featbit.android.api.Operation<co.featbit.android.datasource.SourceUpdateResult> submit(co.featbit.android.datasource.SourceUpdate);
+  public abstract co.featbit.android.api.Outcome<co.featbit.android.datasource.StatusAccepted> report(co.featbit.android.datasource.SourceStatus);
+}
+
+public final class co.featbit.android.datasource.SourceValidation extends java.lang.Enum<co.featbit.android.datasource.SourceValidation> {
+  public static final co.featbit.android.datasource.SourceValidation VALID;
+  public static co.featbit.android.datasource.SourceValidation[] values();
+  public static co.featbit.android.datasource.SourceValidation valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.datasource.SourceValidation> getEntries();
+}
+
+public final class co.featbit.android.datasource.StatusAccepted extends java.lang.Enum<co.featbit.android.datasource.StatusAccepted> {
+  public static final co.featbit.android.datasource.StatusAccepted ACCEPTED;
+  public static co.featbit.android.datasource.StatusAccepted[] values();
+  public static co.featbit.android.datasource.StatusAccepted valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.datasource.StatusAccepted> getEntries();
+}
+
+public final class co.featbit.android.datasource.VariationOption {
+  public co.featbit.android.datasource.VariationOption(java.lang.String, java.lang.String);
+  public final java.lang.String getId();
+  public final java.lang.String getValue();
+  public final java.lang.String component1();
+  public final java.lang.String component2();
+  public final co.featbit.android.datasource.VariationOption copy(java.lang.String, java.lang.String);
+  public static co.featbit.android.datasource.VariationOption copy$default(co.featbit.android.datasource.VariationOption, java.lang.String, java.lang.String, int, java.lang.Object);
+  public java.lang.String toString();
+  public int hashCode();
+  public boolean equals(java.lang.Object);
+}
+
+public interface co.featbit.android.kotlin.ClientAdapters {
+  public abstract <T> java.lang.Object await(co.featbit.android.api.Operation<T>, long, kotlin.coroutines.Continuation<? super co.featbit.android.api.Outcome<T>>);
+  public abstract kotlinx.coroutines.flow.Flow<co.featbit.android.api.FlagChange> changes(co.featbit.android.api.FeatBitClient);
+  public abstract kotlinx.coroutines.flow.Flow<co.featbit.android.api.FlagChange> flagChanges(co.featbit.android.api.FeatBitClient, java.lang.String);
+  public abstract kotlinx.coroutines.flow.Flow<co.featbit.android.api.ConnectionInformation> status(co.featbit.android.api.FeatBitClient);
+}
+
+public interface co.featbit.android.testing.TestData extends co.featbit.android.datasource.DataSourceFactory {
+  public abstract co.featbit.android.api.Outcome<co.featbit.android.api.ClientOptions> clientOptions(co.featbit.android.api.User);
+  public abstract co.featbit.android.api.Operation<co.featbit.android.testing.TestDataResult> replace(java.util.List<co.featbit.android.api.BootstrapFlag>);
+  public abstract co.featbit.android.api.Operation<co.featbit.android.testing.TestDataResult> update(co.featbit.android.api.BootstrapFlag);
+  public abstract co.featbit.android.api.Operation<co.featbit.android.testing.TestDataResult> remove(java.lang.String);
+}
+
+public interface co.featbit.android.testing.TestDataFactory {
+  public abstract co.featbit.android.api.Outcome<co.featbit.android.testing.TestData> create(java.util.List<co.featbit.android.api.BootstrapFlag>);
+}
+
+public final class co.featbit.android.testing.TestDataResult extends java.lang.Enum<co.featbit.android.testing.TestDataResult> {
+  public static final co.featbit.android.testing.TestDataResult COMMITTED;
+  public static final co.featbit.android.testing.TestDataResult SAVED_FOR_NEXT_START;
+  public static co.featbit.android.testing.TestDataResult[] values();
+  public static co.featbit.android.testing.TestDataResult valueOf(java.lang.String);
+  public static kotlin.enums.EnumEntries<co.featbit.android.testing.TestDataResult> getEntries();
+}

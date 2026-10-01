@@ -1,0 +1,36 @@
+name: Library and consumer contracts
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        kotlin: ['1.9.24', '1.9.25', '2.2.10']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build, test and stage real AAR
+        run: bash gradlew :sdk:assembleDebug :sdk:assembleRelease :sdk:testDebugUnitTest :sdk:lintRelease :sdk:publishReleasePublicationToLocalTestRepository :sdk:resolveCandidateRuntime --console=plain
+      - name: Check binary API
+        run: python3 tools/check_api.py
+      - name: Consume AAR with Java and Kotlin, including R8
+        run: bash gradlew -p consumer-tests -PconsumerKotlinVersion=${{ matrix.kotlin }} :java:assembleDebug :java:assembleRelease :java:testDebugUnitTest :kotlin:assembleDebug :kotlin:assembleRelease :kotlin:testDebugUnitTest --console=plain
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reports-${{ matrix.kotlin }}
+          path: |
+            sdk/build/reports/
+            consumer-tests/**/build/reports/
+            sdk/build/outputs/aar/

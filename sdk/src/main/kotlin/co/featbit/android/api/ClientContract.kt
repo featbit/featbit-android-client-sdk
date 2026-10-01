@@ -1,0 +1,77 @@
+package co.featbit.android.api
+
+/** Implementations arrive in subsequent phases; no nonfunctional client factory is shipped. */
+public interface ClientFactory {
+    /** Implementations retain only applicationContext; creation never waits for network readiness. */
+    public fun create(applicationContext: android.content.Context, options: ClientOptions): Operation<FeatBitClient>
+}
+
+public interface FeatBitClient {
+    public fun getVersion(): String
+    public fun getConnectionInformation(): ConnectionInformation
+    public fun isOffline(): Boolean
+    public fun awaitReady(timeoutMillis: Long): Operation<ReadyResult>
+    public fun identify(user: User, timeoutMillis: Long): Operation<ReadyResult>
+    public fun identifyAnonymous(timeoutMillis: Long): Operation<ReadyResult>
+    public fun resetAnonymousIdentity(timeoutMillis: Long): Operation<ReadyResult>
+    public fun setOffline(timeoutMillis: Long): Operation<ModeResult>
+    public fun setOnline(timeoutMillis: Long): Operation<ModeResult>
+    public fun boolVariation(key: String, fallback: Boolean): Boolean
+    public fun boolVariationDetail(key: String, fallback: Boolean): EvaluationDetail<Boolean>
+    public fun numberVariation(key: String, fallback: Double): Double
+    public fun numberVariationDetail(key: String, fallback: Double): EvaluationDetail<Double>
+    public fun stringVariation(key: String, fallback: String): String
+    public fun stringVariationDetail(key: String, fallback: String): EvaluationDetail<String>
+    public fun variation(key: String, fallback: FbValue): FbValue
+    public fun variationDetail(key: String, fallback: FbValue): EvaluationDetail<FbValue>
+    public fun jsonVariation(key: String, fallback: FbValue): FbValue
+    public fun jsonVariationDetail(key: String, fallback: FbValue): EvaluationDetail<FbValue>
+    public fun jsonTextVariation(key: String, fallback: String): String
+    public fun jsonTextVariationDetail(key: String, fallback: String): EvaluationDetail<String>
+    public fun allVariations(): Map<String, EvaluationDetail<String>>
+    public fun track(name: String): Outcome<TrackResult>
+    public fun track(name: String, numericValue: Double): Outcome<TrackResult>
+    public fun flush(): Operation<FlushResult>
+    public fun clearCache(scope: CacheScope, timeoutMillis: Long): Operation<CacheClearResult>
+    public fun subscribeChanges(listener: ChangeListener): Outcome<ChangeSubscription>
+    public fun subscribeFlag(key: String, listener: ChangeListener): Outcome<ChangeSubscription>
+    public fun subscribeStatus(listener: StatusListener): Outcome<Registration>
+    public fun close(): Operation<CloseResult>
+}
+
+public enum class EvaluationReason { MATCH, CLIENT_NOT_READY, FLAG_NOT_FOUND, WRONG_TYPE, ERROR }
+public data class EvaluationDetail<T> public constructor(
+    public val key: String,
+    public val value: T,
+    public val reason: EvaluationReason,
+    public val explanation: String? = null,
+)
+public enum class ReadyResult { REMOTE_CONFIRMED, OFFLINE_LOCAL, CUSTOM_LOCAL }
+public enum class ModeResult { ONLINE, OFFLINE }
+public enum class TrackResult { ACCEPTED, DEDUPLICATED, SUPPRESSED }
+public enum class FlushResult { EMPTY, ALL_DELIVERED, PROCESSED_WITH_LOSS }
+public enum class CacheScope { CURRENT_CONTEXT, NAMESPACE }
+public enum class CacheClearResult { CLEARED }
+public data class CloseResult public constructor(public val undeliveredEvents: Long, public val cleanupComplete: Boolean)
+
+/** Detaches this registration only; does not cancel the underlying operation. */
+public interface Registration { public fun close(): Unit }
+public fun interface Completion<T> { public fun onComplete(result: Outcome<T>): Unit }
+public interface Operation<T> {
+    /** Null means pending; the settled result remains queryable after client shutdown. */
+    public fun getResult(): Outcome<T>?
+    public fun observe(callback: Completion<T>): Outcome<Registration>
+}
+public fun interface ChangeListener { public fun onChange(change: FlagChange): Unit }
+public fun interface StatusListener { public fun onStatus(status: ConnectionInformation): Unit }
+
+public class FlagChange public constructor(keys: Set<String>, public val allFlagsChanged: Boolean) {
+    public val keys: Set<String> = java.util.Collections.unmodifiableSet(LinkedHashSet(keys))
+}
+public class ChangeSubscription public constructor(
+    public val registration: Registration,
+    initialValues: Map<String, EvaluationDetail<String>>,
+) {
+    public val initialValues: Map<String, EvaluationDetail<String>> =
+        java.util.Collections.unmodifiableMap(LinkedHashMap(initialValues))
+}

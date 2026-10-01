@@ -1,0 +1,26 @@
+# Device model checks
+
+完整中文步骤、常见问题与已验证范围：[手动验证指南](../docs/manual-verification.md)。
+
+These Java/Kotlin consumers use the real Maven-staged SDK AAR. They are test fixtures,
+not SDK samples; no runtime client or network connection is created.
+
+1. In the SDK root, run `./gradlew :sdk:publishReleasePublicationToLocalTestRepository`
+   (Windows: `.\gradlew.bat :sdk:publishReleasePublicationToLocalTestRepository`).
+2. Open this `consumer-tests` directory as a separate Android Studio project, select
+   Gradle JDK 17, and let Gradle sync finish.
+3. Start an Android API 21+ emulator, or connect a device with USB debugging enabled.
+4. Choose the `java` or `kotlin` Android App run configuration, use the `debug` build
+   variant, select the device, and click Run. If there is no run configuration, create an
+   Android App configuration for the corresponding module with Launch: Default Activity.
+5. The page automatically executes `ModelSmoke.verify()` and displays **PASS** or **FAIL**.
+   Use the retry button to run again; the check count and completion time update on each run.
+   Search Logcat for `FeatBitConsumer` for results and
+   failure stack traces. Run both modules to check both consumer languages.
+
+The checks cover only the public models used by each existing consumer smoke test.
+A PASS does not establish network, caching, event delivery or complete SDK conformance.
+
+Debug APKs are signed automatically for device installation. Release builds still run R8,
+but remain unsigned: release device execution requires a separate test signing setup.
+Debug device results must not be reported as release/R8 device results.
