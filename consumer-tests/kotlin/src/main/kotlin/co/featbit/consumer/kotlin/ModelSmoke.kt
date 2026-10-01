@@ -5,7 +5,12 @@ import co.featbit.android.datasource.*
 
 object ModelSmoke {
     fun verify() {
-        val user = User.builder("kotlin-user").build().value!!
+        val user = User.builder("kotlin-user")
+            .name("Kotlin User")
+            .attribute("plan", AttributeValue.text("test").value!!)
+            .build().value!!
+        check(user.attributes["plan"]?.kind == AttributeValue.Kind.TEXT)
+        check(user.attributes["plan"]?.text == "test")
         val options = ClientOptions.builder().user(user).offline(true).bootstrap(emptyList()).build().value!!
         check(options.bootstrap != null && options.bootstrap!!.isEmpty())
         val array = FbValue.ofArray(listOf(FbValue.jsonNull(), FbValue.ofBoolean(true))).value!!

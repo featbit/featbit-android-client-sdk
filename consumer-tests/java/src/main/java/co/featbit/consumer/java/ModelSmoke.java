@@ -7,7 +7,7 @@ import java.util.*;
 /** Compiled solely against the Maven-published AAR; no source project dependency. */
 public final class ModelSmoke {
     public static void verify() {
-        User user = User.builder("java-user").attribute("plan", AttributeValue.text("test").getValue()).build().getValue();
+        User user = User.builder("java-user").name("Java User").attribute("plan", AttributeValue.text("test").getValue()).build().getValue();
         BootstrapFlag flag = BootstrapFlag.create("enabled", "true", ValueType.BOOLEAN).getValue();
         ClientOptions options = ClientOptions.builder().user(user).offline(true).bootstrap(Collections.singletonList(flag)).build().getValue();
         FbValue json = FbValue.ofObject(Collections.singletonMap("items", FbValue.ofArray(Arrays.asList(FbValue.jsonNull(), FbValue.ofBoolean(true))).getValue())).getValue();

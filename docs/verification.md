@@ -57,6 +57,14 @@ UI hierarchy inspection confirmed PASS, then a count change from 1 to 2 and a ne
 after tapping retry in each consumer. This verifies debug model checks and retry feedback,
 not release/R8 device execution or SDK runtime behavior.
 
+User validation update on 2026-10-01: key and name now reject null, empty and whitespace-only
+strings; name must be explicitly supplied. Valid values retain their original whitespace.
+All 10 public-model tests passed, including invalid-field diagnostics and preservation checks.
+Release AAR, release lint, local Maven staging and the unchanged 76-type public API/Java 11
+bytecode checks passed. Updated Java and Kotlin 1.9.25 consumers passed their model tests
+and R8 release builds against the staged AAR. Other compiler versions and device runs were
+not repeated for this validation change.
+
 Not executed: hosted GitHub Actions, physical-device or release APK runs, runtime state/transport/event
 tests, Android memory measurements, live service startup/protocol verification or Maven Central
 publication. Runtime factories, adapters and TestData currently have contracts only. These are

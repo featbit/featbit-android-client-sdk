@@ -28,24 +28,47 @@ public class ModelTest {
         assertTrue(FbValue.ofNumber(Double.MAX_VALUE).isSuccess)
     }
     @Test public fun usersFreezeBuilderAndPreserveAttributePresence() {
-        val builder = User.builder("user").attribute("n", AttributeValue.nullValue()).attribute("o", AttributeValue.omittedValue())
+        val builder = User.builder("user").name("User").attribute("n", AttributeValue.nullValue()).attribute("o", AttributeValue.omittedValue())
         val user = builder.build().value!!
         builder.attribute("later", AttributeValue.nullValue())
         assertFalse(user.attributes.containsKey("later"))
         assertEquals(AttributeValue.Kind.NULL, user.attributes["n"]!!.kind)
         assertEquals(AttributeValue.Kind.OMITTED, user.attributes["o"]!!.kind)
         assertFalse(builder.attribute("n", AttributeValue.nullValue()).build().isSuccess)
-        assertFalse(User.builder("").build().isSuccess)
+        assertFalse(User.builder("").name("User").build().isSuccess)
+    }
+    @Test public fun usersRejectMissingOrBlankIdentityFields() {
+        for (invalid in listOf(null, "", "   ", "\t\r\n", "\u2003")) {
+            val keyResult = User.builder(invalid).name("User").build()
+            assertEquals(OutcomeCode.INVALID, keyResult.code)
+            assertNull(keyResult.value)
+            assertEquals(Diagnostic("invalid_user_key", "key"), keyResult.diagnostic)
+
+            val nameResult = User.builder("user").name(invalid).build()
+            assertEquals(OutcomeCode.INVALID, nameResult.code)
+            assertNull(nameResult.value)
+            assertEquals(Diagnostic("invalid_user_name", "name"), nameResult.diagnostic)
+        }
+        val missingName = User.builder("user").build()
+        assertEquals(OutcomeCode.INVALID, missingName.code)
+        assertNull(missingName.value)
+        assertEquals(Diagnostic("invalid_user_name", "name"), missingName.diagnostic)
+    }
+    @Test public fun usersPreserveIdentityWithoutTrimming() {
+        val result = User.builder(" User-001 \t").name(" Alice \n").build()
+        assertTrue(result.isSuccess)
+        assertEquals(" User-001 \t", result.value!!.key)
+        assertEquals(" Alice \n", result.value!!.name)
     }
     @Test public fun offlineExemptsEndpointsAndBootstrapDistinguishesEmptyFromAbsent() {
-        val user = User.builder("u").build().value!!
+        val user = User.builder("u").name("User").build().value!!
         val builder = ClientOptions.builder().user(user).offline(true)
         assertNull(builder.build().value!!.bootstrap)
         assertEquals(emptyList<BootstrapFlag>(), builder.bootstrap(emptyList()).build().value!!.bootstrap)
         assertFalse(builder.offline(false).build().isSuccess)
     }
     @Test public fun configurationCopiesCollectionsAndRejectsConflictsWithoutLeakingSecrets() {
-        val user = User.builder("u").build().value!!
+        val user = User.builder("u").name("User").build().value!!
         val flags = mutableListOf<BootstrapFlag?>(BootstrapFlag.create("f", "true", ValueType.BOOLEAN).value!!)
         val builder = ClientOptions.builder().user(user).offline(true).bootstrap(flags).eventHeader("Gateway", "secret")
         val options = builder.build().value!!
@@ -69,7 +92,7 @@ public class ModelTest {
         assertFalse(FlagRecord.builder("f", "x", "future-type", -1).build().isSuccess)
     }
     @Test public fun onlineValidationRequiresOnlyEnabledPaths() {
-        val user = User.builder("u").build().value!!
+        val user = User.builder("u").name("User").build().value!!
         val builder = ClientOptions.builder().user(user).sdkKey("test-key")
             .streamingUrl("wss://example.test/prefix/streaming").disableEvents(true)
         assertTrue(builder.build().isSuccess)
@@ -80,7 +103,7 @@ public class ModelTest {
         assertFalse(builder.eventsUrl("https://user:secret@example.test/track").build().isSuccess)
     }
     @Test public fun invalidLimitsAndReservedAttributesRemainInvalidOffline() {
-        val user = User.builder("u").attribute("featbit.sdk.version", AttributeValue.text("caller").value!!).build().value!!
+        val user = User.builder("u").name("User").attribute("featbit.sdk.version", AttributeValue.text("caller").value!!).build().value!!
         val builder = ClientOptions.builder().user(user).offline(true)
         assertTrue(builder.build().isSuccess)
         assertFalse(builder.automaticAttributes(true).build().isSuccess)

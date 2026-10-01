@@ -13,13 +13,14 @@ public class AttributeValue private constructor(public val kind: Kind, public va
     }
 }
 
+/** Immutable user context. Key and name must be nonblank and are preserved without trimming. */
 public class User private constructor(
     public val key: String,
     public val name: String,
     public val attributes: Map<String, AttributeValue>,
 ) {
     public class Builder public constructor(private val key: String?) {
-        private var name: String? = ""
+        private var name: String? = null
         private val attributes = LinkedHashMap<String, AttributeValue>()
         private var error: String? = null
         public fun name(value: String?): Builder = apply { name = value }
@@ -29,8 +30,8 @@ public class User private constructor(
             } else attributes[name] = value
         }
         public fun build(): Outcome<User> {
-            if (key.isNullOrEmpty()) return Outcome.invalid("invalid_user_key", "key")
-            if (name == null) return Outcome.invalid("invalid_user_name", "name")
+            if (key.isNullOrBlank()) return Outcome.invalid("invalid_user_key", "key")
+            if (name.isNullOrBlank()) return Outcome.invalid("invalid_user_name", "name")
             error?.let { return Outcome.invalid(it, "attributes") }
             return Outcome.success(User(key, name!!, Collections.unmodifiableMap(LinkedHashMap(attributes))))
         }

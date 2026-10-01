@@ -80,7 +80,9 @@ stable major release; Phase 1 snapshot contracts may change only with explicit b
   accessors return null; numeric/collection factories return ordinary validation errors.
   Nested values are immutable and input containers are copied. IEEE-754 precision applies;
   decimal parsing and JSON parsing are Phase 2 work and must reject nonfinite results.
-- `User` captures key/name and attributes without trimming identity. Attribute values retain
+- `User` requires an explicitly supplied name and a key; both reject null, empty and
+  whitespace-only strings. Valid key/name values are preserved without trimming. Omitting
+  `.name(...)` returns `INVALID` with `invalid_user_name`. Attribute values retain
   TEXT, NULL and OMITTED wire-value forms; an absent map entry is separate. Duplicate and
   reserved key/name properties are rejected. Automatic-prefix collisions are rejected when
   that capability is enabled. Canonical hashing is a later internal implementation concern.
