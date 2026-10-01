@@ -15,7 +15,12 @@ public final class ModelSmoke {
         if (FbValue.ofNumber(Double.NaN).isSuccess()) throw new AssertionError("finite number");
         if (options.getBootstrap().size() != 1 || !options.getOffline()) throw new AssertionError("options");
         if (!SdkInfo.getVersion().equals("0.1.0-SNAPSHOT")) throw new AssertionError("artifact version");
-        FlagRecord record = FlagRecord.builder("enabled", "true", "boolean", 1).build().getValue();
+        FlagRecord record = FlagRecord.builder("enabled", "true", "boolean", 1769702003515L)
+            .variationOptions(Collections.singletonList(new VariationOption("on", "true")))
+            .build().getValue();
+        if (record.getTimestamp() != 1769702003515L) throw new AssertionError("flag timestamp");
+        if (!record.getVariation().equals("true") || !record.getVariationType().equals("boolean")) throw new AssertionError("flag fields");
+        if (!record.getVariationOptions().get(0).getId().equals("on")) throw new AssertionError("variation metadata");
         if (!FullUpdate.create(Collections.singletonList(record)).isSuccess()) throw new AssertionError("source model");
     }
 

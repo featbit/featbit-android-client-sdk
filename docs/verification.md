@@ -65,6 +65,21 @@ bytecode checks passed. Updated Java and Kotlin 1.9.25 consumers passed their mo
 and R8 release builds against the staged AAR. Other compiler versions and device runs were
 not repeated for this validation change.
 
+FlagRecord update on 2026-10-01: retained key/version, renamed value/declaredType to
+variation/variationType, moved variationOptions to the record and removed AnalyticsMetadata
+and sendToExperiment. All 11 model tests passed, including variation-option snapshot isolation,
+unmodifiable access and absent/empty metadata. Release AAR, lint and local Maven staging passed.
+The reviewed API baseline now contains 75 public types and passes the Java 11 bytecode check.
+Java and Kotlin 1.9.25 consumer tests and R8 release builds passed against the updated AAR;
+other compiler versions and device checks were not repeated for this API change.
+
+Timestamp naming update on 2026-10-01: FlagRecord.version is now FlagRecord.timestamp,
+meaning the last flag change time in Unix milliseconds. Baseline.cursor is unchanged.
+Builder parameters, Kotlin named arguments, Java getTimestamp(), model tests, design documents
+and the public API baseline were updated. All 11 model tests, release AAR/lint, API/bytecode
+checks, local Maven staging, Java/Kotlin 1.9.25 consumer tests and R8 release builds passed.
+Other compiler versions and device checks were not repeated for this rename.
+
 Not executed: hosted GitHub Actions, physical-device or release APK runs, runtime state/transport/event
 tests, Android memory measurements, live service startup/protocol verification or Maven Central
 publication. Runtime factories, adapters and TestData currently have contracts only. These are

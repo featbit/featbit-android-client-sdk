@@ -44,32 +44,31 @@ public data class SourceUpdateResult public constructor(
     public val error: Diagnostic?,
 )
 public data class VariationOption public constructor(public val id: String, public val value: String)
-public class AnalyticsMetadata public constructor(options: List<VariationOption>, public val sendToExperiment: Boolean?) {
-    public val options: List<VariationOption> = Collections.unmodifiableList(ArrayList(options))
-}
-/** Raw declaredType is intentional: unknown types remain usable through supported typed reads. */
+/** Raw variationType is intentional: unknown types remain usable through supported typed reads. */
 public class FlagRecord private constructor(
     public val key: String,
-    public val value: String,
-    public val declaredType: String,
-    public val version: Long,
+    public val variation: String,
+    public val variationType: String,
+    /** Last flag change time in Unix milliseconds. */
+    public val timestamp: Long,
     public val archived: Boolean,
     public val reason: String?,
-    public val analytics: AnalyticsMetadata?,
+    variationOptions: List<VariationOption>?,
 ) {
-    public class Builder public constructor(private val key: String?, private val value: String?, private val declaredType: String?, private val version: Long) {
+    public val variationOptions: List<VariationOption>? = variationOptions?.let { Collections.unmodifiableList(ArrayList(it)) }
+    public class Builder public constructor(private val key: String?, private val variation: String?, private val variationType: String?, private val timestamp: Long) {
         private var archived: Boolean = false
         private var reason: String? = null
-        private var analytics: AnalyticsMetadata? = null
+        private var variationOptions: List<VariationOption>? = null
         public fun archived(value: Boolean): Builder = apply { archived = value }
         public fun reason(value: String?): Builder = apply { reason = value }
-        public fun analytics(value: AnalyticsMetadata?): Builder = apply { analytics = value }
+        public fun variationOptions(value: List<VariationOption>?): Builder = apply { variationOptions = value?.let { ArrayList(it) } }
         public fun build(): Outcome<FlagRecord> =
-            if (key.isNullOrEmpty() || value == null || declaredType == null || version < 0) Outcome.invalid("invalid_flag_record")
-            else Outcome.success(FlagRecord(key, value, declaredType, version, archived, reason, analytics))
+            if (key.isNullOrEmpty() || variation == null || variationType == null || timestamp < 0) Outcome.invalid("invalid_flag_record")
+            else Outcome.success(FlagRecord(key, variation, variationType, timestamp, archived, reason, variationOptions))
     }
     public companion object {
-        @JvmStatic public fun builder(key: String?, value: String?, declaredType: String?, version: Long): Builder = Builder(key, value, declaredType, version)
+        @JvmStatic public fun builder(key: String?, variation: String?, variationType: String?, timestamp: Long): Builder = Builder(key, variation, variationType, timestamp)
     }
 }
 

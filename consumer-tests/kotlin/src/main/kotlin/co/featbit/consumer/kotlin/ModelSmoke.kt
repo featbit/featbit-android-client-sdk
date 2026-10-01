@@ -18,6 +18,13 @@ object ModelSmoke {
         check(!FbValue.ofNumber(Double.NaN).isSuccess)
         check(SdkInfo.getVersion() == "0.1.0-SNAPSHOT")
         check(FullUpdate.create(emptyList()).isSuccess)
+        val record = FlagRecord.builder(key = "enabled", variation = "true", variationType = "boolean", timestamp = 1769702003515L)
+            .variationOptions(listOf(VariationOption("on", "true")))
+            .build().value!!
+        check(record.timestamp == 1769702003515L)
+        check(record.variation == "true" && record.variationType == "boolean")
+        check(record.variationOptions?.single()?.id == "on")
+        check(FullUpdate.create(listOf(record)).isSuccess)
         check(LocalFactory().capabilities().provenance == Provenance.LOCAL)
     }
     class LocalFactory : DataSourceFactory {

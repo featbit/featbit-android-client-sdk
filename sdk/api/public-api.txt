@@ -528,12 +528,6 @@ public final class co.featbit.android.api.ValueType extends java.lang.Enum<co.fe
   public static kotlin.enums.EnumEntries<co.featbit.android.api.ValueType> getEntries();
 }
 
-public final class co.featbit.android.datasource.AnalyticsMetadata {
-  public co.featbit.android.datasource.AnalyticsMetadata(java.util.List<co.featbit.android.datasource.VariationOption>, java.lang.Boolean);
-  public final java.lang.Boolean getSendToExperiment();
-  public final java.util.List<co.featbit.android.datasource.VariationOption> getOptions();
-}
-
 public interface co.featbit.android.datasource.Baseline {
   public abstract java.util.Map<java.lang.String, co.featbit.android.datasource.FlagRecord> getRecords();
   public abstract long getCursor();
@@ -557,21 +551,21 @@ public final class co.featbit.android.datasource.DataSourceKt {
 public final class co.featbit.android.datasource.FlagRecord {
   public static final co.featbit.android.datasource.FlagRecord$Companion Companion;
   public final java.lang.String getKey();
-  public final java.lang.String getValue();
-  public final java.lang.String getDeclaredType();
-  public final long getVersion();
+  public final java.lang.String getVariation();
+  public final java.lang.String getVariationType();
+  public final long getTimestamp();
   public final boolean getArchived();
   public final java.lang.String getReason();
-  public final co.featbit.android.datasource.AnalyticsMetadata getAnalytics();
+  public final java.util.List<co.featbit.android.datasource.VariationOption> getVariationOptions();
   public static final co.featbit.android.datasource.FlagRecord$Builder builder(java.lang.String, java.lang.String, java.lang.String, long);
-  public co.featbit.android.datasource.FlagRecord(java.lang.String, java.lang.String, java.lang.String, long, boolean, java.lang.String, co.featbit.android.datasource.AnalyticsMetadata, kotlin.jvm.internal.DefaultConstructorMarker);
+  public co.featbit.android.datasource.FlagRecord(java.lang.String, java.lang.String, java.lang.String, long, boolean, java.lang.String, java.util.List, kotlin.jvm.internal.DefaultConstructorMarker);
 }
 
 public final class co.featbit.android.datasource.FlagRecord$Builder {
   public co.featbit.android.datasource.FlagRecord$Builder(java.lang.String, java.lang.String, java.lang.String, long);
   public final co.featbit.android.datasource.FlagRecord$Builder archived(boolean);
   public final co.featbit.android.datasource.FlagRecord$Builder reason(java.lang.String);
-  public final co.featbit.android.datasource.FlagRecord$Builder analytics(co.featbit.android.datasource.AnalyticsMetadata);
+  public final co.featbit.android.datasource.FlagRecord$Builder variationOptions(java.util.List<co.featbit.android.datasource.VariationOption>);
   public final co.featbit.android.api.Outcome<co.featbit.android.datasource.FlagRecord> build();
 }
 

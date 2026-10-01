@@ -15,7 +15,7 @@ public interface TestDataFactory {
 public interface TestData : DataSourceFactory {
     /** Configures this source with events and production cache disabled. Single-client binding. */
     public fun clientOptions(user: User): Outcome<ClientOptions>
-    /** Test versions are generated internally; callers provide only keys, values and types. */
+    /** Flag change timestamps in Unix milliseconds are generated internally; callers provide only keys, values and types. */
     public fun replace(flags: List<BootstrapFlag>): Operation<TestDataResult>
     public fun update(flag: BootstrapFlag): Operation<TestDataResult>
     public fun remove(key: String): Operation<TestDataResult>

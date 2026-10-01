@@ -101,11 +101,21 @@ stable major release; Phase 1 snapshot contracts may change only with explicit b
   No runtime schema negotiation. Trusted factories fix REMOTE/LOCAL capabilities for a session.
   Factory/start must return promptly; stop reports asynchronous cleanup. The SDK validates
   structure, authority and metadata, not authenticity of arbitrary extension code.
+- `FlagRecord` retains `key` and `timestamp`, with `variation`, `variationType`, and top-level
+  `variationOptions` matching protocol terminology. `timestamp` is the last flag change time
+  in Unix milliseconds, including local records; `Baseline.cursor` remains the synchronization
+  cursor. Variation options are
+  copied when supplied to the builder and exposed as an unmodifiable snapshot. Missing options
+  remain null, distinct from an empty list.
+  The obsolete `sendToExperiment` field and `AnalyticsMetadata` wrapper are not exposed.
+  The current shared wire protocol, JS SDK and evaluation-server still use the field. Phase 5
+  event compatibility requires validating the agreed field-free payload against the migrated
+  service; this model change does not establish that compatibility.
 - `TestDataFactory.create(initialFlags)` accepts immutable `BootstrapFlag` values, with no
-  caller-managed versions. `TestData.clientOptions(user)` binds the source with events/cache
+  caller-managed flag timestamps. `TestData.clientOptions(user)` binds the source with events/cache
   disabled. Its mutation contract is `replace`, `update`, `remove`, with COMMITTED or
   SAVED_FOR_NEXT_START outcomes. Phase 2 implements these contracts, single-client binding,
-  local versions and no-network/no-analytics/no-production-cache behavior.
+  local flag-change timestamps and no-network/no-analytics/no-production-cache behavior.
 - Logging uses an SDK-owned Diagnostic code/field, never raw Throwable, credentials, URLs,
   user values or payloads. Level NONE disables logs; public results/loss counts remain observable.
   Runtime sanitization, exception isolation and rate limiting are implemented with diagnostics.
@@ -186,7 +196,7 @@ Source comparison: sdk-spec `3f08faa77dbf70bea208bd8ab946c2aa0b38ffad`, JS SDK
 - Service `Streaming/Protocol/MessageTypes.cs` supports application JSON ping/data-sync;
   `Streaming/StreamingMiddleware.cs` uses 4003 for permanent authentication rejection.
 - Polling path remains `api/public/sdk/client/latest-all`, event path `api/public/insight/track`,
-  with deployment prefixes retained. Remote cursor is Unix-millisecond record versions.
+  with deployment prefixes retained. Remote cursor is Unix-millisecond record timestamps.
 - `Domain/Insights/MetricInsight.cs` accepts a non-null appType up to 128 characters without
   a closed platform enum: select `Android-Client-SDK`. This is source compatibility, not proof
   of a deployed server accepting the event or downstream analytics behavior.
@@ -199,7 +209,7 @@ owner supplies an isolated instance pinned to the above commit or a recorded rep
 its dependency versions, HTTP/WS endpoints and a client-only key. Setup uses separate admin
 credentials. Create a test environment/user and Boolean/Number/String/JSON flags; reset only
 those fixtures between runs, not production data. Validate auth, prefix routing, empty/full/patch,
-304 baseline, equal versions, archived flags and actual analytics reception. Environment access
+304 baseline, equal timestamps, archived flags and actual analytics reception. Environment access
 and service startup are not prerequisites for local Phases 2–3 and are not marked passed.
 
 ## Verification record

@@ -91,6 +91,30 @@ public class ModelTest {
         assertTrue(FullUpdate.create(emptyList()).isSuccess)
         assertFalse(FlagRecord.builder("f", "x", "future-type", -1).build().isSuccess)
     }
+    @Test public fun flagRecordsCopyVariationOptionsAndPreserveMetadata() {
+        val option = VariationOption("on", "true")
+        val options = mutableListOf(option)
+        val builder = FlagRecord.builder(key = "f", variation = "true", variationType = "boolean", timestamp = 1769702003515L)
+            .variationOptions(options)
+        options.clear()
+        val record = builder.build().value!!
+        builder.variationOptions(emptyList())
+        assertEquals("f", record.key)
+        assertEquals("true", record.variation)
+        assertEquals("boolean", record.variationType)
+        assertEquals(1769702003515L, record.timestamp)
+        assertEquals(listOf(option), record.variationOptions)
+        assertFalse(record.archived)
+        assertNull(record.reason)
+        try { (record.variationOptions as MutableList).clear(); fail("mutable options") } catch (_: UnsupportedOperationException) { }
+        val empty = builder.build().value!!
+        assertEquals(emptyList<VariationOption>(), empty.variationOptions)
+        val absent = builder.variationOptions(null).build().value!!
+        assertNull(absent.variationOptions)
+        val defaults = FlagRecord.builder("f", "x", "future-type", 0).build().value!!
+        assertEquals("future-type", defaults.variationType)
+        assertNull(defaults.variationOptions)
+    }
     @Test public fun onlineValidationRequiresOnlyEnabledPaths() {
         val user = User.builder("u").name("User").build().value!!
         val builder = ClientOptions.builder().user(user).sdkKey("test-key")
