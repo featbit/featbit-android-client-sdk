@@ -1,5 +1,61 @@
 # Verification record
 
+## Shared endpoint scheme handling — 2026-10-02
+
+Builder validation, online transitions, synchronization/event request construction and
+cache namespace matching now share the internal `Endpoint` parser. Protocol names are
+case-insensitive and normalized using `Locale.ROOT`; paths retain casing and escaping.
+Streaming still requires ws/wss, and Polling/events require http/https. Host requirements
+and rejection of user-info/query/fragment remain unchanged. Offline creation still defers
+enabled-path validation until going online. Public API signatures are unchanged.
+
+Four EndpointTest regressions cover mixed/upper/lower schemes across all request paths,
+equal cache namespaces for scheme-case variants, distinct path-case namespaces, invalid
+endpoints, and actual offline-to-online admission with a controlled transport.
+All **139 non-live SDK tests** passed, with zero failures/errors/skips; Release lint,
+release AAR/local Maven publication, the 78-type API baseline and Java 11 bytecode checks
+passed. Logs: `build/fix-endpoint-final.log`. The live fixture's nullable output-path
+compiler warning was also removed with an explicit required-property check.
+
+The default independent Java/Kotlin consumers (Kotlin 1.9.25, AGP 8.5.2, Gradle 8.7)
+were checked against the newly staged AAR; see `build/fix-endpoint-consumers.log`.
+This change does not establish new live-service, device, full compiler-matrix or hosted-CI
+acceptance. Earlier Phase 7 and live-evidence results below retain their original scopes.
+
+## Live acceptance evidence freshness — 2026-10-02
+
+Source baseline: `f5932e8` plus this fix. Live test tasks now disable Gradle up-to-date
+and build-cache reuse. The acceptance runner supplies a unique payload output in its run
+directory and requires all four live tests plus that payload before Domain validation.
+Direct Gradle live runs clear their single configured payload output before executing tests.
+
+- Service absent, with a historical payload still present at the old default path:
+  `python -B tools/phase7_acceptance.py --live --rows java --version 0.1.0-phase7`
+  failed as expected. All 139 SDK tests executed; the four live checks failed, the run's
+  payload was absent, and Domain/consumer validation did not run. Evidence:
+  `build/phase7/20261002-191152-de47bf34/`.
+- With the existing Phase 7 Fake/None evaluation-server binary running on port 5189,
+  the same runner command passed 139 SDK tests, Domain validation (three payloads/messages),
+  API/lint/publication checks and the Java Debug/R8/JUnit/lint row. Its fresh payload and
+  copied XML are in `build/phase7/20261002-191343-e8f27345/`. No device checks were requested.
+- Direct `:sdk:testDebugUnitTest -PliveIntegration -PsdkVersion=0.1.0-phase7
+  --tests '*Live*IntegrationTest' --info` ran twice successfully with identical arguments.
+  Both executions ran the four live tests; logs explicitly show caching disabled and
+  up-to-date reuse disabled. Exported payload hashes differed. Logs/payload copies:
+  `build/fix-live-direct-1.*` and `build/fix-live-direct-2.*`.
+- After stopping that service, the same direct command executed again and failed all four
+  live tests. The old default payload was removed and not recreated. Evidence:
+  `build/fix-live-direct-stopped.log`, `build/fix-live-stopped-sync.xml` and
+  `build/fix-live-stopped-events.xml`.
+- Five Python evidence-admission regressions passed, covering complete evidence, missing or
+  empty current payload, missing suite/method, and skipped/failed/error cases. Both CI
+  workflows now run them. Normal SDK tests (135, no failures/errors/skips) and Release lint
+  also passed after the live checks; log: `build/fix-live-normal.log`.
+
+The test service was stopped. No physical-device, hosted-CI, signing, Central publication or
+database/MQ acceptance is established by this fix. The earlier review's cached live "pass"
+is not current-service evidence; these new negative and positive runs replace that inference.
+
 ## Phase 7 — 2026-10-02
 
 Implementation, commands, source baselines and limitations: [phase-7.md](./phase-7.md).

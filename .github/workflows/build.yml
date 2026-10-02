@@ -20,6 +20,8 @@ jobs:
       - uses: android-actions/setup-android@v3
       - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0' 'build-tools;35.0.0'
       - uses: gradle/actions/setup-gradle@v4
+      - name: Check live evidence admission
+        run: python3 -B -m unittest discover -s tools -p test_phase7_acceptance.py
       - name: Stage and consume isolated Maven publication
         run: python3 tools/phase7_acceptance.py --rows ${{ matrix.consumer }}
       - uses: actions/upload-artifact@v4

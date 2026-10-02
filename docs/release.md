@@ -27,6 +27,16 @@ FeatBit coordinates resolve exclusively from that run's repository. Different co
 rows use their own plugin/Gradle versions. `--rows java` or `--rows kotlin-2.2.10` narrows
 requested checks and must not be described as the full matrix.
 
+Live SDK tests always execute: `-PliveIntegration` disables both Gradle up-to-date reuse
+and build-cache reuse for the test task, including direct Gradle invocations. The runner
+passes a unique `-PliveEventPayload=<run>/target-event-payload.json`; the test writes there
+only after successful delivery assertions. All four live checks must pass and this run's
+payload must exist before Domain validation. A previous run's payload is never copied.
+Direct Gradle runs default to `sdk/build/phase-5-target-payload.json`; that one output is
+removed before each live test execution, so failing tests cannot leave an old success payload.
+Evidence admission regressions run with
+`python -B -m unittest discover -s tools -p test_phase7_acceptance.py` and in both CI workflows.
+
 The device runner uses the existing debug test key to install R8 APKs; this is not a
 distribution signing key. It reads PID-scoped logs so stale PASS markers cannot pass a run.
 Kotlin rows additionally run the platform fixture for both variants. Only opt-in fixture

@@ -33,7 +33,9 @@ public class LiveEventIntegrationTest {
             val payload = captured.joinToString(",", "[", "]") { it.removePrefix("[").removeSuffix("]") }
             assertFalse(payload.contains("sendToExperiment")); assertFalse(payload.contains("do-not-retain"))
             assertTrue(payload.contains("variations")); assertTrue(payload.contains("Android"))
-            File("build/phase-5-target-payload.json").writeText(payload)
+            File(requireNotNull(System.getProperty("featbit.liveEventPayload")) {
+                "Run live integration tests with -PliveIntegration"
+            }).writeText(payload)
         } finally { await(client.close()) }
     }
 }

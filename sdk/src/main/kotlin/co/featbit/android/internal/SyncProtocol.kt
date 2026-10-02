@@ -49,8 +49,7 @@ internal object SyncProtocol {
         return encode(p.toString(), 3) + encode(time.length.toString(), 2) + raw.take(p) + encode(time, time.length) + raw.drop(p)
     }
     fun request(options: ClientOptions, streaming: Boolean, cursor: Long, user: User, now: Long, random: Double): Request {
-        val base = (if (streaming) options.streamingUrl!! else options.pollingUrl!!)
-            .replaceFirst(Regex("^ws:"), "http:").replaceFirst(Regex("^wss:"), "https:")
+        val base = requireNotNull(Endpoint.parse(if (streaming) options.streamingUrl else options.pollingUrl, streaming)).httpBase
         val url = (base.trimEnd('/') + "/").toHttpUrl().newBuilder()
             .addPathSegments(if (streaming) "streaming" else "api/public/sdk/client/latest-all")
         if (streaming) url.addQueryParameter("type", "client").addQueryParameter("token", token(options.sdkKey!!, now, random))

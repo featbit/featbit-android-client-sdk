@@ -1,7 +1,7 @@
 package co.featbit.android.api
 
 import co.featbit.android.datasource.DataSourceFactory
-import java.net.URI
+import co.featbit.android.internal.Endpoint
 import java.util.Collections
 import java.util.Locale
 
@@ -159,16 +159,12 @@ public class ClientOptions private constructor(builder: Builder) {
             if (pollingFallback && mode != SyncMode.STREAMING) return Outcome.invalid("fallback_requires_streaming")
             if (!offline) {
                 if ((source == null || !disableEvents) && sdkKey.isNullOrEmpty()) return Outcome.invalid("sdk_key_required", "sdkKey")
-                if (source == null && mode == SyncMode.STREAMING && !endpoint(streamingUrl, setOf("ws", "wss"))) return Outcome.invalid("invalid_endpoint", "streamingUrl")
-                if (source == null && (mode == SyncMode.POLLING || pollingFallback || backgroundPolling) && !endpoint(pollingUrl, setOf("http", "https"))) return Outcome.invalid("invalid_endpoint", "pollingUrl")
-                if (!disableEvents && !endpoint(eventsUrl, setOf("http", "https"))) return Outcome.invalid("invalid_endpoint", "eventsUrl")
+                if (source == null && mode == SyncMode.STREAMING && Endpoint.parse(streamingUrl, true) == null) return Outcome.invalid("invalid_endpoint", "streamingUrl")
+                if (source == null && (mode == SyncMode.POLLING || pollingFallback || backgroundPolling) && Endpoint.parse(pollingUrl, false) == null) return Outcome.invalid("invalid_endpoint", "pollingUrl")
+                if (!disableEvents && Endpoint.parse(eventsUrl, false) == null) return Outcome.invalid("invalid_endpoint", "eventsUrl")
             }
             return Outcome.success(ClientOptions(this))
         }
-        private fun endpoint(value: String?, schemes: Set<String>): Boolean = try {
-            val uri = URI(value ?: "")
-            uri.scheme?.lowercase(Locale.ROOT) in schemes && !uri.host.isNullOrEmpty() && uri.userInfo == null && uri.fragment == null && uri.query == null
-        } catch (_: Exception) { false }
     }
     public companion object { @JvmStatic public fun builder(): Builder = Builder() }
 }

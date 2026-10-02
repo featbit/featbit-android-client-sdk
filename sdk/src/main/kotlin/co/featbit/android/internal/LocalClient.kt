@@ -2,7 +2,6 @@ package co.featbit.android.internal
 
 import co.featbit.android.api.*
 import co.featbit.android.datasource.*
-import java.net.URI
 
 internal data class View(
     val records: Map<String, FlagRecord>, val defaults: Map<String, FlagRecord>,
@@ -615,16 +614,12 @@ internal class LocalClient(
 }
 
 internal fun onlineError(options: ClientOptions): Pair<OutcomeCode, String>? {
-    fun endpoint(raw: String?, schemes: Set<String>): Boolean = try {
-        val uri = URI(raw ?: "")
-        uri.scheme in schemes && !uri.host.isNullOrEmpty() && uri.userInfo == null && uri.fragment == null && uri.query == null
-    } catch (_: Exception) { false }
     if ((options.source == null || !options.disableEvents) && options.sdkKey.isNullOrEmpty()) return OutcomeCode.INVALID to "sdk_key_required"
     if (options.source == null) {
-        if (options.mode == SyncMode.STREAMING && !endpoint(options.streamingUrl, setOf("ws", "wss"))) return OutcomeCode.INVALID to "invalid_streaming_endpoint"
-        if ((options.mode == SyncMode.POLLING || options.backgroundPolling || options.pollingFallback) && !endpoint(options.pollingUrl, setOf("http", "https"))) return OutcomeCode.INVALID to "invalid_polling_endpoint"
+        if (options.mode == SyncMode.STREAMING && Endpoint.parse(options.streamingUrl, true) == null) return OutcomeCode.INVALID to "invalid_streaming_endpoint"
+        if ((options.mode == SyncMode.POLLING || options.backgroundPolling || options.pollingFallback) && Endpoint.parse(options.pollingUrl, false) == null) return OutcomeCode.INVALID to "invalid_polling_endpoint"
     }
-    if (!options.disableEvents && !endpoint(options.eventsUrl, setOf("http", "https"))) return OutcomeCode.INVALID to "invalid_events_endpoint"
+    if (!options.disableEvents && Endpoint.parse(options.eventsUrl, false) == null) return OutcomeCode.INVALID to "invalid_events_endpoint"
     if (options.source == null && options.sdkKey?.trimEnd('=')?.length !in 2..999) return OutcomeCode.INVALID to "invalid_sdk_key"
     return null
 }

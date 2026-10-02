@@ -1,3 +1,5 @@
+import java.nio.file.Files
+
 plugins {
     id("com.android.library")
     kotlin("android")
@@ -36,7 +38,22 @@ android {
         disable += "GradleDependency"
     }
     testOptions.unitTests.all {
-        if (!providers.gradleProperty("liveIntegration").isPresent) it.exclude("**/Live*IntegrationTest*")
+        if (!providers.gradleProperty("liveIntegration").isPresent) {
+            it.exclude("**/Live*IntegrationTest*")
+        } else {
+            // Service state is not a Gradle input: a previous success is never live evidence.
+            it.outputs.upToDateWhen { false }
+            it.outputs.doNotCacheIf("Live integration requires current service responses") { true }
+            val payload = file(providers.gradleProperty("liveEventPayload")
+                .getOrElse(layout.buildDirectory.file("phase-5-target-payload.json").get().asFile.absolutePath))
+            it.systemProperty("featbit.liveEventPayload", payload.absolutePath)
+            it.outputs.file(payload)
+            it.doFirst {
+                // One explicit output only; failed/filtered runs must not leave old evidence.
+                Files.deleteIfExists(payload.toPath())
+                payload.parentFile.mkdirs()
+            }
+        }
     }
 }
 

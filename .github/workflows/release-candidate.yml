@@ -32,6 +32,8 @@ jobs:
           assert 'SNAPSHOT' not in version
           assert os.environ['GITHUB_REF'] == 'refs/tags/v' + version, 'Select the matching release tag'
           PY
+      - name: Check live evidence admission
+        run: python3 -B -m unittest discover -s tools -p test_phase7_acceptance.py
       - name: Run independent artifact matrix
         env:
           RELEASE_VERSION: ${{ inputs.version }}

@@ -5,7 +5,6 @@ import co.featbit.android.api.*
 import co.featbit.android.datasource.*
 import java.io.*
 import java.lang.ref.WeakReference
-import java.net.URI
 import java.security.MessageDigest
 import java.util.UUID
 
@@ -78,16 +77,8 @@ internal fun contextKey(user: User): String = digest { out ->
 internal fun cacheNamespace(options: ClientOptions, capabilities: SourceCapabilities?): String? {
     if (!options.cacheEnabled || options.sdkKey.isNullOrBlank()) return null
     if (capabilities != null && (capabilities.provenance != Provenance.REMOTE || capabilities.cacheDiscriminator.isNullOrBlank())) return null
-    fun endpoint(raw: String?): String? {
-        if (raw == null) return null
-        val uri = try { URI(raw) } catch (_: Exception) { return null }
-        if (uri.scheme !in setOf("ws", "wss", "http", "https") || uri.host.isNullOrEmpty() ||
-            uri.userInfo != null || uri.query != null || uri.fragment != null) return null
-        // Conservative normalization: retain raw path (including deployment prefix).
-        return uri.scheme.lowercase(java.util.Locale.ROOT) + "://" + uri.host.lowercase(java.util.Locale.ROOT) + ":" + uri.port + uri.rawPath
-    }
-    val streaming = endpoint(options.streamingUrl)
-    val polling = endpoint(options.pollingUrl)
+    val streaming = Endpoint.parse(options.streamingUrl, true)?.namespace
+    val polling = Endpoint.parse(options.pollingUrl, false)?.namespace
     if (options.streamingUrl != null && streaming == null || options.pollingUrl != null && polling == null) return null
     // Custom forbids built-in endpoints. Its stable discriminator supplies deployment/source
     // identity, paired with the SDK key's environment fingerprint.

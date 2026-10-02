@@ -113,6 +113,13 @@ new analytics and retains already accepted events within their limits. Old respo
 revive prior waits or change the new context. Background/network pauses remain independent;
 online/Identify cannot reset a terminal subsystem. Create a new client to retry terminal failure.
 
+Endpoint schemes are case-insensitive: Streaming accepts `ws`/`wss`, while Polling and
+events accept `http`/`https`. Configuration, online transitions, request construction and
+cache namespace matching share this policy. Scheme casing does not create a separate cache;
+deployment path casing and escaping remain significant and are preserved. Endpoints require
+a host and must not contain user-info, a query or a fragment. These requirements are checked
+for enabled online paths; offline creation still defers endpoint validation until going online.
+
 Enable `anonymousEnabled(true)` explicitly. An explicit user wins; otherwise a random stored anonymous
 key is used. Login uses `identify(user, timeout)`; logout/return uses `identifyAnonymous(timeout)`;
 `resetAnonymousIdentity(timeout)` explicitly rotates it. These methods return Operations in Java

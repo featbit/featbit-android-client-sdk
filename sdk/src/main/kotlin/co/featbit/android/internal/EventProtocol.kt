@@ -43,7 +43,8 @@ internal object EventProtocol {
         putJsonArray(kind) { add(if (timestamp == null) event else JsonObject(event + ("timestamp" to JsonPrimitive(timestamp)))) }
     }.toString()
     fun request(options: ClientOptions, payload: String): Request {
-        val builder = Request.Builder().url(options.eventsUrl!!.trimEnd('/') + "/api/public/insight/track")
+        val base = requireNotNull(Endpoint.parse(options.eventsUrl, false)).httpBase
+        val builder = Request.Builder().url(base.trimEnd('/') + "/api/public/insight/track")
             .header("Authorization", options.sdkKey!!)
             .header("User-Agent", "FeatBit-Android-SDK/${SdkInfo.getVersion()}")
             .header("X-User-Agent", "FeatBit-Android-SDK/${SdkInfo.getVersion()}")
