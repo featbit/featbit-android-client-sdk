@@ -1,5 +1,43 @@
 # Verification record
 
+## Phase 4 — 2026-10-02
+
+Implementation and reproducible server/consumer commands: [phase-4.md](./phase-4.md).
+
+- **86 unit/controlled-network tests passed**, zero failures/errors/skips: 12 model,
+  32 local runtime, 18 persistence, 12 online state-machine, 3 online/cache race,
+  5 protocol and 4 real HTTP/WebSocket MockWebServer tests.
+- **3 opt-in target-server tests passed**: Streaming, Polling and initial Streaming
+  outage → target HTTP Polling → target Streaming recovery. The service uses its
+  checked-in Fake provider and actual .NET API/protocol code at commit
+  `7ecc24aac0a5ad766f6843faabf0eaeb71f1b753`; no production data or adjacent source edits.
+  The recovery test injects initial Streaming unavailability and accelerates elapsed
+  cooldown; the final observed candidate update gap was 13 ms on this local run, not a
+  production latency guarantee. All real requests use the target server.
+- Debug/release AARs, release lint and local Maven staging passed. API inventory and
+  Java 11 bytecode check passed: unchanged **78 public types**, no transport/codec types
+  in public signatures.
+- Independent Java and Kotlin 1.9.25 consumer debug/release, R8 and JUnit checks passed.
+- API 34 emulator `emulator-5554`, actual published AAR: both independent debug consumers
+  emitted `PHASE4_PASS` for Streaming/Polling/Identify/offline/online/Close against the
+  target server through `adb reverse tcp:5189 tcp:5189`. Java callbacks and Kotlin
+  suspend adapters both exercised Android completion delivery.
+- Final combined `:sdk:testDebugUnitTest -PliveIntegration`: **89 passed**, zero failures,
+  errors or skips. Final emulator runs at 11:41 (Europe/Berlin) again emitted both PASS markers.
+
+Server compilation succeeded with existing NuGet vulnerability warnings for Microsoft.OpenApi
+2.4.1 and SharpCompress 0.30.1; this task did not change server dependencies. The first
+consumer command required quoting `'-PconsumerKotlinVersion=1.9.25'` in PowerShell; the
+unquoted invocation was parsed as version `1` and failed before compilation. The corrected
+command passed. An initial live-test assertion named the wrong fixture flag; it was corrected
+against the server's checked-in snapshot (`returns-true`) before the successful runs.
+
+Not verified in this phase: a distributed database/MQ deployment, production service/gateway,
+physical devices, minimum API 21 device execution, post-R8 device execution, hosted CI,
+or real Android lifecycle/network observers. Kotlin 1.9.24/2.2.10 consumer matrix was not
+repeated. Events/Track/Flush delivery and event protocol compatibility remain Phase 5.
+No Git commit, push or remote artifact publication was performed.
+
 ## JSON node and duration upper-limit removal — 2026-10-02
 
 Removed the 50,000-node JSON conversion cap, retaining the depth-64 check. Removed

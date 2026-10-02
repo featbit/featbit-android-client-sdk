@@ -1,6 +1,6 @@
 # FeatBit Android Client SDK Architecture
 
-Date: 2026-10-01. Status: Phase 1 foundation and Phase 2 local runtime implemented; Phases 3–7 remain planned. See [Phase 2 implementation](./docs/phase-2.md) and [verification](./docs/verification.md) for actual tested boundaries.
+Date: 2026-10-02. Status: Phases 1–4 implemented; Phases 5–7 remain planned. See [Phase 4 implementation](./docs/phase-4.md) and [verification](./docs/verification.md) for actual tested boundaries.
 
 This document turns the accepted scope in [the development plan](./plan.md) into component boundaries, state ownership, concurrency rules, and implementation checkpoints. Names and additional design choices below are proposals. They do not silently resolve pending product decisions or establish tested behavior.
 

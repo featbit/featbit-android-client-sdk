@@ -45,6 +45,13 @@ public final class SmokeActivity extends Activity {
     }
 
     private void runChecks() {
+        if (getIntent().getBooleanExtra("phase4", false)) {
+            result.setText("正在检查阶段 4 网络同步…");
+            NetworkSmoke.verify(getApplicationContext(), message -> runOnUiThread(() -> {
+                result.setText(message); Log.i("FeatBitConsumer", message);
+            }));
+            return;
+        }
         runCount++;
         lastRun.setText("正在进行第 " + runCount + " 次检查…");
         try {

@@ -313,6 +313,11 @@ Completion criteria: failure injection, restart/restoration, reordered reads/wri
 
 ### Phase 4: Online synchronization
 
+Implemented 2026-10-02. See [implementation and protocol observations](./docs/phase-4.md)
+and [verification](./docs/verification.md). Target-server checks use the actual local
+evaluation-server API with its fictional Fake provider; distributed deployment and
+physical-device acceptance remain separate from that protocol result.
+
 - Apply synchronization headers consistently to WebSocket handshakes, Polling, and recovery candidates. Verify endpoint scope after reconnection/mode changes; prevent automatic redirects and sensitive-data leakage.
 - Integrate setOffline invalidation/bounded stop and setOnline revalidation/permission restoration across built-in transports, background polling, candidates, and Custom. Old callbacks/waiters cannot revive across transitions.
 - Integrate custom factory creation, start, stop, and replacement with the same context/state isolation and bounded waits. Verify Custom starts no built-in Streaming/Polling, fallback, or recovery probes.

@@ -35,6 +35,8 @@ internal class LocalClient(
     private val enrich: (User) -> Outcome<User> = { Outcome.success(it) },
     private val releaseBinding: () -> Unit = {},
     private val cache: DiskCoordinator? = null,
+    transportFactory: () -> SyncTransport = { OkHttpSyncTransport() },
+    random: () -> Double = { kotlin.random.Random.nextDouble() },
 ) : FeatBitClient, CloseAware {
     private val gate = Any()
     private val callbacks = CallbackBudget()
@@ -66,6 +68,10 @@ internal class LocalClient(
     private var cleanupSettled = false
     private val bootstrapRecords = frozen(BootstrapRecords.create(options.bootstrap ?: emptyList())!!.associateBy { it.key })
     @Volatile private var view = initialView()
+    private val online = if (options.source != null) null else OnlineSync(gate, options, clock, workers, transportFactory,
+        { SourceSessionContext(user, view.baseline) },
+        { update, valid, committed -> commitUpdate(update, true, valid, committed).getResult()?.value?.code == SourceUpdateCode.COMMITTED },
+        ::sourceFailure, ::publishStatus, diagnostics::report, random)
     @Volatile private var information = status()
 
     private fun initialView(): View {
@@ -104,13 +110,14 @@ internal class LocalClient(
         if (!foreground) pauses.add(PauseReason.BACKGROUND)
         if (!network && capabilities?.networkDependent != false) pauses.add(PauseReason.NETWORK_UNAVAILABLE)
         if (closed) pauses.add(PauseReason.CLOSING)
-        return ConnectionInformation(options.mode, options.mode, when {
+        return ConnectionInformation(options.mode, online?.effective ?: options.mode, when {
             closed -> SyncStatus.CLOSED
             terminal -> SyncStatus.TERMINAL
             failure != null -> SyncStatus.STALE
             view.confirmed || view.localReady || offline -> SyncStatus.READY
             else -> SyncStatus.WAITING
-        }, pauses, view.available, view.confirmed, successAt, failureAt, failure, RecoveryStatus.NONE, null)
+        }, pauses, view.available, view.confirmed, successAt, failureAt, failure,
+            online?.recovery ?: RecoveryStatus.NONE, online?.candidateFailure)
     }
     private fun publishStatus() {
         information = status()
@@ -247,7 +254,7 @@ internal class LocalClient(
                 reconcile()
             }
             val result = if (offline) ModeResult.OFFLINE else ModeResult.ONLINE
-            if (!offline || sessions.isEmpty()) done(Outcome.success(result))
+            if (!offline || sessions.isEmpty() && online?.idle != false) done(Outcome.success(result))
             else {
                 val op = operation<ModeResult>()
                 waits.add(Wait(op, clock.deadlineAfter(minOf(timeout, 2_000)), "mode", generation, modeId) { result })
@@ -259,7 +266,8 @@ internal class LocalClient(
     fun lifecycle(isForeground: Boolean, networkAvailable: Boolean) = synchronized(gate) {
         if (closed) return@synchronized
         foreground = isForeground; network = networkAvailable
-        if (!permitted()) invalidate() else reconcile()
+        if (online != null) reconcile()
+        else if (!permitted()) invalidate() else reconcile()
         publishStatus()
     }
     private inner class Session(val generation: Long) {
@@ -283,6 +291,11 @@ internal class LocalClient(
     }
     private fun authorized(session: Session): Boolean = session.valid && active === session && session.generation == generation && permitted()
     private fun reconcile() {
+        if (online != null) {
+            online.permissions(!closed && !offline && !terminal && network, foreground)
+            online.tick()
+            return
+        }
         if (!permitted() || active != null || options.source == null) return
         if (sessions.size >= 66) { sourceFailure("extension_capacity", false); return }
         val session = Session(generation)
@@ -317,6 +330,7 @@ internal class LocalClient(
         }
     }
     private fun invalidate() {
+        online?.invalidate()
         val session = active ?: return
         active = null; session.valid = false
         if (!session.busy && !session.stopping) {
@@ -342,12 +356,14 @@ internal class LocalClient(
         publishStatus(); diagnostics.report(code)
     }
 
-    private fun commit(session: Session, update: SourceUpdate): Operation<SourceUpdateResult> {
+    private fun commit(session: Session, update: SourceUpdate): Operation<SourceUpdateResult> =
+        commitUpdate(update, capabilities?.provenance == Provenance.REMOTE, { authorized(session) }) {}
+    private fun commitUpdate(update: SourceUpdate, remote: Boolean, authorized: () -> Boolean,
+        committed: (Baseline?) -> Unit): Operation<SourceUpdateResult> {
         val records = when (update) { is FullUpdate -> update.records; is PatchUpdate -> update.records; is NoChange -> emptyList() }
         // Preparation may enumerate large snapshots; commits retry if another view won meanwhile.
         while (true) {
             val before = view
-            val remote = capabilities?.provenance == Provenance.REMOTE
             var accepted = 0; var skipped = 0
             val newRecords = if (update is FullUpdate) LinkedHashMap() else LinkedHashMap(before.records)
             val defaults = LinkedHashMap(before.defaults)
@@ -366,7 +382,7 @@ internal class LocalClient(
                 else View(frozenRecords, frozen(defaults), true, remote, !remote, baseline)
             val changes = changeKeys(before, after)
             synchronized(gate) {
-                if (!authorized(session)) return sourceResult(if (closed) SourceUpdateCode.CLOSED else SourceUpdateCode.INACTIVE)
+                if (!authorized()) return sourceResult(if (closed) SourceUpdateCode.CLOSED else SourceUpdateCode.INACTIVE)
                 if (update is NoChange && (!remote || update.baseline !== before.baseline))
                     return sourceResult(SourceUpdateCode.INVALID, error = "invalid_baseline")
                 if (view !== before) return@synchronized
@@ -375,6 +391,7 @@ internal class LocalClient(
                     !cache.commit(cacheKey, CachedSnapshot(after.records, after.baseline.cursor), diagnostics::report))
                     diagnostics.report("cache_write_capacity")
                 view = after
+                committed(after.baseline)
                 if (remote) successAt = clock.wall()
                 failure = null
                 notifyChanges(changes)
@@ -538,6 +555,7 @@ internal class LocalClient(
             closed = true; identityId++; modeId++
             closeDeadline = clock.deadlineAfter(options.closeTimeoutMillis)
             invalidate()
+            online?.close()
             waits.toList().forEach { it.finish(OutcomeCode.CLOSED) }
             subscriptions.toList().forEach { it.close() }
             closeListeners.forEach { it.deliver() }; closeListeners.clear()
@@ -549,14 +567,15 @@ internal class LocalClient(
     private fun tick() {
         var result: CloseResult? = null
         synchronized(gate) {
+            if (!closed && online != null) reconcile()
             val now = clock.elapsed()
             waits.toList().forEach {
-                if (it.kind == "mode" && sessions.isEmpty()) it.finish(if (cleanupFailed) OutcomeCode.CLEANUP_FAILED else OutcomeCode.SUCCESS)
+                if (it.kind == "mode" && sessions.isEmpty() && online?.idle != false) it.finish(if (cleanupFailed) OutcomeCode.CLEANUP_FAILED else OutcomeCode.SUCCESS)
                 else if (now >= it.deadline) it.finish(if (it.kind == "mode") OutcomeCode.CLEANUP_FAILED else OutcomeCode.TIMED_OUT, "operation_deadline")
             }
-            if (closed && !cleanupSettled && (sessions.isEmpty() || now >= closeDeadline)) {
+            if (closed && !cleanupSettled && (sessions.isEmpty() && online?.closedCleanly != false || now >= closeDeadline)) {
                 cleanupSettled = true
-                result = CloseResult(0, sessions.isEmpty() && !cleanupFailed)
+                result = CloseResult(0, sessions.isEmpty() && !cleanupFailed && online?.closedCleanly != false)
             }
         }
         result?.let {
@@ -577,7 +596,7 @@ internal fun onlineError(options: ClientOptions): Pair<OutcomeCode, String>? {
         if ((options.mode == SyncMode.POLLING || options.backgroundPolling || options.pollingFallback) && !endpoint(options.pollingUrl, setOf("http", "https"))) return OutcomeCode.INVALID to "invalid_polling_endpoint"
     }
     if (!options.disableEvents && !endpoint(options.eventsUrl, setOf("http", "https"))) return OutcomeCode.INVALID to "invalid_events_endpoint"
-    if (options.source == null) return OutcomeCode.DISABLED to "builtin_transport_unavailable"
+    if (options.source == null && options.sdkKey?.trimEnd('=')?.length !in 2..999) return OutcomeCode.INVALID to "invalid_sdk_key"
     if (!options.disableEvents) return OutcomeCode.DISABLED to "events_unavailable"
     return null
 }

@@ -33,13 +33,18 @@ android {
         // Versions are deliberately pinned for Kotlin 1.9/minSdk 21, not auto-upgraded.
         disable += "GradleDependency"
     }
+    testOptions.unitTests.all {
+        if (!providers.gradleProperty("liveIntegration").isPresent) it.exclude("**/LiveSyncIntegrationTest*")
+    }
 }
 
 dependencies {
-    // Only dependencies needed by this phase are shipped. Transport/platform dependencies
-    // are pinned and resolved separately below, then added with their implementation phase.
+    // Transport/codec dependencies are internal. Android lifecycle integration remains deferred.
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }
 
 val candidateRuntime by configurations.creating { isCanBeConsumed = false }
@@ -69,7 +74,7 @@ afterEvaluate {
                 artifactId = "featbit-client-android"
                 pom {
                     name.set("FeatBit Android Client SDK")
-                    description.set("FeatBit Android local client runtime with cache and anonymous identity persistence; online transport is not yet available.")
+                    description.set("FeatBit Android client with online synchronization, local evaluation, cache and anonymous identity persistence; analytics and Android lifecycle integration remain in development.")
                     url.set("https://github.com/featbit/featbit-android-client-sdk")
                     licenses { license { name.set("MIT License"); url.set("https://opensource.org/licenses/MIT") } }
                     scm { url.set("https://github.com/featbit/featbit-android-client-sdk") }
