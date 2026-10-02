@@ -1,0 +1,56 @@
+name: Prepare signed release candidate
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Candidate version (must match a v-prefixed tag)
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Validate version and tag
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          python3 - <<'PY'
+          import os, re
+          version = os.environ['RELEASE_VERSION']
+          assert re.fullmatch(r'\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?', version), 'Invalid version'
+          assert 'SNAPSHOT' not in version
+          assert os.environ['GITHUB_REF'] == 'refs/tags/v' + version, 'Select the matching release tag'
+          PY
+      - name: Run independent artifact matrix
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: python3 tools/phase7_acceptance.py --version "$RELEASE_VERSION"
+      - name: Stage signed publication (no remote upload)
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+        run: bash gradlew :sdk:publishReleasePublicationToLocalTestRepository -PsdkVersion="$RELEASE_VERSION" -PtestRepository="$RUNNER_TEMP/signed-repository" -PsignPublication=true --console=plain
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-release-candidate
+          path: ${{ runner.temp }}/signed-repository/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-acceptance-evidence
+          path: |
+            build/phase7/**/report.json
+            build/phase7/**/*.log
+            build/phase7/**/TEST-*.xml

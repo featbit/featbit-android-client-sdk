@@ -22,8 +22,10 @@ public final class NetworkSmoke {
                     ClientOptions options = ClientOptions.builder().user(User.builder("java-phase4").name("Java").build().getValue())
                         .sdkKey("gpnOV3wI3kKAO9q9viC0wQWdKZrVAf2U6gAnxl4lSH3w")
                         .streamingUrl("ws://127.0.0.1:5189").pollingUrl("http://127.0.0.1:5189")
-                        .disableEvents(true).cacheEnabled(false).requestTimeoutMillis(1000).mode(mode).build().getValue();
+                        .disableEvents(true).cacheEnabled(false).requestTimeoutMillis(1000).mode(mode)
+                        .logger((level, diagnostic) -> android.util.Log.i("FeatBitConsumer", "NETWORK_DIAGNOSTIC " + diagnostic.getCode())).build().getValue();
                     FeatBitClient client = await(ClientFactory.getDefault().create(context, options)).getValue();
+                    client.subscribeStatus(status -> android.util.Log.i("FeatBitConsumer", "NETWORK_STATUS " + mode + " " + status.getStatus() + " " + status.getPauseReasons()));
                     try {
                         await(client.awaitReady(10000));
                         if (!client.boolVariation("returns-true", false)) throw new AssertionError("remote value");

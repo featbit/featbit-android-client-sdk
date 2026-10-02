@@ -1,5 +1,42 @@
 # Verification record
 
+## Phase 7 — 2026-10-02
+
+Implementation, commands, source baselines and limitations: [phase-7.md](./phase-7.md).
+Final artifact evidence: `build/phase7/20261002-164239-3eb84010/`, SDK version
+`0.1.0-phase7`, source HEAD `6eff0ddf7e04eccba3863a2404a2d34edebf2e04` plus Phase 7 changes.
+
+- **139 SDK tests passed**, zero failures/errors/skips: 135 unit/controlled-network checks
+  plus four explicit target-server checks. Includes three new attribute/diagnostics tests.
+- Debug/release AAR, Release lint, API inventory (**78 public types**) and Java 11 bytecode passed.
+- Local Maven publication includes AAR, sources, Dokka documentation JAR, POM and Gradle
+  module metadata. Runtime version, POM and module metadata agree on `0.1.0-phase7`.
+- Independent Java, Kotlin 1.9.24, 1.9.25 and 2.2.10 roots passed Debug/R8 Release, JUnit
+  and full Release lint. Toolchain versions and resolved graphs are in the phase report.
+- API-34 x86_64 emulator: all four Debug and all four actual R8 Release consumer runtime
+  launches passed. Six Kotlin launches passed automatic-attribute checks and six platform
+  runs emitted PHASE6_DEVICE_PASS. R8 APKs were locally test-signed for installation only.
+- Actual SDK reads/state/version were exercised under StrictMode disk/network penalties;
+  state-container immutability and artifact-version equality were verified through the actual AAR.
+- Rebuilt target service with Fake/None providers; Domain verifier accepted three exported
+  Android payloads and their three converted messages. HTTP success alone is not this evidence.
+- After the first-draw launcher fix, all four consumers were rebuilt with JUnit/full lint
+  and test-signed again. Final `target-device-runs/20261002-171633-1ec55ffd/report.json`
+  contains **24 passing device checks**: four rows × Debug/R8 × local/sync/events.
+  Earlier failed target runs remain preserved separately; see `final-summary.json`.
+- Python syntax, local documentation targets, publication metadata and `git diff --check` passed.
+
+Failed attempts are retained separately: initial Wrapper drift used Gradle 9.3 instead of
+the intended distribution; a background Identify exceeded the fixture's one-second success
+wait; target-device launch hit a long initial renderer stall. Findings and fixture fixes are
+documented in phase-7.md. The original failed runs are not counted as passing evidence.
+
+Not established: physical devices/natural deep sleep, API 21/newer-OS, real VPN and
+missing-permission device paths, vendor restrictions, interactive multi-window, backup/restore,
+every AtomicFile kill boundary, deployed database/MQ attribution, exhaustive diagnostics/resource
+leak checks, hosted CI, credential-backed signing or Central download verification. No commit,
+push or remote publication. Adjacent source repositories were not edited.
+
 ## Phase 6 fixture opt-in and warning cleanup — 2026-10-02
 
 The Kotlin consumer now registers LifecycleProbeReceiver/Activity only when built with

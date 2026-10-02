@@ -2,10 +2,12 @@ plugins {
     id("com.android.library")
     kotlin("android")
     `maven-publish`
+    signing
+    id("org.jetbrains.dokka")
 }
 
 group = "co.featbit"
-version = "0.1.0-SNAPSHOT"
+version = providers.gradleProperty("sdkVersion").getOrElse("0.1.0-SNAPSHOT")
 
 android {
     namespace = "co.featbit.android"
@@ -60,6 +62,11 @@ tasks.register("resolveCandidateRuntime") {
     doLast { candidateRuntime.resolve().sortedBy { it.name }.forEach { println(it.name) } }
 }
 
+val documentationJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("javadoc")
+    from(tasks.named("dokkaHtml"))
+}
+
 afterEvaluate {
     // Resolve Android variants, not multiplatform desktop defaults.
     val runtimeAttributes = configurations.getByName("releaseRuntimeClasspath").attributes
@@ -72,6 +79,7 @@ afterEvaluate {
         publications {
             create<MavenPublication>("release") {
                 from(components["release"])
+                artifact(documentationJar)
                 artifactId = "featbit-client-android"
                 pom {
                     name.set("FeatBit Android Client SDK")
@@ -79,9 +87,19 @@ afterEvaluate {
                     url.set("https://github.com/featbit/featbit-android-client-sdk")
                     licenses { license { name.set("MIT License"); url.set("https://opensource.org/licenses/MIT") } }
                     scm { url.set("https://github.com/featbit/featbit-android-client-sdk") }
+                    developers { developer { id.set("featbit"); name.set("FeatBit Contributors"); url.set("https://github.com/featbit") } }
                 }
             }
         }
-        repositories { maven { name = "localTest"; url = uri(rootProject.layout.buildDirectory.dir("test-repository")) } }
+        repositories { maven {
+            name = "localTest"
+            url = uri(providers.gradleProperty("testRepository").getOrElse(rootProject.layout.buildDirectory.dir("test-repository").get().asFile.absolutePath))
+        } }
+    }
+    if (providers.gradleProperty("signPublication").orNull == "true") {
+        signing {
+            useInMemoryPgpKeys(providers.environmentVariable("SIGNING_KEY").get(), providers.environmentVariable("SIGNING_PASSWORD").get())
+            sign(publishing.publications["release"])
+        }
     }
 }

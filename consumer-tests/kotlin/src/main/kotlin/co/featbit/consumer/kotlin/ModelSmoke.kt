@@ -16,7 +16,7 @@ object ModelSmoke {
         val array = FbValue.ofArray(listOf(FbValue.jsonNull(), FbValue.ofBoolean(true))).value!!
         check(array.asArray()!![0].kind == FbValue.Kind.NULL)
         check(!FbValue.ofNumber(Double.NaN).isSuccess)
-        check(SdkInfo.getVersion() == "0.1.0-SNAPSHOT")
+        check(SdkInfo.getVersion() == BuildConfig.EXPECTED_SDK_VERSION)
         check(FullUpdate.create(emptyList()).isSuccess)
         val record = FlagRecord.builder(key = "enabled", variation = "true", variationType = "boolean", timestamp = 1769702003515L)
             .variationOptions(listOf(VariationOption("on", "true")))

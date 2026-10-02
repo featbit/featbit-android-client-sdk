@@ -85,17 +85,24 @@ internal object RuntimeFactory : ClientFactory {
         } }, failed = { failed(Outcome.invalid("lifecycle_observer_unavailable")) })
         return result
     }
-    private fun enrich(context: Context, options: ClientOptions, user: User): Outcome<User> {
-        if (!options.automaticAttributes) return Outcome.success(user)
-        if (user.attributes.keys.any { it.startsWith("featbit.sdk.") }) return Outcome.invalid("reserved_attribute_prefix")
-        val builder = User.builder(user.key).name(user.name)
-        user.attributes.forEach { (key, value) -> builder.attribute(key, value) }
-        @Suppress("DEPRECATION")
-        val version = try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (_: Exception) { null }
-        val values = mapOf("applicationId" to context.packageName, "applicationVersion" to version,
-            "osName" to "Android", "osVersion" to Build.VERSION.RELEASE, "deviceManufacturer" to Build.MANUFACTURER,
-            "deviceModel" to Build.MODEL, "version" to SdkInfo.getVersion())
-        values.forEach { (key, value) -> if (!value.isNullOrEmpty()) builder.attribute("featbit.sdk.$key", AttributeValue.text(value).value!!) }
-        return builder.build()
+    private fun enrich(context: Context, options: ClientOptions, user: User): Outcome<User> =
+        enrichUser(user, options.automaticAttributes) {
+            @Suppress("DEPRECATION")
+            val version = try { context.packageManager.getPackageInfo(context.packageName, 0).versionName } catch (_: Exception) { null }
+            mapOf("applicationId" to context.packageName, "applicationVersion" to version,
+                "osName" to "Android", "osVersion" to Build.VERSION.RELEASE, "deviceManufacturer" to Build.MANUFACTURER,
+                "deviceModel" to Build.MODEL, "version" to SdkInfo.getVersion())
+        }
+}
+
+/** Sampling stays lazy so disabled collection and invalid callers never inspect platform fields. */
+internal fun enrichUser(user: User, enabled: Boolean, collect: () -> Map<String, String?>): Outcome<User> {
+    if (!enabled) return Outcome.success(user)
+    if (user.attributes.keys.any { it.startsWith("featbit.sdk.") }) return Outcome.invalid("reserved_attribute_prefix")
+    val builder = User.builder(user.key).name(user.name)
+    user.attributes.forEach { (key, value) -> builder.attribute(key, value) }
+    collect().forEach { (key, value) ->
+        if (!value.isNullOrEmpty()) builder.attribute("featbit.sdk.$key", AttributeValue.text(value).value!!)
     }
+    return builder.build()
 }

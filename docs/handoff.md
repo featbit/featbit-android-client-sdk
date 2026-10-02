@@ -4,16 +4,21 @@
 
 ## 当前进度
 
-阶段 1–6 代码已实现，阶段 7 尚未实施；阶段 6 真机验收仍待执行。本次接入真实进程生命周期、
-多网络状态及 Doze observers，并修复宽限期、恢复探测和休眠后旧回调的权限边界。
+阶段 1–6 代码已实现，阶段 7 的验收工具、消费者矩阵、文档和发布准备已实现；完整发布验收仍未完成。
+本次补齐独立 Maven/AAR 消费者构建、版本一致性、StrictMode 读取、自动属性与诊断测试，
+以及 Dokka 文档产物和仅本地 staging 的签名工作流。阶段 6 真机验收仍待执行。
 没有提交、推送或远程发布。相邻规范和服务端源码未修改。
-详细实现见 [phase-6.md](./phase-6.md)，本次实际验证及未执行项见 [verification.md](./verification.md)。
-阶段 5 的真实服务协议联调属于历史证据，本次设备 HTTP fixture 不替代该联调或数据库验收。
+阶段 7 见 [phase-7.md](./phase-7.md)、[release.md](./release.md)、[conformance.md](./conformance.md)，
+本次实际验证及未执行项见 [verification.md](./verification.md)。
+最终证据目录 `build/phase7/20261002-164239-3eb84010/`：139 个 SDK 测试通过，四组消费者
+Debug/R8/JUnit/lint 通过，六次 Kotlin 平台检查通过。修正首帧启动后，最后 24 项设备
+本地/同步/事件检查全部通过；以 `final-summary.json` 及其指向的最终 target 报告为准。
+阶段 7 重跑 Fake/None 目标服务协议及 Domain 消息校验；设备 HTTP fixture 与该联调均不替代数据库/MQ 验收。
 在线事件默认启用，需要配置 eventsUrl。
 
 ## 先读
 
-1. [实施计划](../plan.md)：阶段边界；下一步补齐设备验收并进入阶段 7。
+1. [阶段 7](./phase-7.md) 与 [实施计划](../plan.md)：阶段边界、证据目录及剩余发布验收。
 2. [架构](../architecture.md)：状态、会话、缓存与身份持久化规则。
 3. [阶段 6](./phase-6.md)、[阶段 5](./phase-5.md)、[阶段 4](./phase-4.md)、[阶段 3](./phase-3.md) 与 [阶段 2](./phase-2.md)：平台、事件、网络、持久化和运行时边界。
 4. [验证记录](./verification.md)：本次结果与历史结果分开。
@@ -101,9 +106,9 @@
 
 ## 工作区和规范
 
-主目录 `D:\Workspace\FeatBit\featbit-android-client-sdk`。本次阶段 6 开始时工作区干净，
-HEAD 为 `c7533b9826d92784b83b2391a62f24345758d8ac`。
-当前未提交修改为阶段 6 实现、测试及文档；先检查 git status，保留它们。
+主目录 `D:\Workspace\FeatBit\featbit-android-client-sdk`。本次阶段 7 开始时工作区干净，
+HEAD 为 `6eff0ddf7e04eccba3863a2404a2d34edebf2e04`。
+当前未提交修改为阶段 7 工具、测试、文档及构建配置；先检查 git status，保留它们。
 用户禁止批量/递归删除文件，只可一次删除一个明确路径文件。
 
 阶段 4–5 核对共享规范、协议参考、mobile 约束、JS SDK 与 evaluation-server 实现。
@@ -114,11 +119,16 @@ JDK `C:\Program Files\Microsoft\jdk-17.0.11.9-hotspot`；Android SDK
 `C:\Users\Falcon\AppData\Local\Android\Sdk`；Gradle 8.7 / AGP 8.5.2，
 SDK Kotlin 1.9.25，Java 11 字节码，minSdk 21 / compileSdk 34。
 本地 Maven 坐标 `co.featbit:featbit-client-android:0.1.0-SNAPSHOT`，输出到 `build/test-repository`。
+阶段 7 最终矩阵用 `-PsdkVersion=0.1.0-phase7` 验证非默认版本，并发布到每次验收独立的 Maven 目录。
 
-## 下一步：设备验收与阶段 7
+## 下一步：补齐发布验收
 
 按 verification 中未执行项补齐真机深度休眠、设备/OS 兼容性及多窗口等平台验收。
-阶段 7 汇总真实 AAR、Java/Kotlin 工具链矩阵、R8、目标服务/存储路径和规范追踪表。
+运行 `python tools/phase7_acceptance.py` 汇总真实 AAR、Java/Kotlin 独立工具链矩阵及规范追踪表；
+`--serial emulator-5554` 执行 Debug/R8 设备检查，`--live` 要求目标 Fake/None 服务已启动。
+每次输出独立 `build/phase7/<run>/report.json`，不能把较早失败目录或部分矩阵当作完整通过。
+Core 编译器仍为 Kotlin 1.9.25；2.2.10 消费者使用独立 AGP 8.10.1/Gradle 8.11.1。
+正式 Central 发布、托管 CI 与凭证签名需要单独执行，当前工作没有远程上传。
 新平台恢复路径不得绕过 disableEvents、offline、隐私过滤和独立终止状态。
 
 继续沿用现有项目、三个工厂和独立消费者，不要重建工程。重新验证本次实际改动，不能继承历史 PASS。

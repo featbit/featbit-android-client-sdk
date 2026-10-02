@@ -200,7 +200,9 @@ try:
     current = state(background=True, confirmed=True)
     assert current["pid"] != old_pid
     assert len(polls) == count + 1
-    command("identify")
+    # This checks successful background synchronization, not a one-second latency SLA.
+    # Keep the explicit Doze timeout below at one second.
+    command("identify", waitMillis="5000")
     until(lambda: any(v["kind"] == "identify" and v["detail"] == "SUCCESS" for v in logs()), "background identify")
     event_count = len(events); command("track"); command("flush")
     until(lambda: any(v["kind"] == "flush" and v["detail"].startswith("DISABLED:") for v in logs()), "disabled flush")

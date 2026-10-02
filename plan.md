@@ -1,8 +1,8 @@
 # FeatBit Android Client SDK Development Plan
 
-Date: 2026-10-01. Status: Phase 1 foundation and Phase 2 local runtime implemented; Phases 3–7 remain planned. See [Phase 2 scope and remaining integration checks](./docs/phase-2.md).
+Updated: 2026-10-02. Phases 1–6 are implemented. Phase 7 acceptance tooling, independent artifact matrix, documentation and publication preparation are implemented; full release acceptance remains open. See [current evidence and limitations](./docs/phase-7.md).
 
-The repository contains the Library build, immutable models, a local client runtime, independent AAR consumers and CI configuration. See [Phase 1 decisions](./docs/phase-1.md), [Phase 2 implementation](./docs/phase-2.md) and [verification evidence](./docs/verification.md). Later-phase behavior below remains planned unless explicitly listed as verified; no samples, live-service validation or remote publication is included.
+The repository contains the Library build, local and online runtime, events, persistence, real Android lifecycle integration, independent AAR consumers and CI configuration. See [verification evidence](./docs/verification.md) for the boundary between implemented behavior, executed checks and remaining acceptance. Samples and remote publication remain separate work.
 
 ## 1. Goals and agreed boundaries
 
@@ -38,7 +38,7 @@ The following is the proposed first-release scope. Deferring optional capabiliti
 | --- | --- |
 | WebSocket synchronization | Required and the default mode; includes application-level heartbeats, recovery, and terminal rejection |
 | Foreground HTTP Polling | Included as an explicit mode, sharing the Streaming storage and identity contracts |
-| Android lifecycle and network integration | Required; automatic integration plus explicit, testable host hooks |
+| Android lifecycle and network integration | Automatic process/network/Doze integration; internal testable platform boundary, no public manual-visibility hooks |
 | Background synchronization | Android background polling is included but disabled by default; explicit enablement remains subject to platform execution opportunities; otherwise synchronization pauses |
 | Transition grace period | Defaults to 0; a bounded duration is configurable and affects only flag synchronization |
 | Initialization, Identify, Flush, Close | Bounded asynchronous results with explicit errors, timeouts, supersession, and closure outcomes |
@@ -50,7 +50,7 @@ The following is the proposed first-release scope. Deferring optional capabiliti
 | Generic variation / variationDetail | Included; convert according to the declared flag type and return a unified immutable value model usable from Java/Kotlin; detailed results include evaluation reasons |
 | Change and status subscriptions | Global flag changes, individual flag changes, and readiness/synchronization status; Java listeners return closeable handles, with Kotlin Flow adapters |
 | JSON evaluation | Included; raw JSON string access and parsed JSON helpers usable from Java/Kotlin |
-| Persistent flag cache | Included and enabled by default; can be disabled, cleared, and bounded by retention limits |
+| Persistent flag cache | Enabled by default; can be disabled or cleared; five-context LRU per namespace, no byte cap or age expiry |
 | Bootstrap | `bootstrap(flags)` supplies immutable all-user defaults; bootstrap first at creation, target-context cache first after Identify; no public scope type or context-bound variant |
 | Event collection and in-memory queue | Required, bounded capacity, deduplication per flush group; periodic flush defaults to 30 seconds |
 | Additional JSON data for Track | Not provided in the first release; Track retains an event name and optional numeric value (default 1.0), with no additional JSON payload parameter |

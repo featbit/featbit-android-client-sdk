@@ -1,0 +1,169 @@
+"""Stage and consume the real publication in isolated builds. Never deletes files.
+
+Requires JAVA_HOME (JDK 17), ANDROID_HOME and Python 3. Each invocation creates a
+new evidence directory. --serial also installs/runs fixture APKs on that emulator.
+Exit success means requested checks passed, not full physical-device conformance.
+"""
+import argparse
+import hashlib
+import json
+import os
+import re
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import time
+import uuid
+import xml.etree.ElementTree as ET
+
+ROOT = Path(__file__).resolve().parents[1]
+MATRIX = {
+    "java": ("java", "1.9.25", "8.5.2", "8.7"),
+    "kotlin-1.9.24": ("kotlin", "1.9.24", "8.1.0", "8.1.1"),
+    "kotlin-1.9.25": ("kotlin", "1.9.25", "8.1.0", "8.1.1"),
+    "kotlin-2.2.10": ("kotlin", "2.2.10", "8.10.1", "8.11.1"),
+}
+
+
+def source_hashes(directory):
+    paths = subprocess.check_output(["git", "ls-files", "-c", "-o", "--exclude-standard", "-z"], cwd=directory).decode().split("\0")
+    return {p: hashlib.sha256((directory / p).read_bytes()).hexdigest()
+            for p in sorted(set(paths)) if p and (directory / p).is_file()}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--rows", nargs="+", choices=MATRIX, default=list(MATRIX))
+    parser.add_argument("--serial", help="Explicit emulator serial; runs debug and signed R8 APKs")
+    parser.add_argument("--live", action="store_true", help="Require target service on port 5189")
+    parser.add_argument("--version", default="0.1.0-SNAPSHOT")
+    args = parser.parse_args()
+    if not re.fullmatch(r"\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?", args.version):
+        parser.error("Invalid artifact version")
+    if args.serial and not args.serial.startswith("emulator-"):
+        parser.error("Physical-device acceptance is a separate controlled procedure")
+    run = ROOT / "build" / "phase7" / (time.strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:8])
+    run.mkdir(parents=True)
+    report = {"version": args.version, "checks": [], "rows": {}, "scope": "local acceptance; see docs/conformance.md for release gates"}
+    repo = run / "repository"
+    report["repository"] = str(repo)
+    print(f"Evidence: {run}", flush=True)
+
+    def save():
+        (run / "report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+
+    def command(label, argv, cwd=ROOT, timeout=1800):
+        print(label, flush=True)
+        log = run / (label + ".log")
+        with log.open("w", encoding="utf-8") as out:
+            result = subprocess.run([str(x) for x in argv], cwd=cwd, stdout=out, stderr=subprocess.STDOUT, timeout=timeout)
+        record = {"name": label, "command": [str(x) for x in argv], "cwd": str(cwd), "exit": result.returncode}
+        report["checks"].append(record)
+        save()
+        if result.returncode:
+            raise RuntimeError(f"{label} failed; see {log}")
+        return log.read_text(encoding="utf-8", errors="replace")
+
+    def gradle(cwd, *parts):
+        wrapper = [cwd / "gradlew.bat"] if os.name == "nt" else ["bash", cwd / "gradlew"]
+        return [*wrapper, *parts, "--console=plain", "--no-daemon", "--max-workers=2"]
+
+    try:
+        command("sdk-baseline", ["git", "rev-parse", "HEAD"])
+        command("sdk-worktree", ["git", "status", "--short"])
+        report["source_sha256"] = source_hashes(ROOT)
+        command("java-version", [Path(os.environ["JAVA_HOME"]) / "bin" / "java", "-version"])
+        for name, directory in [("spec", ROOT.parent / "sdk-spec"), ("server", ROOT.parent / "featbit/modules/evaluation-server")]:
+            if directory.exists():
+                command(name + "-baseline", ["git", "rev-parse", "HEAD"], directory)
+                command(name + "-worktree", ["git", "status", "--short"], directory)
+                if name == "spec":
+                    report["spec_sha256"] = source_hashes(directory)
+        tasks = [":sdk:assembleDebug", ":sdk:assembleRelease", ":sdk:testDebugUnitTest", ":sdk:lintRelease", ":sdk:publishReleasePublicationToLocalTestRepository"]
+        command("sdk", gradle(ROOT, *tasks, f"-PtestRepository={repo.as_posix()}", f"-PsdkVersion={args.version}", *(["-PliveIntegration"] if args.live else [])))
+        if args.live:
+            payload = run / "target-event-payload.json"
+            shutil.copyfile(ROOT / "sdk/build/phase-5-target-payload.json", payload)
+            local_dotnet = Path.home() / ".dotnet" / ("dotnet.exe" if os.name == "nt" else "dotnet")
+            dotnet = os.environ.get("DOTNET_HOST_PATH") or (str(local_dotnet) if local_dotnet.exists() else shutil.which("dotnet"))
+            if not dotnet:
+                raise RuntimeError("Live Domain validation requires .NET 10; set DOTNET_HOST_PATH")
+            command("target-domain", [dotnet, "run", "--project", ROOT / "tools/event-contract/EventContract.csproj", "--", payload])
+        command("api", [sys.executable, ROOT / "tools/check_api.py"])
+        artifacts = list(repo.rglob("*"))
+        report["artifacts"] = {str(p.relative_to(repo)): hashlib.sha256(p.read_bytes()).hexdigest() for p in artifacts if p.is_file()}
+        for suffix in (".aar", ".pom", ".module", "-sources.jar", "-javadoc.jar"):
+            if not any(p.name.endswith(suffix) for p in artifacts):
+                raise RuntimeError("Missing publication artifact " + suffix)
+        results = run / "sdk-test-results"
+        shutil.copytree(ROOT / "sdk/build/test-results/testDebugUnitTest", results)
+        report["unit_tests"] = [dict(ET.parse(p).getroot().attrib) for p in results.glob("TEST-*.xml")]
+        command("conformance", [sys.executable, ROOT / "tools/conformance_report.py", run])
+        for row in args.rows:
+            language, kotlin, agp, distribution = MATRIX[row]
+            consumer = run / row
+            shutil.copytree(ROOT / "consumer-tests", consumer, ignore=shutil.ignore_patterns("build", ".gradle", "local.properties"))
+            wrapper = consumer / "gradle/wrapper/gradle-wrapper.properties"
+            wrapper.write_text(re.sub(r"gradle-[0-9.]+-bin", f"gradle-{distribution}-bin", wrapper.read_text()), encoding="utf-8")
+            props = [f"-PconsumerLanguage={language}", f"-PconsumerKotlinVersion={kotlin}", f"-PconsumerAgpVersion={agp}", f"-PtestRepository={repo.as_posix()}", f"-PsdkVersion={args.version}", "-Pphase6Probe=true"]
+            report["rows"][row] = {"language": language, "kotlin": kotlin if language == "kotlin" else None, "agp": agp, "gradle": distribution, "device": "not executed"}
+            output = command(row, gradle(consumer, *props, *[f":{language}:{task}" for task in ("assembleDebug", "assembleRelease", "testDebugUnitTest", "lintRelease")]), consumer)
+            if "compiled with an incompatible version of Kotlin" in output:
+                raise RuntimeError(row + " Kotlin metadata/analyzer incompatibility")
+            command(row + "-dependencies", gradle(consumer, *props, f":{language}:dependencies", "--configuration", "releaseRuntimeClasspath"), consumer)
+            command(row + "-plugins", gradle(consumer, *props, f":{language}:buildEnvironment"), consumer)
+            report["rows"][row]["build"] = "passed"
+            if args.serial:
+                device_checks(args.serial, language, consumer, row, run, command)
+                report["rows"][row]["device"] = "debug and R8 smoke passed"
+            save()
+        if args.live and args.serial:
+            command("target-devices", [sys.executable, ROOT / "tools/phase7_live_device.py", run, "--serial", args.serial], timeout=900)
+        report["result"] = "requested checks passed"
+    except Exception as error:
+        report["result"] = "failed"
+        report["error"] = str(error)
+        raise
+    finally:
+        save()
+
+
+def device_checks(serial, language, consumer, row, run, command):
+    sdk = Path(os.environ.get("ANDROID_HOME") or os.environ["ANDROID_SDK_ROOT"])
+    adb = sdk / "platform-tools" / ("adb.exe" if os.name == "nt" else "adb")
+    base = [adb, "-s", serial]
+    command(row + "-device", [*base, "shell", "getprop"])
+    package = "co.featbit.consumer." + language
+    for variant in ("debug", "release"):
+        apk = consumer / language / f"build/outputs/apk/{variant}/{language}-{variant}{'-unsigned' if variant == 'release' else ''}.apk"
+        if variant == "release":
+            signer = sdk / "build-tools/34.0.0" / ("apksigner.bat" if os.name == "nt" else "apksigner")
+            signed = run / f"{row}-release-test-signed.apk"
+            command(row + "-sign", [signer, "sign", "--ks", Path.home() / ".android/debug.keystore", "--ks-key-alias", "androiddebugkey", "--ks-pass", "pass:android", "--key-pass", "pass:android", "--out", signed, apk])
+            apk = signed
+        label = row + "-" + variant
+        command(label + "-install", [*base, "install", "-r", apk])
+        command(label + "-stop", [*base, "shell", "am", "force-stop", package])
+        # PID-scoped log reading avoids stale PASS markers and does not clear global logs.
+        command(label + "-launch", [*base, "shell", "am", "start", "-W", "-n", package + "/.SmokeActivity"])
+        pid = subprocess.check_output([*base, "shell", "pidof", package], text=True).strip()
+        if not pid.isdigit():
+            raise RuntimeError("Fixture did not start")
+        deadline = time.monotonic() + 90
+        while time.monotonic() < deadline:
+            logs = subprocess.check_output([*base, "logcat", "-d", f"--pid={pid}", "-s", "FeatBitConsumer:I", "AndroidRuntime:E"], text=True, encoding="utf-8", errors="replace")
+            (run / (label + "-runtime.log")).write_text(logs, encoding="utf-8")
+            if "FAIL" in logs or "FATAL EXCEPTION" in logs:
+                raise RuntimeError(label + " device failure")
+            if f"PASS · {language.capitalize()} runtime" in logs:
+                break
+            time.sleep(1)
+        else:
+            raise RuntimeError(label + " runtime timed out")
+        if language == "kotlin":
+            command(label + "-platform", [sys.executable, ROOT / "tools/phase6_device.py", "--adb", adb, "--serial", serial], timeout=240)
+
+
+if __name__ == "__main__":
+    main()

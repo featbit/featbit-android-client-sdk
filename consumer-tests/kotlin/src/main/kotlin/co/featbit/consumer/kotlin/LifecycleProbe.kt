@@ -63,7 +63,8 @@ private object LifecycleProbe {
                 }
             }
             "snapshot" -> emit("snapshot", intent.getStringExtra("token") ?: "")
-            "identify" -> client?.identify(User.builder("phase6-other").name("Other").build().value!!, 1_000)?.observe { emit("identify", it.code.name) }
+            "identify" -> client?.identify(User.builder("phase6-other").name("Other").build().value!!,
+                intent.getStringExtra("waitMillis")?.toLongOrNull() ?: 1_000)?.observe { emit("identify", it.code.name) }
             "await" -> client?.awaitReady(1_000)?.observe { emit("await", it.code.name) }
             "offline" -> client?.setOffline(1_000)?.observe { emit("offline", it.code.name) }
             "online" -> client?.setOnline(1_000)?.observe { emit("online", it.code.name) }

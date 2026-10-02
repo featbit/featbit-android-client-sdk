@@ -2,17 +2,21 @@
 
 Kotlin implementation with Java-compatible public APIs, targeting Android API 21+.
 
-**Current state: Phase 6 Android lifecycle integration.** The project builds debug/release AARs with
+**Current state: Phase 7 release preparation; full release acceptance remains open.** The project builds debug/release AARs with
 local evaluation, Bootstrap, TestData/Custom sources, Identify, online/offline intent,
 subscriptions, coroutine adapters, bounded Close, persistent cache and anonymous identity.
 Built-in Streaming/Polling, reconnect, Identify isolation, optional fallback/recovery and
 platform-aware background polling are implemented. Evaluation/Track events, privacy filtering,
 bounded queues/retries, Flush and final Close delivery are implemented. Configure `eventsUrl`
 for enabled analytics. Process lifecycle, connectivity and device-idle observers are connected;
-physical-device acceptance and final release checks remain outstanding.
+physical-device/deployed-storage acceptance and formal publication remain outstanding.
 Do not use this snapshot as a production feature-flag SDK.
 
 - [Implementation plan](./plan.md)
+- [Java/Kotlin integration and configuration](./docs/integration.md)
+- [Phase 7 acceptance evidence and limitations](./docs/phase-7.md)
+- [Release preparation and toolchain matrix](./docs/release.md)
+- [Conformance mapping and remaining gates](./docs/conformance.md)
 - [Architecture](./architecture.md)
 - [Phase 1 decisions and build commands](./docs/phase-1.md)
 - [Phase 2 runtime, usage and boundaries](./docs/phase-2.md)
@@ -33,9 +37,14 @@ bash gradlew -p consumer-tests :java:assembleRelease :java:testDebugUnitTest :ko
 ```
 
 On Windows use `.\gradlew.bat`. Outputs are under `sdk/build/outputs/aar/` and
-the local test Maven repository `build/test-repository/`. The planned coordinates are
+the local test Maven repository `build/test-repository/`. The Maven coordinates are
 `co.featbit:featbit-client-android`; the local development version is `0.1.0-SNAPSHOT`.
 Nothing is published remotely by these commands.
+
+For the isolated Java/Kotlin compiler matrix, use `python tools/phase7_acceptance.py`.
+Add `--serial emulator-5554` to install and execute Debug/R8 test APKs. This additionally
+requires build-tools 35.0.0 for the Kotlin 2.2.10 consumer; the core SDK compiler stays 1.9.25.
+See the release guide for per-run evidence, signing preparation and unexecuted release gates.
 
 `consumer-tests/` contains independent Java/Kotlin compilation and R8 fixtures, not samples.
 Samples are deferred. OpenFeature is a separate product and is not a dependency.

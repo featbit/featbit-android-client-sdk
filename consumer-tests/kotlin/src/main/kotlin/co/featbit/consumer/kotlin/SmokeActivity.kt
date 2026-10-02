@@ -41,7 +41,19 @@ class SmokeActivity : Activity() {
             text = "验证独立 AAR 的本地运行时、缓存与匿名身份持久化。\n不验证网络同步或事件发送。"
         })
         setContentView(ScrollView(this).apply { addView(content) })
-        runChecks()
+        // Keep first-frame renderer stalls outside SDK operation wait budgets.
+        result.viewTreeObserver.addOnDrawListener(object : android.view.ViewTreeObserver.OnDrawListener {
+            private var scheduled = false
+            override fun onDraw() {
+                if (scheduled) return
+                scheduled = true
+                result.post {
+                    result.viewTreeObserver.removeOnDrawListener(this)
+                    Log.i("FeatBitConsumer", "LAUNCHER_READY")
+                    runChecks()
+                }
+            }
+        })
     }
 
     private fun runChecks() {

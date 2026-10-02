@@ -19,6 +19,7 @@ public final class RuntimeSmoke {
             client.awaitReady(2000).observe(ready -> {
                 try {
                     require(ready.getValue() == ReadyResult.CUSTOM_LOCAL, "local readiness");
+                    co.featbit.consumer.ReleaseContract.verifyLocal(client, BuildConfig.EXPECTED_SDK_VERSION);
                     require(client.boolVariation("enabled", false), "Boolean evaluation");
                     require(!client.getConnectionInformation().getRemoteConfirmed(), "local provenance");
                     AtomicInteger changes = new AtomicInteger();

@@ -14,7 +14,7 @@ public final class ModelSmoke {
         if (json.asObject().get("items").asArray().get(0).getKind() != FbValue.Kind.NULL) throw new AssertionError("JSON null");
         if (FbValue.ofNumber(Double.NaN).isSuccess()) throw new AssertionError("finite number");
         if (options.getBootstrap().size() != 1 || !options.getOffline()) throw new AssertionError("options");
-        if (!SdkInfo.getVersion().equals("0.1.0-SNAPSHOT")) throw new AssertionError("artifact version");
+        if (!SdkInfo.getVersion().equals(BuildConfig.EXPECTED_SDK_VERSION)) throw new AssertionError("artifact version");
         FlagRecord record = FlagRecord.builder("enabled", "true", "boolean", 1769702003515L)
             .variationOptions(Collections.singletonList(new VariationOption("on", "true")))
             .build().getValue();

@@ -19,6 +19,8 @@ object RuntimeSmoke {
                 val c = adapters.await(ClientFactory.getDefault().create(context, data.clientOptions(user).value!!), 3000).value!!
                 clients.add(c)
                 check(adapters.await(c.awaitReady(2000), 3000).value == ReadyResult.CUSTOM_LOCAL)
+                co.featbit.consumer.ReleaseContract.verifyLocal(c, BuildConfig.EXPECTED_SDK_VERSION)
+                check(adapters.await(c.flush(), 3000).code == OutcomeCode.DISABLED)
                 check(c.variation("json", FbValue.jsonNull()).asObject()!!["items"]!!.asArray()!![0].kind == FbValue.Kind.NULL)
                 val statusObserved = CompletableDeferred<Unit>()
                 val statuses = launch(start = CoroutineStart.UNDISPATCHED) {
@@ -42,6 +44,7 @@ object RuntimeSmoke {
                 check(adapters.await(custom.close(), 3000).value!!.cleanupComplete)
                 probeLocalReads(context, user, adapters)
                 PersistenceSmoke.verify(context)
+                AttributeSmoke.verify(context)
                 completion("PASS · Kotlin runtime: TestData、Custom、JSON、suspend/Flow、Identify、Offline/Online、Close、Cache、Anonymous")
             } catch (e: Exception) {
                 android.util.Log.e("FeatBitConsumer", "Runtime smoke failed", e)

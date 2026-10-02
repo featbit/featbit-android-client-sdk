@@ -41,7 +41,20 @@ public final class SmokeActivity extends Activity {
         ScrollView scroll = new ScrollView(this);
         scroll.addView(content);
         setContentView(scroll);
-        runChecks();
+        // Emulator renderer initialization may block the first traversal for many seconds.
+        // Start SDK operation budgets only after that unrelated traversal has completed.
+        result.getViewTreeObserver().addOnDrawListener(new android.view.ViewTreeObserver.OnDrawListener() {
+            private boolean scheduled;
+            @Override public void onDraw() {
+                if (scheduled) return;
+                scheduled = true;
+                result.post(() -> {
+                    result.getViewTreeObserver().removeOnDrawListener(this);
+                    Log.i("FeatBitConsumer", "LAUNCHER_READY");
+                    runChecks();
+                });
+            }
+        });
     }
 
     private void runChecks() {

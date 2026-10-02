@@ -1,6 +1,6 @@
 # FeatBit Android Client SDK Architecture
 
-Date: 2026-10-02. Status: Phases 1–5 implemented; Phases 6–7 remain planned. See [Phase 5 implementation](./docs/phase-5.md) and [verification](./docs/verification.md) for actual tested boundaries.
+Date: 2026-10-02. Phases 1–6 and Phase 7 release preparation are implemented. Full release acceptance remains open. See [Phase 7](./docs/phase-7.md) and [verification](./docs/verification.md) for actual tested boundaries.
 
 This document turns the accepted scope in [the development plan](./plan.md) into component boundaries, state ownership, concurrency rules, and implementation checkpoints. Names and additional design choices below are proposals. They do not silently resolve pending product decisions or establish tested behavior.
 
@@ -14,7 +14,7 @@ Local planning documents evolve together and use relative links rather than manu
 
 | Source | Baseline |
 | --- | --- |
-| Android repository | Phase 1 started from `c0730f3f70d62a76a1a37bcb556783b58d3c6a6e`; Phase 2 started from `ab973d1` and remains in the working tree |
+| Android repository | Phase 7 starts from `6eff0ddf7e04eccba3863a2404a2d34edebf2e04`; current changes and evidence are recorded in handoff/Phase 7 |
 | Development scope | [Development plan](./plan.md); evolving working document |
 | Comparison/scope decisions | [Feature comparison and scope decisions](./launchdarkly-feature-comparison.md); evolving working document |
 | Shared specifications | `sdk-spec` HEAD `3f08faa77dbf70bea208bd8ab946c2aa0b38ffad`; Phase 2 observed existing English changes in conformance/identity/public-api; local untracked Chinese supplements are excluded |
@@ -56,9 +56,9 @@ featbit-android-client-sdk/
   integration/                 Versioned fixtures and server-test entry points
 ```
 
-The Phase 1 subset of these paths now exists; later runtime components remain planned. Samples/demo Apps are deferred; independent consumer fixtures are in `consumer-tests/`. SDK implementation and test sources use explicit `kotlin/` source directories; Java consumer compatibility does not require SDK sources in a `java/` directory. Phase 1 validates these source sets and uses explicit public declarations and an AAR API baseline. Kotlin `internal` alone is not a complete Java binary API boundary. Consumers must not need internal packages.
+This tree describes architectural roles, not literal current directories. The runtime is implemented in files under `internal/`; see [handoff](./docs/handoff.md) for concrete entry points. Device checks run through independent published-AAR consumers. Samples/demo Apps remain deferred. SDK implementation and tests use `kotlin/` source directories; Java compatibility is verified at the public AAR boundary. Kotlin `internal` alone is not a complete Java binary API boundary. Consumers must not need internal packages.
 
-Retain the plan's candidate Coroutines, OkHttp, Serialization and AndroidX dependencies for Phase 1 validation. Do not expose OkHttp, Serialization DTOs, Android lifecycle owners, or OpenFeature types in the foundational API. Flow/suspend adapters intentionally expose coroutine integration in their own namespace. The supporting toolchain and dependency versions remain candidates until consumer builds pass.
+Coroutines, OkHttp, Serialization and AndroidX are integrated; resolved dependency reports accompany Phase 7 consumer builds. Do not expose OkHttp, Serialization DTOs, Android lifecycle owners, or OpenFeature types in the public API. Flow/suspend adapters intentionally expose coroutine integration in their own namespace. Tested toolchains and their limits are recorded in the release guide.
 
 ```mermaid
 flowchart TD
