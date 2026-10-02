@@ -1,7 +1,8 @@
 # Phase 3: cache and anonymous identity persistence
 
-Implemented 2026-10-01. This completes the local SDK milestone; built-in networking,
-event delivery and Android lifecycle observers remain Phases 4–6.
+Implemented 2026-10-01. This document records the Phase 3 local SDK milestone.
+Built-in networking, event delivery and Android lifecycle observers were subsequently
+implemented in [Phase 4](./phase-4.md), [Phase 5](./phase-5.md) and [Phase 6](./phase-6.md).
 
 ## Storage and identity
 

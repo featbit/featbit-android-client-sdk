@@ -166,8 +166,8 @@ consumer-tests\kotlin\build\reports\tests\testDebugUnitTest\index.html
 
 2026-10-01 已在 API 34 模拟器 `emulator-5554` 上安装并启动 Java、Kotlin debug APK。两个页面均显示 PASS，点击“重新检查”后次数从 1 变为 2，完成时间更新；通过 UI 层级读取确认这些结果。
 
-release 构建和 R8 已通过，但当前 release APK 未配置签名，**尚未进行 release APK 的设备运行验证**。debug APK 的设备结果不能代替 R8 后的运行结果。
+上述 2026-10-01 检查当时只运行了 debug APK，release/R8 仅完成构建。后续阶段 7 已通过本地测试密钥签名的 R8 APK 设备检查，见[验证记录](./verification.md#phase-7--2026-10-02)。直接构建本交互工程仍生成未签名的 release APK；需要设备验证时使用[阶段 7 验收脚本](./release.md)。测试密钥签名不等于正式受信任签名，debug 结果也不能代替 R8 后的运行结果。
 
 后续重复验证时可记录：日期、代码版本/工作区变更、设备/API、模块、构建变体、首次结果、重试次数变化和错误日志。完整已执行/未执行项目见 [验证记录](./verification.md)。
 
-本指南暂不覆盖 SDK 客户端运行时、远端开关读取、用户切换、缓存、事件投递、真机兼容性和正式发布；这些随后续阶段补充。
+本指南的默认页面覆盖本地运行时、用户切换及 Kotlin 缓存/匿名身份检查；网络、事件与平台检查使用前文链接的独立入口。真机兼容性及正式发布仍需按[发布指南](./release.md)和[符合性清单](./conformance.md)完成，不能由页面 PASS 推断通过。

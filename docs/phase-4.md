@@ -44,7 +44,8 @@ consumer projects. Public API signatures are unchanged.
   authoritative failures. Elapsed candidate deadlines cannot be extended by suspension or callbacks.
 - Controlled foreground/network inputs implement grace, optional background Polling,
   foreground mode restoration, offline revocation and bounded cleanup. Background Polling
-  defaults off and uses its separate interval. Real Android observers remain Phase 6.
+  defaults off and uses its separate interval. Real Android observers were subsequently
+  connected in [Phase 6](./phase-6.md); these controlled-input results describe Phase 4.
 - Synchronization headers apply to each handshake/reconnect/candidate/poll. Event headers
   never enter these requests. Diagnostics contain SDK codes, never payloads, credentials,
   token URLs or transport exception text.

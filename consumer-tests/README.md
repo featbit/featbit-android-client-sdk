@@ -19,7 +19,9 @@ both Debug and Release; the flag explicitly enables either variant for device va
 完整中文步骤、常见问题与已验证范围：[手动验证指南](../docs/manual-verification.md)。
 
 These Java/Kotlin consumers use the real Maven-staged SDK AAR. They are test fixtures,
-not SDK samples. They create local TestData and Custom clients, without network connections.
+not SDK samples. The default page checks local TestData and Custom clients without SDK
+transport connections; opt-in network/event checks below use the target fixture. Current AAR
+clients install Android lifecycle/network/idle observers, including in local checks.
 
 1. In the SDK root, run `./gradlew :sdk:publishReleasePublicationToLocalTestRepository`
    (Windows: `.\gradlew.bat :sdk:publishReleasePublicationToLocalTestRepository`).
@@ -40,8 +42,10 @@ conversion/heap probe. JVM consumer tests cover models and inactive TestData mut
 the Android runtime checks require launching the Activity.
 A PASS does not establish network, event delivery or complete SDK conformance.
 
-Debug APKs are signed automatically for device installation. Release builds still run R8,
-but remain unsigned: release device execution requires a separate test signing setup.
+Debug APKs are signed automatically for device installation. Direct builds of this interactive
+project run R8 for Release but leave its APK unsigned. The Phase 7 runner signs its generated
+Release APKs with a local test key and exercises them on device when `--serial` is supplied;
+see [recorded results](../docs/verification.md). This is not trusted release signing.
 Debug device results must not be reported as release/R8 device results.
 ## Phase 3 persistence checks
 
@@ -71,5 +75,7 @@ Track before readiness, deduplication, remote evaluation, private-attribute opti
 offline suppression/retention/resumption and final Close delivery. Java uses callbacks and Kotlin
 uses suspend adapters. The separate JVM live export plus target Domain verifier checks the
 actual filtered wire payload and resulting message content; the Activity does not inspect server
-storage. No production databases/MQ or platform lifecycle observers are involved. Remove the
+storage. No production databases/MQ are involved. The current SDK installs real platform
+observers, but this event fixture does not independently establish lifecycle/Doze acceptance;
+use the Phase 6 platform fixture for those checks. Remove the
 test reverse mapping afterward with `adb reverse --remove tcp:5189`.

@@ -7,10 +7,11 @@
 阶段 1–6 代码已实现，阶段 7 的验收工具、消费者矩阵、文档和发布准备已实现；完整发布验收仍未完成。
 本次补齐独立 Maven/AAR 消费者构建、版本一致性、StrictMode 读取、自动属性与诊断测试，
 以及 Dokka 文档产物和仅本地 staging 的签名工作流。阶段 6 真机验收仍待执行。
-没有提交、推送或远程发布。相邻规范和服务端源码未修改。
+阶段 7 已提交为 `f5932e8`，后续审核修复已提交为 `416110e`；这不代表已完成远程发布。
+相邻规范和服务端源码未修改。提交与工作区状态应以当前 Git 记录为准。
 阶段 7 见 [phase-7.md](./phase-7.md)、[release.md](./release.md)、[conformance.md](./conformance.md)，
 本次实际验证及未执行项见 [verification.md](./verification.md)。
-最终证据目录 `build/phase7/20261002-164239-3eb84010/`：139 个 SDK 测试通过，四组消费者
+阶段 7 当时的最终证据目录 `build/phase7/20261002-164239-3eb84010/`：139 个 SDK 测试通过，四组消费者
 Debug/R8/JUnit/lint 通过，六次 Kotlin 平台检查通过。修正首帧启动后，最后 24 项设备
 本地/同步/事件检查全部通过；以 `final-summary.json` 及其指向的最终 target 报告为准。
 阶段 7 重跑 Fake/None 目标服务协议及 Domain 消息校验；设备 HTTP fixture 与该联调均不替代数据库/MQ 验收。
@@ -106,9 +107,10 @@ Debug/R8/JUnit/lint 通过，六次 Kotlin 平台检查通过。修正首帧启�
 
 ## 工作区和规范
 
-主目录 `D:\Workspace\FeatBit\featbit-android-client-sdk`。本次阶段 7 开始时工作区干净，
-HEAD 为 `6eff0ddf7e04eccba3863a2404a2d34edebf2e04`。
-当前未提交修改为阶段 7 工具、测试、文档及构建配置；先检查 git status，保留它们。
+主目录 `D:\Workspace\FeatBit\featbit-android-client-sdk`。阶段 7 开始时工作区干净，
+当时 HEAD 为 `6eff0ddf7e04eccba3863a2404a2d34edebf2e04`，随后阶段 7 提交为 `f5932e8`。
+后续审核修复记录见 verification.md；历史验收结果不自动覆盖这些改动。
+继续工作前检查 `git status` 和 `git log`，保留已有修改，不将本文中的历史基线当作当前 HEAD。
 用户禁止批量/递归删除文件，只可一次删除一个明确路径文件。
 
 阶段 4–5 核对共享规范、协议参考、mobile 约束、JS SDK 与 evaluation-server 实现。
