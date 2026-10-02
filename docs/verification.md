@@ -1,5 +1,75 @@
 # Verification record
 
+## Phase 6 fixture opt-in and warning cleanup — 2026-10-02
+
+The Kotlin consumer now registers LifecycleProbeReceiver/Activity only when built with
+`-Pphase6Probe=true`. Ordinary builds omit the probe manifest overlay; the switch applies
+to both Debug and non-debuggable R8 Release and does not change the SDK AAR.
+
+- Built both variants with the switch and inspected the packaged APK manifests using
+  `aapt2 dump xmltree`: both probe components are present.
+- Built both variants again without the switch and inspected the packaged APK manifests:
+  neither probe component is registered; SmokeActivity remains. Default APKs are the final
+  local build outputs. Both Release builds completed R8.
+- Renamed the overridden SyncListener.failed parameter to `status`, matching the interface,
+  and renamed the captured test variable to avoid shadowing. All **4 SyncTransportTest**
+  tests passed, without compiler warnings in that run.
+- Device scenarios were not rerun for these fixture-registration/test-naming changes.
+  The Phase 6 results below remain the earlier device evidence; all unverified acceptance
+  items below remain open. No new multi-window or physical-device claim is made.
+
+Build logs: `build/phase6-probe-enabled.log`, `build/phase6-probe-default.log`,
+`build/phase6-warning-cleanup.log`. Updated device build commands are in [Phase 6](./phase-6.md).
+
+## Phase 6 — 2026-10-02
+
+Implementation and commands: [phase-6.md](./phase-6.md). Source starts at SDK HEAD
+`c7533b9826d92784b83b2391a62f24345758d8ac` with this uncommitted Phase 6 change.
+JDK 17.0.11, Gradle 8.7, AGP 8.5.2, Kotlin 1.9.25, Android compile/build-tools 34.
+
+- **132 SDK unit tests passed**, no failures/errors/skips. Twelve new platform/state tests
+  cover initial snapshot and close fencing, multiple networks, background creation/Identify,
+  grace expiry and queued dispatch, inactivity after sleep, candidate interruption and
+  foreground recovery ordering, Doze permission, event retention/group boundaries.
+- Debug/release AAR, release lint and local Maven staging passed. API inventory and Java 11
+  bytecode checks passed with unchanged **78 public types**. Platform types remain internal.
+- Independent Java and Kotlin 1.9.25 consumers: Debug/Release builds, unit tests and R8 passed.
+  Merged release manifest includes ACCESS_NETWORK_STATE and ProcessLifecycleInitializer.
+- API 34 x86_64 emulator `emulator-5554` / `sdk_gphone64_x86_64`: the complete installed-AAR
+  platform runner passed against **both Debug and actual R8 Release APKs**, each emitting
+  `PHASE6_DEVICE_PASS`. The unsigned release consumer was signed locally with the standard
+  debug test key for installation; no distribution artifact was published.
+- Device checks: background creation without transient requests; readiness timeout;
+  foreground polling; real Activity rotation/recreation retaining the client; Wi-Fi to
+  cellular handover, total network loss and recovery; background event suspension and
+  deduplication/group boundaries; offline and closed-state recovery fencing; process
+  recreation; background polling/Identify; disableEvents; forced Doze with an Identify
+  timeout and resumption; transition cutoff/late response/retained retry; network-independent
+  TestData. HTTP uses an isolated loopback fixture, not the evaluation-server deployment.
+- Actual **Java and Kotlin R8** launcher smoke checks also passed. Kotlin reported
+  `PHASE3_PASS previousProcessData=true` for cache/anonymous restart behavior, alongside
+  TestData/Custom/JSON/suspend/Flow/Identify/offline/Close checks. This does not establish
+  backup restoration or process termination during every atomic-write stage.
+
+Local logs: `build/phase6-sdk.log`, `build/phase6-consumers.log`,
+`build/phase6-device.log`, `build/phase6-device-r8.log`,
+`build/phase6-r8-consumer-smoke.log`; JUnit XML is under `sdk/build/test-results/`.
+The device runner restores network/rotation/screen-timeout/battery settings and its reverse
+mapping. Final inspection found no reverse mapping and `mForceIdle=false`, `mState=ACTIVE`.
+
+Earlier device attempts exposed fixture field-extraction/timing assumptions that were
+corrected before the complete runs above. A SCREEN_OFF test also hit a **system_server ANR**
+in `AlarmManagerService$InteractiveStateReceiver`; the emulator was rebooted. Final Doze
+checks use explicit `force-idle`, verify `mState=IDLE`, and exercise the SDK while CPU
+execution is available. They do **not** prove natural screen-off/deep-sleep behavior.
+
+**Not executed / not established:** physical devices, API 21/newer-OS device matrix, real
+VPN, missing-permission device path, vendor restrictions, natural deep sleep, full Kotlin
+compiler matrix, hosted CI, target service/database/MQ revalidation, and atomic-write kill
+coverage. The multi-window launch request remained fullscreen on this emulator; it is
+**unverified**, not passed. Process STARTED policy is implemented, but interactive split
+screen acceptance must be completed on a capable configuration. Phase 7 remains outstanding.
+
 ## Event field-format checks removed — 2026-10-02
 
 Removed EventProtocol field-format and individual length checks for event names, flag keys,

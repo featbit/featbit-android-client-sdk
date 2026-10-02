@@ -1,5 +1,12 @@
 # Device model and local runtime checks
 
+Phase 6 adds an opt-in public-AAR lifecycle fixture. After staging the current SDK and
+building the Kotlin APK with `-Pphase6Probe=true` and installing it, run `python tools/phase6_device.py` from the
+repository root (use `--adb` for its full path). See [Phase 6](../docs/phase-6.md) for
+commands, emulator setting changes and acceptance boundaries. The exported probe receiver
+is test-only and is not part of the SDK AAR. Probe registration is absent by default in
+both Debug and Release; the flag explicitly enables either variant for device validation.
+
 完整中文步骤、常见问题与已验证范围：[手动验证指南](../docs/manual-verification.md)。
 
 These Java/Kotlin consumers use the real Maven-staged SDK AAR. They are test fixtures,

@@ -1,10 +1,15 @@
 # Android SDK 手动验证指南
 
-更新日期：2026-10-01。适用于 Windows、PowerShell 和 Android Studio。
+更新日期：2026-10-02。适用于 Windows、PowerShell 和 Android Studio。
 
 本指南记录从导入项目到模拟器检查的完整过程，方便以后重复验证。默认页面检查阶段 2 本地运行时，以及阶段 3 Kotlin 缓存/匿名身份；这些 PASS 不代表网络或事件测试通过。阶段 4 网络和阶段 5 事件已有单独 opt-in 入口：分别使用 Activity extra `phase4=true`、`phase5=true`，启动本地 Fake 服务后验证对应 PASS。阶段 5 完整命令见 [消费者说明](../consumer-tests/README.md#phase-5-event-checks)，实现边界见 [阶段 5](./phase-5.md)。下文的阶段 1 结果属于历史记录。
 
 ## 1. 准备环境
+
+阶段 6 平台验证使用独立入口：先用 `-Pphase6Probe=true` 构建并安装 Kotlin 消费者 APK（Debug 或 R8 Release），再在仓库根目录运行
+`python tools/phase6_device.py --adb C:/Users/Falcon/AppData/Local/Android/Sdk/platform-tools/adb.exe`。
+它控制模拟器前后台、旋转、网络和 forced-idle，并在退出时恢复设置；详见[阶段 6](./phase-6.md)。
+普通构建默认不注册探针入口。脚本 PASS 不代表真机深度休眠或目标服务数据库验收通过。
 
 本项目已验证的基础配置：JDK 17、Gradle Wrapper 8.7、Android SDK Platform 34、Build Tools 34.0.0。不要使用系统安装的其他 Gradle 替代项目 Wrapper。
 

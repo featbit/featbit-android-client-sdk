@@ -39,7 +39,8 @@ android {
 }
 
 dependencies {
-    // Transport/codec dependencies are internal. Android lifecycle integration remains deferred.
+    // Platform and transport dependencies stay out of the public API.
+    implementation("androidx.lifecycle:lifecycle-process:2.8.7")
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
@@ -74,7 +75,7 @@ afterEvaluate {
                 artifactId = "featbit-client-android"
                 pom {
                     name.set("FeatBit Android Client SDK")
-                    description.set("FeatBit Android client with online synchronization, local evaluation, analytics, cache and anonymous identity persistence; Android lifecycle integration remains in development.")
+                    description.set("FeatBit Android client with lifecycle-aware online synchronization, local evaluation, analytics, cache and anonymous identity persistence.")
                     url.set("https://github.com/featbit/featbit-android-client-sdk")
                     licenses { license { name.set("MIT License"); url.set("https://opensource.org/licenses/MIT") } }
                     scm { url.set("https://github.com/featbit/featbit-android-client-sdk") }

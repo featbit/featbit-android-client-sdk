@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Test-only adb control surface; merged only with -Pphase6Probe=true. -->
+    <application>
+        <receiver android:name=".LifecycleProbeReceiver" android:exported="true" />
+        <activity android:name=".LifecycleProbeActivity" android:exported="true" android:resizeableActivity="true" />
+    </application>
+</manifest>

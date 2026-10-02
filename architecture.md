@@ -274,6 +274,12 @@ Unknown connectivity permits bounded request-based recovery. Network availabilit
 
 Platform adapters retain application-scoped resources only. Automatic and manual visibility are exclusive authoritative input modes; manual integration supplies initial state. Repeated signals are idempotent. Missing optional connectivity access degrades gracefully. Background polling uses a process-owned scheduler when execution is available; the first-release design adds no service, wake lock, exact alarm or WorkManager persistence. Schedule the next poll after completion, never overlapping or catching up missed ticks.
 
+Phase 6 implements the automatic mode only, through `AndroidPlatformMonitor` and
+`PlatformStateRelay`. ProcessLifecycleOwner STARTED defines visibility; initial snapshots
+precede source start. Connectivity tracks Internet-capable network membership, and API 23+
+device-idle signals withdraw execution permission. Platform installation and native removal
+run on main; logical close fences callbacks immediately. See [Phase 6](./docs/phase-6.md).
+
 Streaming normal closure, temporary network failure and inactivity use paced reconnection; `4003` is terminal. The polling classifier and accepted rejection statuses must be fixed against the target protocol before implementation. Transport failures, not wait timeouts, drive fallback. Reset the temporary failure window on valid synchronization, not handshake; background/network suspension ends that window while retaining recovery backoff.
 
 Recovery uses one bounded handover attempt at a time:

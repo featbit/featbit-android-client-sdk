@@ -107,17 +107,17 @@ public class SyncTransportTest {
             server.start(); target.start()
             server.enqueue(MockResponse().setResponseCode(302).setHeader("Location", target.url("/streaming")))
             val io = OkHttpSyncTransport(); val done = CountDownLatch(1)
-            var status: Int? = null
+            var receivedStatus: Int? = null
             try {
                 val options = networkOptions(server, SyncMode.STREAMING)
                 io.start(SyncProtocol.request(options, true, 0, user("A"), JvmClock.wall(), 0.5), true, object : SyncListener {
                     override fun opened() = Unit
                     override fun message(text: String) = Unit
                     override fun response(status: Int, body: String, retryAfter: String?) = Unit
-                    override fun failed(code: Int?, retryAfter: String?) { status = code; done.countDown() }
+                    override fun failed(status: Int?, retryAfter: String?) { receivedStatus = status; done.countDown() }
                     override fun ended(code: Int) = Unit
                 })
-                assertTrue(done.await(5, TimeUnit.SECONDS)); assertEquals(302, status)
+                assertTrue(done.await(5, TimeUnit.SECONDS)); assertEquals(302, receivedStatus)
                 assertEquals(1, server.requestCount); assertEquals(0, target.requestCount)
             } finally { io.close() }
         } }

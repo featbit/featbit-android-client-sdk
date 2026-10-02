@@ -363,6 +363,10 @@ Completion criteria: event protocol integration passes against the target server
 
 ### Phase 6: Android lifecycle and suspension
 
+Implemented 2026-10-02; see [platform integration](./docs/phase-6.md) and
+[verification](./docs/verification.md). Physical-device acceptance remains unexecuted;
+emulator forced-idle results do not establish physical deep-sleep behavior.
+
 - Connect real Android lifecycle/network observers to the state interfaces established and tested in Phases 2 and 4. Add platform coverage without redefining synchronization/closure state machines.
 - Apply known visibility before the first synchronization; handle Activity rotation, multi-window, and process-level foreground/background state.
 - Apply default background suspension to Streaming/Polling; explicit background polling switches to platform-constrained background Polling. Network recovery cannot override offline, close, or terminal state.

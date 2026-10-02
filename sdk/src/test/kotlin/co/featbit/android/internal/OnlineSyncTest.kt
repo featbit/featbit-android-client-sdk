@@ -32,7 +32,8 @@ internal fun envelope(user: String = "A", value: String = "one", time: Long = 1,
     """{"messageType":"data-sync","data":{"eventType":"$kind","userKeyId":"$user","featureFlags":[{"id":"flag","variation":"$value","variationType":"string","timestamp":$time}]}}"""
 
 internal class OnlineHarness(mode: SyncMode = SyncMode.STREAMING, fallback: Boolean = false,
-    background: Boolean = false, grace: Long = 0, bootstrap: Boolean = false) {
+    background: Boolean = false, grace: Long = 0, bootstrap: Boolean = false,
+    initial: PlatformState = PlatformState(foreground = true)) {
     val clock = FakeClock()
     val workers = ManualWorkers()
     val dispatch = ManualDispatch()
@@ -45,7 +46,7 @@ internal class OnlineHarness(mode: SyncMode = SyncMode.STREAMING, fallback: Bool
         .synchronizationHeader("X-Gateway", "sync-only").eventHeader("X-Event", "event-only")
         .apply { if (bootstrap) bootstrap(listOf(flag("flag", "bootstrap"))) }.build().value!!
     val client = LocalClient(options, options.initialUser!!, null, dispatch, clock, workers, ticker,
-        Diagnostics(options, clock, ManualWorkers()), transportFactory = { transport }, random = { 0.5 })
+        Diagnostics(options, clock, ManualWorkers()), transportFactory = { transport }, random = { 0.5 }, initialPlatformState = initial)
     init { client.start(); workers.drain() }
     val last: FakeTransport.Exchange get() = transport.requests.last()
     fun advance(time: Long) { clock.now += time; ticker.action(); workers.drain(); dispatch.drain() }
@@ -176,8 +177,8 @@ public class OnlineSyncTest {
     @Test public fun backgroundPollingAndGraceRestoreStreamingWithoutOverlap() {
         val h = OnlineHarness(background = true, grace = 1000)
         val stream = h.last; stream.data()
-        h.client.lifecycle(false, true); h.advance(999); assertFalse(stream.canceled)
-        h.advance(1); assertTrue(stream.canceled); assertFalse(h.last.streaming)
+        h.client.lifecycle(false, true); h.workers.drain()
+        assertTrue(stream.canceled); assertFalse(h.last.streaming)
         val poll = h.last; poll.data()
         h.client.lifecycle(true, true); h.workers.drain()
         assertTrue(h.last.streaming)

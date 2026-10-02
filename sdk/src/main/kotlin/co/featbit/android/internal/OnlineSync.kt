@@ -29,6 +29,7 @@ internal class OnlineSync(
     private var recoveryAt = Long.MAX_VALUE
     private var recoveryFailures = 0
     private var stableSince: Long? = null
+    private var resumeFirst = false
     private var forceFull = false
     private var active: Attempt? = null
     private var transport: SyncTransport? = null
@@ -52,9 +53,12 @@ internal class OnlineSync(
         var activityAt = clock.elapsed()
         var pingAt = clock.deadlineAfter(18_000)
     }
-    private fun eligible(a: Attempt): Boolean = !stopped && allowed && active === a && a.valid
+    private fun eligible(a: Attempt): Boolean = !stopped && allowed && active === a && a.valid &&
+        (foreground || options.backgroundPolling ||
+            a.dispatched && !a.candidate && clock.elapsed() < (backgroundAt ?: 0L))
     private fun eligibleBeforeDeadline(a: Attempt): Boolean = eligible(a) &&
-        ((a.streaming && a.synchronized && !a.candidate) || clock.elapsed() < a.deadline)
+        ((a.streaming && a.synchronized && !a.candidate) || clock.elapsed() < a.deadline) &&
+        (!a.streaming || !a.opened || clock.elapsed() - a.activityAt < 36_000)
     private fun effect(action: () -> Unit): Boolean = workers.execute(action)
     private fun revoke() {
         val old = active ?: return
@@ -74,12 +78,24 @@ internal class OnlineSync(
     fun permissions(enabled: Boolean, isForeground: Boolean) {
         val previousMode = effective
         val previousRecovery = recovery
+        // A foreground signal can beat the first ticker after sleep. Expire the old grace
+        // before clearing its deadline, otherwise that signal would revive an expired stream.
+        if (!foreground && !options.backgroundPolling && active != null &&
+            clock.elapsed() >= (backgroundAt ?: Long.MAX_VALUE)) invalidate()
         if (foreground != isForeground) {
             foreground = isForeground
+            if (!foreground) {
+                failureSince = null; stableSince = null
+                if (active?.candidate == true) { coolDown(); revoke() }
+                else if (active?.dispatched == false) revoke()
+            } else {
+                if (fallback) resumeFirst = true
+                if (active == null) nextAt = clock.elapsed()
+            }
             backgroundAt = if (foreground) null else clock.deadlineAfter(maxOf(1, options.flagGraceMillis))
             if (options.flagGraceMillis == 0L && !foreground) backgroundAt = clock.elapsed()
         }
-        val bg = !foreground && clock.elapsed() >= (backgroundAt ?: Long.MAX_VALUE)
+        val bg = !foreground && (options.backgroundPolling || clock.elapsed() >= (backgroundAt ?: Long.MAX_VALUE))
         val permitted = enabled && !terminated && (!bg || options.backgroundPolling)
         if (allowed != permitted || background != bg) invalidate()
         allowed = permitted; background = bg
@@ -109,13 +125,13 @@ internal class OnlineSync(
                 send(a, SyncProtocol.PING)
             }
         }
-        if (!fallback && options.pollingFallback && !background && failureSince?.let { now - it >= 30_000 } == true) {
+        if (!fallback && options.pollingFallback && foreground && failureSince?.let { now - it >= 30_000 } == true) {
             revoke(); fallback = true; effective = SyncMode.POLLING; coolDown(); nextAt = now; changed()
         }
-        if (fallback && foreground && active?.candidate != true && now >= recoveryAt) {
+        if (fallback && foreground && !resumeFirst && active?.candidate != true && now >= recoveryAt) {
             revoke(); begin(true, true); return
         }
-        if (active == null && now >= nextAt) begin(effective == SyncMode.STREAMING, false)
+        if (active == null && now >= nextAt && (foreground || background && options.backgroundPolling)) begin(effective == SyncMode.STREAMING, false)
     }
     private fun begin(streaming: Boolean, candidate: Boolean) {
         val current = context()
@@ -206,6 +222,7 @@ internal class OnlineSync(
                 (update is FullUpdate || context().baseline === a.baseline)
         }) { baseline ->
             a.baseline = baseline; a.synchronized = true; forceFull = false
+            resumeFirst = false
             failures = 0; failureSince = null
             if (a.candidate) {
                 a.candidate = false; fallback = false; effective = SyncMode.STREAMING
@@ -229,6 +246,7 @@ internal class OnlineSync(
         if (fatal && !eligibleBeforeDeadline(a)) { failed(a, "sync_timeout", false); return }
         if (code == "sync_timeout" && !a.synchronized && !a.candidate) forceFull = true
         val candidate = a.candidate
+        resumeFirst = false
         revoke(); stableSince = null
         if (fatal) { allowed = false; terminated = true; recovery = RecoveryStatus.NONE; failure(code, true); return }
         if (candidate) {

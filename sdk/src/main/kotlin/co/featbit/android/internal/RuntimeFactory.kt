@@ -28,15 +28,16 @@ internal object RuntimeFactory : ClientFactory {
         val workers = BoundedWorkers()
         val ticker = DeadlineTicker()
         val diagnostics = Diagnostics(options, AndroidClock)
+        val platform = AndroidPlatformMonitor(context, diagnostics)
         val deadline = AndroidClock.deadlineAfter(options.startupWaitMillis)
         val lock = Any()
         var settled = false
         fun failed(outcome: Outcome<FeatBitClient>) {
             synchronized(lock) { if (settled) return; settled = true; result.settle(outcome) }
-            testData?.unbind(binding); workers.close(); ticker.close(); diagnostics.close()
+            platform.close(); testData?.unbind(binding); workers.close(); ticker.close(); diagnostics.close()
         }
         ticker.start { if (AndroidClock.elapsed() >= deadline) failed(Outcome.failure(OutcomeCode.TIMED_OUT, Diagnostic("creation_deadline"))) }
-        workers.execute {
+        platform.start(ready = { workers.execute {
             try {
                 val source = options.source
                 val caps: SourceCapabilities? = source?.capabilities()
@@ -57,11 +58,16 @@ internal object RuntimeFactory : ClientFactory {
                         if (AndroidClock.elapsed() >= deadline) { failed(Outcome.failure(OutcomeCode.TIMED_OUT, Diagnostic("creation_deadline"))); return }
                         fun publish() {
                             ticker.close()
-                            val client = LocalClient(options, user.value!!, caps, dispatch, AndroidClock, workers,
-                                DeadlineTicker(), diagnostics, anonymous, enrich, { testData?.unbind(binding) }, cache)
-                            client.start()
-                            settled = true
-                            result.settle(Outcome.success(client))
+                            platform.relay.bind { initial ->
+                                val client = LocalClient(options, user.value!!, caps, dispatch, AndroidClock, workers,
+                                    DeadlineTicker(), diagnostics, anonymous, enrich, { testData?.unbind(binding) }, cache,
+                                    initialPlatformState = initial, releasePlatform = platform::close)
+                                client.start()
+                                settled = true
+                                result.settle(Outcome.success(client))
+                                val listener: (PlatformState) -> Unit = { next -> client.lifecycle(next.foreground, next.network, next.executionAllowed) }
+                                listener
+                            }
                         }
                         if (identity == null) publish()
                         else if (anonymous?.withCurrent(identity, ::publish) != true)
@@ -76,7 +82,7 @@ internal object RuntimeFactory : ClientFactory {
                     catch (_: Exception) { failed(Outcome.failure(OutcomeCode.STORAGE_FAILED, Diagnostic("anonymous_creation_failed"))) }
                 }
             } catch (_: Exception) { failed(Outcome.invalid("client_creation_failed")) }
-        }
+        } }, failed = { failed(Outcome.invalid("lifecycle_observer_unavailable")) })
         return result
     }
     private fun enrich(context: Context, options: ClientOptions, user: User): Outcome<User> {

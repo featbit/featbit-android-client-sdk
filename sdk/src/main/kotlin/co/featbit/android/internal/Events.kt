@@ -97,7 +97,7 @@ internal class Events(
         }
         tick()
     }
-    fun permissions(nextOffline: Boolean, nextForeground: Boolean, nextNetwork: Boolean) {
+    fun permissions(nextOffline: Boolean, nextForeground: Boolean, nextNetwork: Boolean, executionAllowed: Boolean = true) {
         if (nextOffline != offline || nextForeground != foreground) seal()
         if (foreground && !nextForeground) {
             transitionHigh = sealed
@@ -105,7 +105,8 @@ internal class Events(
         }
         // Cancel transition attempts on foreground resume; never extend their original budget.
         if (!foreground && nextForeground) { revoke(); transitionDeadline = 0; periodic = clock.deadlineAfter(options.flushIntervalMillis) }
-        offline = nextOffline; foreground = nextForeground; network = nextNetwork
+        if (!executionAllowed) transitionDeadline = 0
+        offline = nextOffline; foreground = nextForeground; network = nextNetwork && executionAllowed
         if (offline || !network || !foreground && transitionDeadline == 0L) revoke()
         if (offline) waits.toList().forEach { settle(it, Outcome.failure(OutcomeCode.DEFERRED, Diagnostic("offline_transition"))) }
     }
@@ -147,11 +148,11 @@ internal class Events(
         batch = null; physical = null; transport = null; seal()
         return finalLoss
     }
-    fun tick() {
+    fun tick(deliverNow: Boolean = true) {
         if (options.disableEvents || stopped) return
         val now = clock.elapsed()
         waits.toList().filter { now >= it.deadline }.forEach { settle(it, Outcome.failure(OutcomeCode.TIMED_OUT, Diagnostic("flush_deadline"))) }
-        if (!closing && foreground && !offline && now >= periodic) { seal(); periodic = clock.deadlineAfter(options.flushIntervalMillis) }
+        if (deliverNow && !closing && foreground && !offline && now >= periodic) { seal(); periodic = clock.deadlineAfter(options.flushIntervalMillis) }
         if (!foreground && !closing && transitionDeadline != 0L && now >= transitionDeadline) { transitionDeadline = 0; revoke() }
         physical?.let { if (it.valid && now >= it.deadline) revoke() }
         // Expiry is a final outcome even while delivery is paused. Revoke its old authority first.
@@ -160,7 +161,7 @@ internal class Events(
             if (batch?.entries?.any { now >= it.expires } == true) { revoke(); finish(batch!!.entries, "event_expired"); batch = null }
             finish(entries.values.filter { now >= it.expires }, "event_expired")
         }
-        if (!deliver() || physical != null) return
+        if (!deliverNow || !deliver() || physical != null) return
         var current = batch
         if (current == null) {
             val limit = if (!foreground && !closing) minOf(sealed, transitionHigh) else sealed

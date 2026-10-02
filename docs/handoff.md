@@ -4,18 +4,18 @@
 
 ## 当前进度
 
-阶段 1–5 已实现，阶段 6–7 尚未实施。本次接入评估/Track 事件、隐私过滤、分组去重、
-有界发送/重试、Flush、离线保留与 Close 最终发送。没有提交、推送或远程发布。
-相邻服务端源码未修改，构建并运行其 Fake provider 做真实协议联调；另用目标 Domain
-校验实际 Android 负载及消息转换，避免仅凭 HTTP 200 判断兼容。
-详细实现见 [phase-5.md](./phase-5.md)，实际验证见 [verification.md](./verification.md)。
-真实 Android observers 仍未接入；在线事件默认启用，需要配置 eventsUrl。
+阶段 1–6 代码已实现，阶段 7 尚未实施；阶段 6 真机验收仍待执行。本次接入真实进程生命周期、
+多网络状态及 Doze observers，并修复宽限期、恢复探测和休眠后旧回调的权限边界。
+没有提交、推送或远程发布。相邻规范和服务端源码未修改。
+详细实现见 [phase-6.md](./phase-6.md)，本次实际验证及未执行项见 [verification.md](./verification.md)。
+阶段 5 的真实服务协议联调属于历史证据，本次设备 HTTP fixture 不替代该联调或数据库验收。
+在线事件默认启用，需要配置 eventsUrl。
 
 ## 先读
 
-1. [实施计划](../plan.md)：阶段边界；下一步阶段 6。
+1. [实施计划](../plan.md)：阶段边界；下一步补齐设备验收并进入阶段 7。
 2. [架构](../architecture.md)：状态、会话、缓存与身份持久化规则。
-3. [阶段 5](./phase-5.md)、[阶段 4](./phase-4.md)、[阶段 3](./phase-3.md) 与 [阶段 2](./phase-2.md)：事件、网络、持久化和运行时边界。
+3. [阶段 6](./phase-6.md)、[阶段 5](./phase-5.md)、[阶段 4](./phase-4.md)、[阶段 3](./phase-3.md) 与 [阶段 2](./phase-2.md)：平台、事件、网络、持久化和运行时边界。
 4. [验证记录](./verification.md)：本次结果与历史结果分开。
 5. [阶段 1](./phase-1.md)：工具链、API 决策及初始默认参数。
 
@@ -29,6 +29,9 @@
 - `internal/Values.kt`：输入保护、decimal/JSON 转换与不可变结果。
 - `internal/LocalTestData.kt`：全量本地提交、单客户端绑定、暂停时保存、时间回退处理。
 - `internal/RuntimeFactory.kt`：异步验证/创建、自动属性、真实缓存与匿名存储接入。
+- `internal/AndroidPlatformMonitor.kt` / `PlatformState.kt`：主线程安装与解除平台监听、初始状态原子接入、多网络集合及 Doze 权限。
+- `PlatformLifecycleTest`：后台初建、grace/candidate/休眠截止时间、事件组及平台撤权回归。
+- `consumer-tests/kotlin/.../LifecycleProbe.kt` / `tools/phase6_device.py`：实际 AAR 的独立平台验证入口；默认不注册，显式 `-Pphase6Probe=true` 才合并 Debug/Release 测试探针 manifest。入口不属于 SDK AAR。
 - `internal/Persistence.kt`：AtomicFile、完整上下文指纹、namespace coordinator、匿名仓库。
 - `internal/OnlineSync.kt`：与 LocalClient 共用 gate 的内置网络状态机、请求授权、重试和单 candidate 接管。
 - `internal/SyncProtocol.kt`：请求、token、精确 Long cursor、消息解析和安全 HTTP 分类。
@@ -46,6 +49,15 @@
 - `consumer-tests/*/.../RuntimeSmoke.*`：实际 AAR 的 Android 运行验证。验证页面仍是测试入口，不是 samples。
 
 ## 不可遗漏的边界
+
+- 阶段 6 自动使用 lifecycle-process 2.8.7 及 AndroidX Startup initializer；没有公开手动 visibility 模式。
+  以进程 STARTED 判断可见，旋转/短暂切换沿用 AndroidX 的 STOP 延迟；SDK 预算从进程后台信号开始。
+  首次同步前应用初始可见性/网络/idle 状态。Close 立即隔离回调，主线程完成原生解除注册。
+- AAR 增加普通权限 ACCESS_NETWORK_STATE；缺少可选网络访问时以未知网络、受限重试降级。
+  Doze 撤权结束 transition flush，退出 idle 不重置其两秒预算。无 service/wake lock/电池豁免。
+- 后台轮询启用时立即切换，不等待 Flag grace。默认后台 grace 仅保留已派发请求，不能创建重连/替代源。
+  后台立即取消 candidate；前台先恢复原有效模式，再按恢复规则探测。先处理过期 wait/grace，旧 stream
+  inactivity 到期后即使回调早于 timer 也不得提交。
 
 - 2026-10-01 按用户决定移除 Flag 输入大小、数量和元数据预算限制，覆盖 Bootstrap、Full/Patch、Custom/TestData 和 JSON 文本。保留重复 key 等有效性检查；JSON 解析深度/节点数及线程、回调、事件、缓存容量约束不属于该变更。`Limits` 已替换为只负责 Bootstrap 校验和转换的 `BootstrapRecords`。当时的 40 个测试是阶段 2 历史证据；阶段 3 本次结果见 verification.md。
 - 2026-10-02 后续移除 JSON 的 50,000 节点上限，保留深度 64；移除等待、请求/关闭超时、轮询/flush 间隔及 Flag grace 的固定上限，保留最小值与默认值。截止时间相加溢出时饱和到 `Long.MAX_VALUE`。内部两秒数据源停止预算和运行时容量限制不变。62 个单元测试及 Release lint 通过，未重跑设备测试。
@@ -89,8 +101,9 @@
 
 ## 工作区和规范
 
-主目录 `D:\Workspace\FeatBit\featbit-android-client-sdk`。本次阶段 5 开始时工作区干净。
-当前未提交修改为阶段 5 实现、测试及文档；先检查 git status，保留它们。
+主目录 `D:\Workspace\FeatBit\featbit-android-client-sdk`。本次阶段 6 开始时工作区干净，
+HEAD 为 `c7533b9826d92784b83b2391a62f24345758d8ac`。
+当前未提交修改为阶段 6 实现、测试及文档；先检查 git status，保留它们。
 用户禁止批量/递归删除文件，只可一次删除一个明确路径文件。
 
 阶段 4–5 核对共享规范、协议参考、mobile 约束、JS SDK 与 evaluation-server 实现。
@@ -102,12 +115,11 @@ JDK `C:\Program Files\Microsoft\jdk-17.0.11.9-hotspot`；Android SDK
 SDK Kotlin 1.9.25，Java 11 字节码，minSdk 21 / compileSdk 34。
 本地 Maven 坐标 `co.featbit:featbit-client-android:0.1.0-SNAPSHOT`，输出到 `build/test-repository`。
 
-## 下一步：阶段 6
+## 下一步：设备验收与阶段 7
 
-按 plan 接入真实 Android 生命周期/网络 observers，复用当前 lifecycle 输入和状态机。
-首次同步前应用已知可见性，覆盖 Activity 旋转、多窗口、进程前后台及 Wi-Fi/蜂窝切换。
-验证 Doze/暂停后的 elapsed deadline、后台轮询及两秒事件 transition flush。
-disableEvents、offline、隐私过滤和独立终止状态不能被平台恢复绕过；前台恢复必须先封存后台组。
+按 verification 中未执行项补齐真机深度休眠、设备/OS 兼容性及多窗口等平台验收。
+阶段 7 汇总真实 AAR、Java/Kotlin 工具链矩阵、R8、目标服务/存储路径和规范追踪表。
+新平台恢复路径不得绕过 disableEvents、offline、隐私过滤和独立终止状态。
 
 继续沿用现有项目、三个工厂和独立消费者，不要重建工程。重新验证本次实际改动，不能继承历史 PASS。
 完整物理设备、部署数据库/MQ、备份恢复和各原子替换阶段的进程终止覆盖仍属阶段 6–7 汇总验收。

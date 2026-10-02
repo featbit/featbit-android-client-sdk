@@ -38,6 +38,8 @@ internal class LocalClient(
     transportFactory: () -> SyncTransport = { OkHttpSyncTransport() },
     random: () -> Double = { kotlin.random.Random.nextDouble() },
     eventTransportFactory: () -> SyncTransport = { OkHttpSyncTransport(readResponseBody = false) },
+    initialPlatformState: PlatformState = PlatformState(foreground = true),
+    private val releasePlatform: () -> Unit = {},
 ) : FeatBitClient, CloseAware {
     private val gate = Any()
     private val callbacks = CallbackBudget()
@@ -53,8 +55,9 @@ internal class LocalClient(
     private var identityId = 0L
     private var modeId = 0L
     private var offline = options.offline
-    private var foreground = true
-    private var network = true
+    private var foreground = initialPlatformState.foreground
+    private var network = initialPlatformState.network
+    private var executionAllowed = initialPlatformState.executionAllowed
     private var closed = false
     private var terminal = false
     private var successAt: Long? = null
@@ -80,6 +83,7 @@ internal class LocalClient(
         return View(emptyMap(), bootstrapRecords, options.bootstrap != null || offline)
     }
     fun start() { ticker.start(::tick); synchronized(gate) {
+        events.permissions(offline, foreground, network, executionAllowed)
         if (options.bootstrap == null) loadCache()
         reconcile()
     } }
@@ -105,7 +109,7 @@ internal class LocalClient(
             diagnostics.report("cache_load_capacity")
         }
     }
-    private fun permitted(): Boolean = !closed && !offline && !terminal && foreground && (network || capabilities?.networkDependent == false)
+    private fun permitted(): Boolean = !closed && !offline && !terminal && foreground && executionAllowed && (network || capabilities?.networkDependent == false)
     private fun status(): ConnectionInformation {
         val pauses = linkedSetOf<PauseReason>()
         if (offline) pauses.add(PauseReason.OFFLINE)
@@ -249,7 +253,7 @@ internal class LocalClient(
                 modeId++
                 waits.filter { it.kind == "mode" }.toList().forEach { it.finish(OutcomeCode.SUPERSEDED) }
                 offline = nextOffline
-                events.permissions(offline, foreground, network)
+                events.permissions(offline, foreground, network, executionAllowed)
                 invalidate()
                 if (offline) waits.filter { it.kind == "ready" }.toList().forEach { it.finish(OutcomeCode.DEFERRED, "offline_transition") }
                 else view = view.copy(confirmed = false, localReady = false)
@@ -265,11 +269,13 @@ internal class LocalClient(
             }
         }
     }
-    /** Internal lifecycle seam; real Android observers are a later phase. */
-    fun lifecycle(isForeground: Boolean, networkAvailable: Boolean) = synchronized(gate) {
+    /** Initial state and subsequent platform signals share the same authority gate. */
+    fun lifecycle(isForeground: Boolean, networkAvailable: Boolean, canExecute: Boolean = true) = synchronized(gate) {
         if (closed) return@synchronized
-        foreground = isForeground; network = networkAvailable
-        events.permissions(offline, foreground, network)
+        expireWaits()
+        foreground = isForeground; network = networkAvailable; executionAllowed = canExecute
+        events.permissions(offline, foreground, network, executionAllowed)
+        events.tick(deliverNow = false)
         if (online != null) reconcile()
         else if (!permitted()) invalidate() else reconcile()
         publishStatus()
@@ -296,7 +302,7 @@ internal class LocalClient(
     private fun authorized(session: Session): Boolean = session.valid && active === session && session.generation == generation && permitted()
     private fun reconcile() {
         if (online != null) {
-            online.permissions(!closed && !offline && !terminal && network, foreground)
+            online.permissions(!closed && !offline && !terminal && network && executionAllowed, foreground)
             online.tick()
             return
         }
@@ -574,15 +580,23 @@ internal class LocalClient(
             closeListeners.forEach { it.deliver() }; closeListeners.clear()
             information = status()
         }
+        releasePlatform()
         tick()
         return closeOperation
+    }
+    private fun expireWaits() {
+        val now = clock.elapsed()
+        waits.toList().filter { now >= it.deadline }.forEach {
+            it.finish(if (it.kind == "mode") OutcomeCode.CLEANUP_FAILED else OutcomeCode.TIMED_OUT, "operation_deadline")
+        }
     }
     private fun tick() {
         var result: CloseResult? = null
         synchronized(gate) {
-            if (!closed && online != null) reconcile()
+            expireWaits()
             val now = clock.elapsed()
             events.tick()
+            if (!closed && online != null) reconcile()
             waits.toList().forEach {
                 if (it.kind == "mode" && sessions.isEmpty() && online?.idle != false) it.finish(if (cleanupFailed) OutcomeCode.CLEANUP_FAILED else OutcomeCode.SUCCESS)
                 else if (now >= it.deadline) it.finish(if (it.kind == "mode") OutcomeCode.CLEANUP_FAILED else OutcomeCode.TIMED_OUT, "operation_deadline")

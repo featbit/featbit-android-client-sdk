@@ -1,7 +1,8 @@
 # Phase 5: Events, Flush and Close
 
 Implemented 2026-10-02 in the existing Kotlin runtime with Java-compatible public APIs.
-Public signatures and types are unchanged. Real Android lifecycle/network observers remain Phase 6.
+Public signatures and types are unchanged. Real Android lifecycle/network observers were
+subsequently connected in [Phase 6](./phase-6.md); the results below describe Phase 5.
 
 ## Collection and privacy
 
