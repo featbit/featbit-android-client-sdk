@@ -34,6 +34,7 @@ internal class LocalClient(
     private val anonymous: AnonymousRepository? = null,
     private val enrich: (User) -> Outcome<User> = { Outcome.success(it) },
     private val releaseBinding: () -> Unit = {},
+    private val cache: DiskCoordinator? = null,
 ) : FeatBitClient, CloseAware {
     private val gate = Any()
     private val callbacks = CallbackBudget()
@@ -41,6 +42,9 @@ internal class LocalClient(
     private val subscriptionBudget = CallbackBudget()
     private val closeOperation = ResultOperation<CloseResult>(dispatch, closeCallbacks, clock)
     private var user = initialUser
+    private var cacheKey = contextKey(initialUser)
+    private var loadId = 0L
+    private var localPending = false
     private var generation = 0L
     private var identityId = 0L
     private var modeId = 0L
@@ -67,7 +71,32 @@ internal class LocalClient(
     private fun initialView(): View {
         return View(emptyMap(), bootstrapRecords, options.bootstrap != null || offline)
     }
-    fun start() { ticker.start(::tick); synchronized(gate) { reconcile() } }
+    fun start() { ticker.start(::tick); synchronized(gate) {
+        if (options.bootstrap == null) loadCache()
+        reconcile()
+    } }
+    private fun loadCache() {
+        val repository = cache ?: return
+        val id = ++loadId
+        val expected = repository.epoch()
+        localPending = true
+        if (!repository.load(cacheKey, expected, diagnostics::report) { snapshot ->
+            synchronized(gate) {
+                if (closed || id != loadId || !localPending) return@synchronized
+                repository.withEpoch(expected) {
+                    val before = view
+                    view = if (snapshot == null) initialView() else View(snapshot.records, emptyMap(), true,
+                        baseline = IssuedBaseline(snapshot.records, snapshot.cursor))
+                    localPending = false
+                    changed(before, view); publishStatus()
+                }
+            }
+        }) {
+            localPending = false
+            view = initialView()
+            diagnostics.report("cache_load_capacity")
+        }
+    }
     private fun permitted(): Boolean = !closed && !offline && !terminal && foreground && (network || capabilities?.networkDependent == false)
     private fun status(): ConnectionInformation {
         val pauses = linkedSetOf<PauseReason>()
@@ -104,7 +133,7 @@ internal class LocalClient(
             waits.remove(this)
         }
     }
-    private fun validTimeout(value: Long): Boolean = value in 1..300_000
+    private fun validTimeout(value: Long): Boolean = value > 0
     private fun readiness(): ReadyResult? = when {
         offline -> ReadyResult.OFFLINE_LOCAL
         view.confirmed -> ReadyResult.REMOTE_CONFIRMED
@@ -118,7 +147,7 @@ internal class LocalClient(
         readiness()?.let { return done(Outcome.success(it)) }
         if (waits.size >= 256) return done(Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("operation_capacity")))
         val op = operation<ReadyResult>()
-        waits.add(Wait(op, clock.elapsed() + timeout, "ready", generation, modeId) { readiness()!! })
+        waits.add(Wait(op, clock.deadlineAfter(timeout), "ready", generation, modeId) { readiness()!! })
         return op
     }
     override fun awaitReady(timeoutMillis: Long): Operation<ReadyResult> = synchronized(gate) {
@@ -128,23 +157,27 @@ internal class LocalClient(
         if (!validTimeout(timeoutMillis)) return done(Outcome.invalid("invalid_timeout"))
         val prepared = enrich(user)
         if (!prepared.isSuccess) return done(Outcome.failure(prepared.code, prepared.diagnostic))
+        val key = contextKey(prepared.value!!)
         return synchronized(gate) {
             if (closed) return@synchronized done(Outcome.failure(OutcomeCode.CLOSED, null))
             if (waits.size >= 256) return@synchronized done(Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("operation_capacity")))
             identityId++
             waits.filter { it.kind == "identity" }.toList().forEach { it.finish(OutcomeCode.SUPERSEDED) }
-            adopt(prepared.value!!)
+            adopt(prepared.value, key)
             readyWait(timeoutMillis)
         }
     }
-    private fun adopt(next: User) {
+    private fun adopt(next: User, key: String) {
         val before = view
         generation++
         user = next
+        cacheKey = key
+        loadId++; localPending = false
         invalidate()
         waits.filter { it.kind == "ready" }.toList().forEach { it.finish(OutcomeCode.SUPERSEDED) }
         successAt = null; failureAt = null; failure = null
-        view = initialView()
+        view = if (cache == null) initialView() else View(emptyMap(), emptyMap(), offline)
+        loadCache()
         changed(before, view)
         publishStatus()
         reconcile()
@@ -164,13 +197,15 @@ internal class LocalClient(
             if (waits.size >= 256) return done(Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("operation_capacity")))
             id = ++identityId
             waits.filter { it.kind == "identity" }.toList().forEach { it.finish(OutcomeCode.SUPERSEDED) }
-            wait = Wait(op, clock.elapsed() + timeout, "identity", generation, modeId) { readiness()!! }
+            wait = Wait(op, clock.deadlineAfter(timeout), "identity", generation, modeId) { readiness()!! }
             waits.add(wait)
         }
         if (!workers.execute {
             try {
                 repository.prepare(reset) { result ->
+                    if (!result.isSuccess) diagnostics.report("anonymous_storage_failed")
                     val prepared = result.value?.let { enrich(User.builder(it.key).name("Anonymous").build().value!!) }
+                    val key = prepared?.value?.let(::contextKey)
                     synchronized(gate) {
                         if (id != identityId || closed || wait !in waits) return@synchronized
                         if (clock.elapsed() >= wait.deadline) { wait.finish(OutcomeCode.TIMED_OUT); return@synchronized }
@@ -179,7 +214,7 @@ internal class LocalClient(
                             waits.remove(wait)
                         } else if (!repository.withCurrent(result.value) {
                             waits.remove(wait)
-                            adopt(prepared.value!!)
+                            adopt(prepared.value!!, key!!)
                             val ready = readiness()
                             if (terminal && !offline) op.settle(Outcome.failure(OutcomeCode.TERMINAL_FAILURE, failure))
                             else if (ready != null) op.settle(Outcome.success(ready))
@@ -215,7 +250,7 @@ internal class LocalClient(
             if (!offline || sessions.isEmpty()) done(Outcome.success(result))
             else {
                 val op = operation<ModeResult>()
-                waits.add(Wait(op, clock.elapsed() + minOf(timeout, 2_000), "mode", generation, modeId) { result })
+                waits.add(Wait(op, clock.deadlineAfter(minOf(timeout, 2_000)), "mode", generation, modeId) { result })
                 op
             }
         }
@@ -335,6 +370,10 @@ internal class LocalClient(
                 if (update is NoChange && (!remote || update.baseline !== before.baseline))
                     return sourceResult(SourceUpdateCode.INVALID, error = "invalid_baseline")
                 if (view !== before) return@synchronized
+                loadId++; localPending = false
+                if (remote && after.baseline != null && cache != null &&
+                    !cache.commit(cacheKey, CachedSnapshot(after.records, after.baseline.cursor), diagnostics::report))
+                    diagnostics.report("cache_write_capacity")
                 view = after
                 if (remote) successAt = clock.wall()
                 failure = null
@@ -390,7 +429,19 @@ internal class LocalClient(
         when {
             !validTimeout(timeoutMillis) -> done(Outcome.invalid("invalid_timeout"))
             closed -> done(Outcome.failure(OutcomeCode.CLOSED, null))
-            else -> unavailable("cache_persistence_unavailable")
+            cache == null -> unavailable("cache_unavailable")
+            waits.size >= 256 -> done(Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("operation_capacity")))
+            else -> {
+                val op = operation<CacheClearResult>()
+                val wait = Wait(op, clock.deadlineAfter(timeoutMillis), "cache", generation, modeId) { CacheClearResult.CLEARED }
+                waits.add(wait)
+                if (!cache.clear(if (scope == CacheScope.CURRENT_CONTEXT) cacheKey else null, diagnostics::report) { ok ->
+                    synchronized(gate) {
+                        if (wait in waits) wait.finish(if (ok) OutcomeCode.SUCCESS else OutcomeCode.STORAGE_FAILED, if (ok) null else "cache_clear_failed")
+                    }
+                }) wait.finish(OutcomeCode.CAPACITY_EXCEEDED, "storage_capacity")
+                op
+            }
         }
     }
 
@@ -485,7 +536,7 @@ internal class LocalClient(
         synchronized(gate) {
             if (closed) return closeOperation
             closed = true; identityId++; modeId++
-            closeDeadline = clock.elapsed() + options.closeTimeoutMillis
+            closeDeadline = clock.deadlineAfter(options.closeTimeoutMillis)
             invalidate()
             waits.toList().forEach { it.finish(OutcomeCode.CLOSED) }
             subscriptions.toList().forEach { it.close() }

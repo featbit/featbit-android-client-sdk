@@ -13,6 +13,12 @@ internal interface Clock {
     fun elapsed(): Long
     fun wall(): Long
 }
+/** Saturate unrepresentable deadlines instead of wrapping a long wait into the past. */
+internal fun Clock.deadlineAfter(durationMillis: Long): Long {
+    require(durationMillis > 0)
+    val now = elapsed()
+    return if (now > Long.MAX_VALUE - durationMillis) Long.MAX_VALUE else now + durationMillis
+}
 internal object AndroidClock : Clock {
     override fun elapsed() = SystemClock.elapsedRealtime()
     override fun wall() = System.currentTimeMillis()

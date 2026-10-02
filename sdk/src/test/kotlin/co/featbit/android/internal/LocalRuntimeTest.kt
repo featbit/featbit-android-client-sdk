@@ -78,6 +78,44 @@ internal fun SourceUpdateSink.full(vararg flags: FlagRecord): SourceUpdateResult
 internal fun SourceUpdateSink.patch(vararg flags: FlagRecord): SourceUpdateResult = submit(PatchUpdate.create(flags.toList()).value!!).getResult()!!.value!!
 
 public class LocalRuntimeTest {
+    @Test public fun largeJsonArrayEvaluatesBeyondFormerNodeLimit() {
+        val h = Harness()
+        val raw = List(50_001) { "0" }.joinToString(",", "[", "]")
+        (h.options.source as ControlledSource).sinks.last().full(record("large", raw, type = "json"))
+        val detail = h.client.jsonVariationDetail("large", FbValue.jsonNull())
+        assertEquals(EvaluationReason.MATCH, detail.reason)
+        assertEquals(50_001, h.client.jsonVariation("large", FbValue.jsonNull()).asArray()!!.size)
+        assertNull(Conversion.json("[".repeat(65) + "0" + "]".repeat(65)))
+        h.close()
+    }
+    @Test public fun longWaitsDoNotExpireEarlyOrOverflow() {
+        val h = Harness()
+        val waiting = h.client.awaitReady(600_000)
+        h.advance(300_001)
+        assertNull(waiting.getResult())
+        h.advance(299_999)
+        assertEquals(OutcomeCode.TIMED_OUT, waiting.getResult()!!.code)
+        val huge = h.client.identify(user("B"), Long.MAX_VALUE)
+        h.advance(1)
+        assertNull(huge.getResult())
+        assertEquals(Long.MAX_VALUE, h.clock.deadlineAfter(Long.MAX_VALUE))
+        h.workers.drain()
+        (h.options.source as ControlledSource).sinks.last().full(record("f", "value"))
+        assertEquals(OutcomeCode.SUCCESS, huge.getResult()!!.code)
+        assertEquals(OutcomeCode.INVALID, h.client.awaitReady(0).getResult()!!.code)
+        assertEquals(OutcomeCode.INVALID, h.client.identify(user("C"), -1).getResult()!!.code)
+        h.close()
+    }
+    @Test public fun coroutineLongTimeoutDoesNotOverflow(): Unit = runBlocking {
+        val clock = FakeClock().apply { now = 1_000 }
+        val dispatch = ManualDispatch()
+        val op = ResultOperation<String>(dispatch, CallbackBudget(), clock)
+        val waiting = async(start = CoroutineStart.UNDISPATCHED) { CoroutineAdapters.await(op, Long.MAX_VALUE) }
+        yield()
+        op.settle(Outcome.success("ready")); dispatch.drain()
+        assertEquals("ready", waiting.await().value)
+        assertEquals(OutcomeCode.INVALID, CoroutineAdapters.await(op, 0).code)
+    }
     @Test public fun physicallyBlockedExtensionWorkersCannotHoldCloseDeadline() {
         val entered = java.util.concurrent.CountDownLatch(2)
         val release = java.util.concurrent.CountDownLatch(1)

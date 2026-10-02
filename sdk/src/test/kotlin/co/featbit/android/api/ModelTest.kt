@@ -133,7 +133,22 @@ public class ModelTest {
         assertFalse(builder.automaticAttributes(true).build().isSuccess)
         assertFalse(builder.automaticAttributes(false).eventCapacity(0).build().isSuccess)
         assertTrue(builder.eventCapacity(1).flagGraceMillis(30_000).build().isSuccess)
-        assertFalse(builder.flagGraceMillis(30_001).build().isSuccess)
+        assertTrue(builder.flagGraceMillis(30_001).build().isSuccess)
+        assertFalse(builder.flagGraceMillis(-1).build().isSuccess)
         assertFalse(builder.flagGraceMillis(0).requestTimeoutMillis(0).build().isSuccess)
+    }
+    @Test public fun durationOptionsAcceptLongValuesAndKeepMinimums() {
+        val builder = ClientOptions.builder().user(User.builder("u").name("User").build().value!!).offline(true)
+            .startupWaitMillis(Long.MAX_VALUE).requestTimeoutMillis(Long.MAX_VALUE)
+            .closeTimeoutMillis(Long.MAX_VALUE).flagGraceMillis(Long.MAX_VALUE)
+            .pollingIntervalMillis(Long.MAX_VALUE).backgroundPollingIntervalMillis(Long.MAX_VALUE)
+            .flushIntervalMillis(Long.MAX_VALUE)
+        assertTrue(builder.build().isSuccess)
+        assertFalse(builder.startupWaitMillis(0).build().isSuccess)
+        assertFalse(builder.startupWaitMillis(1).closeTimeoutMillis(0).build().isSuccess)
+        assertFalse(builder.closeTimeoutMillis(1).flushIntervalMillis(999).build().isSuccess)
+        assertFalse(builder.flushIntervalMillis(1_000).pollingIntervalMillis(999).build().isSuccess)
+        assertFalse(builder.pollingIntervalMillis(1_000).backgroundPollingIntervalMillis(899_999).build().isSuccess)
+        assertTrue(builder.backgroundPollingIntervalMillis(900_000).build().isSuccess)
     }
 }

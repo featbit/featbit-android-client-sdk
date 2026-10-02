@@ -137,20 +137,25 @@ effects and validate the resource assumptions. No whole-result-store capacity st
 
 | Public control | Default | Accepted range |
 | --- | --- | --- |
-| Startup wait | 5,000 ms | 1–300,000 ms |
-| Request timeout | 10,000 ms | 1–300,000 ms |
-| Close budget | 5,000 ms | 1–300,000 ms |
-| Event flush | 30,000 ms | 1,000–86,400,000 ms |
+| Startup wait | 5,000 ms | 1–Long.MAX_VALUE ms |
+| Request timeout | 10,000 ms | 1–Long.MAX_VALUE ms |
+| Close budget | 5,000 ms | 1–Long.MAX_VALUE ms |
+| Event flush | 30,000 ms | 1,000–Long.MAX_VALUE ms |
 | Event capacity | 10,000 | 1–100,000 events across all retained work |
-| Foreground polling | 30,000 ms | 1,000–86,400,000 ms, after completion |
-| Background polling | 900,000 ms | 900,000–86,400,000 ms; no execution guarantee |
-| Flag background grace | 0 ms | 0–30,000 ms |
+| Foreground polling | 30,000 ms | 1,000–Long.MAX_VALUE ms, after completion |
+| Background polling | 900,000 ms | 900,000–Long.MAX_VALUE ms; no execution guarantee |
+| Flag background grace | 0 ms | 0–Long.MAX_VALUE ms |
 
 Streaming, events and cache default on. Explicit offline, background polling, fallback/recovery,
 anonymous generation, automatic attributes, transition flushing and private filtering default off.
 Logs default WARN. Enabling fallback implies recovery; directly configured Polling never probes.
 Endpoints have no public-service default: require the applicable URLs online, not offline.
 No dynamic disableEvents toggle. Validating a configuration does not make it an operational SDK.
+
+Updated 2026-10-02: duration controls and operation/adapter waits have no fixed upper
+limit beyond the `Long` millisecond representation. Minimums above remain. Runtime
+deadline addition saturates at `Long.MAX_VALUE` rather than overflowing into the past.
+Defaults and the internal two-second source-stop budget are unchanged.
 
 Internal starting policies, documented rather than adding configuration knobs:
 
@@ -163,8 +168,8 @@ Internal starting policies, documented rather than adding configuration knobs:
 | Events | 50 events / 256 KiB per batch, one physical request; at most 3 attempts; 1 s then 2 s jittered retry; max age 24 h |
 | Transition flush | disabled; when enabled, 2 s total from background entry |
 | Event memory | 8 MiB total and at most 256 groups; overflow drops new unique work observably |
-| Cache | 5 contexts / 10 MiB per namespace, 7-day age, LRU; backup-excluded private atomic files |
-| Input protection | Updated 2026-10-01: no Flag byte/count caps; retain validity checks and JSON parsing depth/node limits. See phase-2.md. |
+| Cache | Updated 2026-10-02: 5 contexts per namespace, LRU; no byte limit or time-based expiry; backup-excluded private atomic files |
+| Input protection | Updated 2026-10-01: no Flag byte/count caps; retain validity checks and JSON parsing depth limit. See phase-2.md. |
 | Operations / subscriptions | 256 pending ordinary operations and 256 registrations/client; close independent; 32 additional close registrations |
 | Extensions | 2 worker threads, 64 queued invocations/client; 2 s stop wait, no replacement threads for hung calls |
 | Diagnostics | repeated code at most once per 60 s, 128 code buckets / queued log messages; loss counters are not rate limited |

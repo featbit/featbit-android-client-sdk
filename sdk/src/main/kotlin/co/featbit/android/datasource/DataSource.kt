@@ -7,6 +7,8 @@ public enum class Provenance { REMOTE, LOCAL }
 public data class SourceCapabilities public constructor(
     public val provenance: Provenance,
     public val networkDependent: Boolean,
+    /** Stable deployment/source/format identity for REMOTE cache reuse, paired with sdkKey.
+     * Custom sources have no built-in endpoint configuration; include the deployment here. */
     public val cacheDiscriminator: String? = null,
 )
 public interface DataSourceFactory {

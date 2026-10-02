@@ -147,10 +147,10 @@ public class ClientOptions private constructor(builder: Builder) {
         }
         public fun build(): Outcome<ClientOptions> {
             if (invalid) return Outcome.invalid("invalid_configuration")
-            if (flushIntervalMillis !in 1_000..86_400_000 || eventCapacity !in 1..100_000 ||
-                startupWaitMillis !in 1..300_000 || requestTimeoutMillis !in 1..300_000 ||
-                pollingIntervalMillis !in 1_000..86_400_000 || backgroundPollingIntervalMillis !in 900_000..86_400_000 ||
-                closeTimeoutMillis !in 1..300_000 || flagGraceMillis !in 0..30_000) return Outcome.invalid("invalid_limit")
+            if (flushIntervalMillis < 1_000 || eventCapacity !in 1..100_000 ||
+                startupWaitMillis < 1 || requestTimeoutMillis < 1 ||
+                pollingIntervalMillis < 1_000 || backgroundPollingIntervalMillis < 900_000 ||
+                closeTimeoutMillis < 1 || flagGraceMillis < 0) return Outcome.invalid("invalid_limit")
             if (user == null && !anonymous) return Outcome.invalid("user_required", "user")
             if (automaticAttributes && user?.attributes?.keys?.any { it.startsWith("featbit.sdk.") } == true) return Outcome.invalid("reserved_attribute_prefix")
             if (source != null && (explicitTransport || mode != SyncMode.STREAMING || streamingUrl != null || pollingUrl != null || pollingFallback || backgroundPolling || syncHeaders.isNotEmpty())) return Outcome.invalid("custom_source_conflict")

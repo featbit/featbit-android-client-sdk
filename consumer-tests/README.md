@@ -22,8 +22,18 @@ The checks cover models, TestData/Custom sources, evaluation, Identify, online/o
 subscriptions and Close. Kotlin additionally exercises suspend/Flow and logs a 5,000-record
 conversion/heap probe. JVM consumer tests cover models and inactive TestData mutations;
 the Android runtime checks require launching the Activity.
-A PASS does not establish network, caching, event delivery or complete SDK conformance.
+A PASS does not establish network, event delivery or complete SDK conformance.
 
 Debug APKs are signed automatically for device installation. Release builds still run R8,
 but remain unsigned: release device execution requires a separate test signing setup.
 Debug device results must not be reported as release/R8 device results.
+## Phase 3 persistence checks
+
+The Kotlin runtime launcher also verifies cache and anonymous identity through the
+staged AAR and real Android AtomicFile storage. Launch once, wait for `PHASE3_PASS`,
+force-stop the Kotlin test app and launch again: `previousProcessData=true` confirms
+that the prior process's cache and anonymous key were read before replacement.
+The fixture uses an isolated subdirectory under noBackupFilesDir, no service/network,
+and leaves one snapshot for the next run. Clear retains active values and the anonymous
+key; post-clear commits may repopulate the cache. Physical-device backup restoration
+and termination at each atomic-write stage remain later acceptance checks.

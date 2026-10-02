@@ -35,10 +35,9 @@ internal object Conversion {
     } catch (_: IllegalArgumentException) { null }
 }
 
-/** Strict JSON grammar with bounded depth and expansion; no dependency types escape. */
+/** Strict JSON grammar with bounded depth; no dependency types escape. */
 private class JsonReader(private val text: String) {
     private var index = 0
-    private var nodes = 0
     fun parse(): FbValue { val result = value(0); whitespace(); require(index == text.length); return result }
     private fun whitespace() { while (index < text.length && text[index] in " \r\n\t") index++ }
     private fun take(c: Char): Boolean {
@@ -46,7 +45,7 @@ private class JsonReader(private val text: String) {
         return if (index < text.length && text[index] == c) { index++; true } else false
     }
     private fun value(depth: Int): FbValue {
-        require(depth <= 64 && ++nodes <= 50_000)
+        require(depth <= 64)
         whitespace(); require(index < text.length)
         return when (text[index]) {
             '"' -> FbValue.ofString(string()).value!!

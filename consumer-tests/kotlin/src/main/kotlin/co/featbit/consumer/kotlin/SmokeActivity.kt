@@ -38,7 +38,7 @@ class SmokeActivity : Activity() {
             setOnClickListener { runChecks() }
         })
         content.addView(TextView(this).apply {
-            text = "验证独立 AAR 的模型与阶段 2 本地运行时。\n不验证网络同步、持久化或事件发送。"
+            text = "验证独立 AAR 的本地运行时、缓存与匿名身份持久化。\n不验证网络同步或事件发送。"
         })
         setContentView(ScrollView(this).apply { addView(content) })
         runChecks()

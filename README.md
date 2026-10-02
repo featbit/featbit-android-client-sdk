@@ -2,16 +2,17 @@
 
 Kotlin implementation with Java-compatible public APIs, targeting Android API 21+.
 
-**Current state: Phase 2 local runtime.** The project builds debug/release AARs with
+**Current state: Phase 3 local runtime and persistence.** The project builds debug/release AARs with
 local evaluation, Bootstrap, TestData/Custom sources, Identify, online/offline intent,
-subscriptions, coroutine adapters and bounded Close. Persistent cache, anonymous storage,
-built-in network synchronization and analytics delivery remain later-phase work.
+subscriptions, coroutine adapters, bounded Close, persistent cache and anonymous identity.
+Built-in network synchronization and analytics delivery remain later-phase work.
 Do not use this snapshot as a production feature-flag SDK.
 
 - [Implementation plan](./plan.md)
 - [Architecture](./architecture.md)
 - [Phase 1 decisions and build commands](./docs/phase-1.md)
 - [Phase 2 runtime, usage and boundaries](./docs/phase-2.md)
+- [Phase 3 persistence, clearing and identity](./docs/phase-3.md)
 - [Verification results](./docs/verification.md)
 - [手动验证指南（Android Studio / 模拟器）](./docs/manual-verification.md)
 - [开发交接与当前进度](./docs/handoff.md)

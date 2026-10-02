@@ -2,7 +2,7 @@
 
 更新日期：2026-10-01。适用于 Windows、PowerShell 和 Android Studio。
 
-本指南记录从导入项目到模拟器检查的完整过程，方便以后重复验证。阶段 2 已扩展验证页面：模型通过后继续运行 TestData、Custom、读取、Identify、模式切换和 Close；Kotlin 还运行 suspend/Flow 及 5,000 条记录的性能探针。页面上的 PASS 不代表真实网络、持久化或事件发送已实现。详见 [阶段 2](./phase-2.md)；下文的阶段 1 结果属于历史记录。
+本指南记录从导入项目到模拟器检查的完整过程，方便以后重复验证。阶段 2 已扩展验证页面：模型通过后继续运行 TestData、Custom、读取、Identify、模式切换和 Close；Kotlin 还运行 suspend/Flow 及 5,000 条记录的性能探针。阶段 3 为 Kotlin 页面增加缓存、匿名身份和清除检查；强制结束进程后再次启动可检查重启恢复，见 [消费者说明](../consumer-tests/README.md#phase-3-persistence-checks)。页面上的 PASS 不代表真实网络或事件发送已实现。详见 [阶段 3](./phase-3.md)；下文的阶段 1 结果属于历史记录。
 
 ## 1. 准备环境
 

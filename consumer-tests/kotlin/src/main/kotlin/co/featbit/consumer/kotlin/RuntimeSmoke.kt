@@ -41,8 +41,10 @@ object RuntimeSmoke {
                 check(adapters.await(custom.awaitReady(2000), 3000).value == ReadyResult.CUSTOM_LOCAL)
                 check(adapters.await(custom.close(), 3000).value!!.cleanupComplete)
                 probeLocalReads(context, user, adapters)
-                completion("PASS · Kotlin runtime: TestData、Custom、JSON、suspend/Flow、Identify、Offline/Online、Close")
+                PersistenceSmoke.verify(context)
+                completion("PASS · Kotlin runtime: TestData、Custom、JSON、suspend/Flow、Identify、Offline/Online、Close、Cache、Anonymous")
             } catch (e: Exception) {
+                android.util.Log.e("FeatBitConsumer", "Runtime smoke failed", e)
                 clients.forEach { it.close() }
                 completion("FAIL: $e")
             }

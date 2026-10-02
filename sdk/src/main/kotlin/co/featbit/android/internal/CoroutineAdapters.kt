@@ -16,10 +16,10 @@ import kotlin.coroutines.resume
 
 internal object CoroutineAdapters : ClientAdapters {
     override suspend fun <T> await(operation: Operation<T>, timeoutMillis: Long): Outcome<T> {
-        if (timeoutMillis !in 1..300_000) return Outcome.invalid("invalid_timeout")
+        if (timeoutMillis < 1) return Outcome.invalid("invalid_timeout")
         operation.getResult()?.let { return it }
         val clock = (operation as? ResultOperation<T>)?.clock
-        val deadline = clock?.elapsed()?.plus(timeoutMillis)
+        val deadline = clock?.deadlineAfter(timeoutMillis)
         return withTimeoutOrNull(timeoutMillis) {
             coroutineScope {
                 val delivered = async<Outcome<T>> {

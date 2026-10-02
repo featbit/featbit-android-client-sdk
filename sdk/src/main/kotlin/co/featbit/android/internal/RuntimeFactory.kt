@@ -17,9 +17,6 @@ internal object RuntimeFactory : ClientFactory {
         if (!options.offline) onlineError(options)?.let {
             result.settle(Outcome.failure(it.first, Diagnostic(it.second))); return result
         }
-        if (options.initialUser == null) {
-            result.settle(Outcome.failure(OutcomeCode.DISABLED, Diagnostic("anonymous_persistence_unavailable"))); return result
-        }
         val testData = options.source as? LocalTestData
         if (testData != null && (!options.disableEvents || options.cacheEnabled)) {
             result.settle(Outcome.invalid("test_data_configuration_conflict")); return result
@@ -31,7 +28,7 @@ internal object RuntimeFactory : ClientFactory {
         val workers = BoundedWorkers()
         val ticker = DeadlineTicker()
         val diagnostics = Diagnostics(options, AndroidClock)
-        val deadline = AndroidClock.elapsed() + options.startupWaitMillis
+        val deadline = AndroidClock.deadlineAfter(options.startupWaitMillis)
         val lock = Any()
         var settled = false
         fun failed(outcome: Outcome<FeatBitClient>) {
@@ -48,17 +45,35 @@ internal object RuntimeFactory : ClientFactory {
                     failed(Outcome.invalid("custom_validation_failed")); return@execute
                 }
                 val enrich: (User) -> Outcome<User> = { enrich(context, options, it) }
-                val user = enrich(options.initialUser)
-                if (!user.isSuccess) { failed(Outcome.failure(user.code, user.diagnostic)); return@execute }
-                if (AndroidClock.elapsed() >= deadline) { failed(Outcome.failure(OutcomeCode.TIMED_OUT, Diagnostic("creation_deadline"))); return@execute }
-                synchronized(lock) {
-                    if (settled) return@execute
-                    ticker.close()
-                    val client = LocalClient(options, user.value!!, caps, dispatch, AndroidClock, workers,
-                        DeadlineTicker(), diagnostics, enrich = enrich, releaseBinding = { testData?.unbind(binding) })
-                    client.start()
-                    settled = true
-                    result.settle(Outcome.success(client))
+                val root = try { context.noBackupFilesDir } catch (_: Exception) { null }
+                val anonymous = if (options.anonymousEnabled && root != null) PersistenceRegistry.anonymous(root) else null
+                val cache = if (root != null) cacheNamespace(options, caps)?.let { PersistenceRegistry.cache(root, it) } else null
+                if (root == null && options.cacheEnabled) diagnostics.report("cache_storage_unavailable")
+                fun complete(initial: User, identity: AnonymousIdentity? = null) {
+                    val user = enrich(initial)
+                    if (!user.isSuccess) { failed(Outcome.failure(user.code, user.diagnostic)); return }
+                    synchronized(lock) {
+                        if (settled) return
+                        if (AndroidClock.elapsed() >= deadline) { failed(Outcome.failure(OutcomeCode.TIMED_OUT, Diagnostic("creation_deadline"))); return }
+                        fun publish() {
+                            ticker.close()
+                            val client = LocalClient(options, user.value!!, caps, dispatch, AndroidClock, workers,
+                                DeadlineTicker(), diagnostics, anonymous, enrich, { testData?.unbind(binding) }, cache)
+                            client.start()
+                            settled = true
+                            result.settle(Outcome.success(client))
+                        }
+                        if (identity == null) publish()
+                        else if (anonymous?.withCurrent(identity, ::publish) != true)
+                            failed(Outcome.failure(OutcomeCode.SUPERSEDED, Diagnostic("anonymous_revision_changed")))
+                    }
+                }
+                if (options.initialUser != null) complete(options.initialUser)
+                else if (anonymous == null) failed(Outcome.failure(OutcomeCode.STORAGE_FAILED, Diagnostic("anonymous_storage_unavailable")))
+                else anonymous.prepare(false) { identity ->
+                    if (!identity.isSuccess) failed(Outcome.failure(identity.code, identity.diagnostic))
+                    else try { complete(User.builder(identity.value!!.key).name("Anonymous").build().value!!, identity.value) }
+                    catch (_: Exception) { failed(Outcome.failure(OutcomeCode.STORAGE_FAILED, Diagnostic("anonymous_creation_failed"))) }
                 }
             } catch (_: Exception) { failed(Outcome.invalid("client_creation_failed")) }
         }

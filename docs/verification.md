@@ -1,5 +1,65 @@
 # Verification record
 
+## JSON node and duration upper-limit removal — 2026-10-02
+
+Removed the 50,000-node JSON conversion cap, retaining the depth-64 check. Removed
+fixed upper limits on startup/request/close durations, operation and coroutine waits,
+polling/flush intervals and Flag grace. Existing minimums, defaults, event capacity,
+runtime queue budgets and the internal two-second source-stop budget remain unchanged.
+Monotonic deadline addition saturates at `Long.MAX_VALUE` to prevent overflow.
+
+`:sdk:testDebugUnitTest :sdk:lintRelease` passed: 62 tests, no failures/errors/skips.
+Regression coverage includes a 50,001-element JSON array, excessive nesting rejection,
+waiting beyond five minutes, `Long.MAX_VALUE` configuration/Identify/coroutine waits,
+and invalid minimum values. No device run was performed for this change.
+
+## Cache limit removal — 2026-10-02
+
+Removed the Flag cache's 10 MiB cap and seven-day expiry, including clock-rollback
+cache misses and age-based pruning during writes. Five-context LRU eviction remains;
+the disk schema and anonymous identity storage are unchanged.
+
+`:sdk:testDebugUnitTest :sdk:lintRelease` passed. Regression coverage verifies a
+snapshot above 10 MiB survives persistence/restart without evicting another context,
+and cached data remains available after a year, clock rollback and subsequent writes.
+No device run was performed for this change.
+
+## Phase 3 — 2026-10-01
+
+Scope and storage policy: [phase-3.md](./phase-3.md). Prior sections are historical.
+
+- SDK unit tests: **57 passed**, 11 model + 29 local runtime + 17 persistence;
+  no failures, errors or skips. New coverage includes first-write/restart, full-context
+  matching, cache/Bootstrap arbitration, late loads, shared clear epochs, physical-write
+  clear races, equal timestamps/lower cursors, expiry/LRU/byte limits, corrupt/unavailable
+  storage, deadlines/capacity and anonymous reset/revision/failure outcomes.
+- Release AAR, release lint and local Maven staging passed.
+- API inventory / Java 11 bytecode passed, unchanged 78 public types.
+- Independent Java and Kotlin 1.9.25 consumer debug/release, R8 and JUnit passed.
+- API 34 emulator `emulator-5554`: Java and Kotlin debug runtime checks passed.
+  Kotlin additionally logged `PHASE3_PASS previousProcessData=false` on first setup and
+  `previousProcessData=true` after force-stop/relaunch with a new PID. These checks read
+  the previous cache and anonymous key before changing them, then verify reset, reuse,
+  namespace clear retaining memory/identity, and post-clear repopulation.
+
+Commands: `gradlew.bat :sdk:testDebugUnitTest :sdk:assembleRelease :sdk:lintRelease
+:sdk:publishReleasePublicationToLocalTestRepository`, `python tools/check_api.py`, then
+`gradlew.bat -p consumer-tests -PconsumerKotlinVersion=1.9.25 :java:assembleDebug
+:java:assembleRelease :java:testDebugUnitTest :kotlin:assembleDebug :kotlin:assembleRelease
+:kotlin:testDebugUnitTest`. Install debug APKs using `adb install -r`; launch each
+`co.featbit.consumer.<language>/.SmokeActivity`, then force-stop/relaunch Kotlin.
+
+The first device attempt exposed the Custom built-in-endpoint configuration conflict;
+the namespace matcher and fixture were corrected, with a regression test for Custom
+discriminator + SDK key, before the passing runs. No configuration restriction was removed.
+Final review also eliminated intermediate Bootstrap publication during cached Identify.
+
+The Kotlin 1.9.24/2.2.10 matrix was not repeated. No live service, physical device,
+backup/restore, hosted CI or post-R8 device execution was verified. Controlled fault
+injection and completed-write process restart are covered; killing a process at every
+AtomicFile replacement stage remains a Phases 6–7 acceptance check. No remote publication,
+Git commit or push was performed, and adjacent repositories were not changed.
+
 ## Flag input limit removal — 2026-10-01
 
 Removed SDK-imposed Flag byte/count limits, including JSON text size. Duplicate-key

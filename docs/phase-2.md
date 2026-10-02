@@ -1,6 +1,8 @@
 # Phase 2: local runtime
 
 Implemented 2026-10-01. This is a local SDK milestone, not a production network SDK.
+This document records Phase 2. Cache and anonymous-storage limitations below were
+subsequently resolved by [Phase 3](./phase-3.md); network/event boundaries still apply.
 
 ## Public entry points
 
@@ -97,13 +99,13 @@ Select on-demand conversion for now. Store raw strings, and parse only the reque
 outside the state gate. No parsed-value cache or eagerly retained object tree. Double uses
 IEEE-754 precision; complete decimal grammar rejects hexadecimal, suffixes and nonfinite
 results. The dependency-free JSON reader accepts objects, arrays, scalars and null, with
-64 levels and 50,000 parsed nodes; duplicate object properties use their last value.
+64 levels, with no parsed-node count limit; duplicate object properties use their last value.
 
 Flag inputs have no SDK-imposed byte or record-count caps, including Bootstrap,
 Full/Patch updates, TestData, metadata and JSON text. Duplicate Bootstrap keys remain
 invalid; TestData reports `duplicate_flag_key`, and the configuration builder retains
 `invalid_configuration`. Update envelopes retain their existing validity checks.
-JSON parsing retains the depth and node limits above. Unknown types and malformed selected strings remain raw readable data;
+JSON parsing retains the depth limit above. Unknown types and malformed selected strings remain raw readable data;
 conversion failure is local to the requested read. There is no whole-store history or
 tombstone eviction policy; patch replaces current records.
 
