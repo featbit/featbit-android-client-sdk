@@ -1,8 +1,11 @@
 # Phase 2: local runtime
 
-Implemented 2026-10-01. This is a local SDK milestone, not a production network SDK.
-This document records Phase 2. Cache and anonymous-storage limitations below were
-subsequently resolved by [Phase 3](./phase-3.md); network/event boundaries still apply.
+Implemented 2026-10-01. This document records the historical Phase 2 local SDK milestone.
+Cache and anonymous-storage limitations below were subsequently resolved by
+[Phase 3](./phase-3.md), built-in networking by [Phase 4](./phase-4.md), events by
+[Phase 5](./phase-5.md), and Android platform observers by [Phase 6](./phase-6.md).
+Later-phase boundaries below describe what was unavailable at Phase 2, not the current SDK.
+See [verification](./verification.md) for current evidence and remaining acceptance gaps.
 
 ## Public entry points
 
@@ -52,8 +55,9 @@ Unchanged flags preserve their timestamps. Removal and re-addition are supported
   fake foreground/network inputs, retained reads after close and shared idempotent close.
 - Public Full/Patch/NoChange sink results. Preparation runs outside the state gate;
   publication revalidates the captured view and session. Submission currently completes
-  synchronously at commit, through the standard Operation interface, without an update queue.
-  Overlapping calls are ordered at commit admission; non-overlapping calls retain order.
+  synchronously on the caller's thread and returns an already-settled Operation, without an
+  update queue. Overlapping calls are ordered by actual commit; non-overlapping calls retain
+  order. Completion callbacks are asynchronous; large submissions should run off the UI thread.
 - Custom create/start/stop on two fixed workers with a 64-entry queue; no replacement
   threads for blocked extensions. Failed scheduling or extension exceptions produce safe
   status; uncooperative stop produces `cleanupComplete=false` within the close budget.
@@ -71,9 +75,9 @@ Unchanged flags preserve their timestamps. Removal and re-addition are supported
 Budgets use Android elapsed realtime, including sleep, and are checked at completion as
 well as by one 50 ms deadline ticker/client. OS scheduling can delay observation. Flag
 timestamps and displayed success/failure times use wall time. No transport or event sender
-is started by this implementation.
+was started by the Phase 2 implementation.
 
-## Explicit later-phase boundaries
+## Historical Phase 2 boundaries
 
 Built-in online creation returns `DISABLED / builtin_transport_unavailable`; it does not
 simulate remote readiness. An offline client may be created without endpoints; setOnline

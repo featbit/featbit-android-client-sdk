@@ -34,8 +34,8 @@ only after successful delivery assertions. All four live checks must pass and th
 payload must exist before Domain validation. A previous run's payload is never copied.
 Direct Gradle runs default to `sdk/build/phase-5-target-payload.json`; that one output is
 removed before each live test execution, so failing tests cannot leave an old success payload.
-Evidence admission regressions run with
-`python -B -m unittest discover -s tools -p test_phase7_acceptance.py` and in both CI workflows.
+Evidence admission and device-script cleanup regressions run with
+`python -B -m unittest discover -s tools -p 'test_*.py'` and in both CI workflows.
 
 The device runner uses the existing debug test key to install R8 APKs; this is not a
 distribution signing key. It reads PID-scoped logs so stale PASS markers cannot pass a run.

@@ -3,6 +3,7 @@
 Requires the Kotlin consumer APK built with -Pphase6Probe=true and installed on an emulator.
 Ordinary builds do not register the probe components. Changes network/rotation/idle
 settings temporarily and restores them in finally. Does not install, erase data or publish.
+Reuses a matching reverse mapping, rejects conflicts, and removes only a mapping it created.
 """
 import argparse
 import json
@@ -129,15 +130,31 @@ def passed(text):
     print("PASS " + text, flush=True)
 
 
-server = ThreadingHTTPServer(("127.0.0.1", 5196), Fixture)
-threading.Thread(target=server.serve_forever, daemon=True).start()
+def reverse_target():
+    for line in adb("reverse", "--list").splitlines():
+        fields = line.split()
+        if len(fields) >= 2 and fields[-2] == "tcp:5196":
+            return fields[-1]
+    return None
+
+
+existing_reverse = reverse_target()
+if existing_reverse not in (None, "tcp:5196"):
+    raise RuntimeError("Port 5196 already has a different reverse mapping; leaving it unchanged")
 rotation = adb("shell", "settings", "get", "system", "user_rotation").strip()
 auto_rotation = adb("shell", "settings", "get", "system", "accelerometer_rotation").strip()
 wifi = adb("shell", "settings", "get", "global", "wifi_on").strip()
 mobile = adb("shell", "settings", "get", "global", "mobile_data").strip()
 screen_timeout = adb("shell", "settings", "get", "system", "screen_off_timeout").strip()
+server = ThreadingHTTPServer(("127.0.0.1", 5196), Fixture)
+threading.Thread(target=server.serve_forever, daemon=True).start()
+owned_reverse = False
+settings_started = False
 try:
-    adb("reverse", "tcp:5196", "tcp:5196")
+    if existing_reverse is None:
+        adb("reverse", "--no-rebind", "tcp:5196", "tcp:5196")
+        owned_reverse = True
+    settings_started = True
     adb("shell", "settings", "put", "system", "screen_off_timeout", "600000")
     adb("shell", "svc", "wifi", "enable")
     adb("shell", "svc", "data", "enable")
@@ -254,8 +271,7 @@ finally:
         ("shell", "settings", "put", "system", "screen_off_timeout", screen_timeout),
         ("shell", "input", "keyevent", "KEYCODE_WAKEUP"),
         ("shell", "am", "force-stop", package),
-        ("reverse", "--remove", "tcp:5196"),
-    ]
+    ] if settings_started else []
     cleanup_failures = []
     for operation in cleanup:
         try:
@@ -263,7 +279,18 @@ finally:
         except (RuntimeError, subprocess.TimeoutExpired) as error:
             print("CLEANUP_FAILED " + " ".join(operation) + ": " + str(error), flush=True)
             cleanup_failures.append(operation)
+    if owned_reverse:
+        try:
+            target = reverse_target()
+            if target == "tcp:5196":
+                adb("reverse", "--remove", "tcp:5196")
+            elif target is not None:
+                raise RuntimeError("Port 5196 mapping changed during the run; leaving it unchanged")
+        except (RuntimeError, subprocess.TimeoutExpired) as error:
+            print("CLEANUP_FAILED reverse tcp:5196: " + str(error), flush=True)
+            cleanup_failures.append(("reverse", "tcp:5196"))
     server.shutdown()
+    server.server_close()
     if cleanup_failures:
         raise RuntimeError("Emulator cleanup incomplete; inspect CLEANUP_FAILED output")
 print("PHASE6_DEVICE_PASS", flush=True)

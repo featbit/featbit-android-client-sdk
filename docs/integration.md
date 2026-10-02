@@ -248,6 +248,17 @@ Late sinks after Identify/pause/Close have no authority. LOCAL sources cannot co
 readiness; REMOTE cache needs a deployment/source/format-specific cacheDiscriminator and SDK key.
 Built-in fallback/recovery is inapplicable. Public store/platform replacement is unsupported.
 
+`sink.submit(update)` prepares and commits synchronously on the calling thread and returns an
+already-settled `Operation<SourceUpdateResult>`. Read `SourceUpdateResult.code` to distinguish
+`COMMITTED` from `INVALID`, `INACTIVE` or `CLOSED`; a successful outer Outcome alone does not
+mean the update committed. The current sink does not emit the public `BACKPRESSURED` or
+`SUPERSEDED` enum values. It has no update queue or submission admission sequence.
+Non-overlapping calls retain call order; overlapping calls are ordered by actual commit.
+Serialize submissions when upstream ordering matters, and submit large snapshots off the UI
+thread. An await timeout cannot preempt the synchronous `submit()` call. Completion callbacks
+run asynchronously on Android's main dispatcher and use the normal registration capacity;
+registration rejection or detachment does not undo the commit or discard its queryable result.
+
 ## Diagnostics
 
 Use `logLevel(LogLevel.NONE)` to silence logging, or `logger((level, diagnostic) -> ...)` in

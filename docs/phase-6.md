@@ -86,9 +86,18 @@ to the opt-in consumer fixture; do not distribute that APK. The SDK AAR is unaff
 
 The device runner uses this test-only receiver/Activity and public AAR APIs. It starts an
 isolated HTTP fixture on loopback port 5196, temporarily changes emulator network, rotation
-and idle settings, and restores them and removes its reverse mapping on exit. It force-stops
+and idle settings, and restores them on exit. Before changing settings it checks `tcp:5196`:
+an existing mapping to host `tcp:5196` is reused and retained; a conflicting mapping stops
+the run without device changes. A missing mapping is created with `--no-rebind` to reject
+a concurrent bind. Cleanup removes only a mapping created by this run, checks that its
+destination is still unchanged, and reports cleanup failure if it has been replaced or
+cannot be removed. It force-stops
 only the consumer fixture app. It does not erase app data or publish anything. This is not
 production-server interoperability or analytics database-persistence evidence.
+
+Run script regressions with `python -B -m unittest discover -s tools -p 'test_*.py'`.
+Mapping tests execute the script's setup and failure cleanup against simulated ADB;
+they do not establish new emulator or physical-device acceptance.
 
 Physical-device deep sleep, vendor restrictions, real VPN handovers, backup restoration
 and process termination at every atomic-write stage remain separate checks. Forced emulator

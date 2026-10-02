@@ -1,5 +1,20 @@
 # Verification record
 
+## Platform fixture reverse-mapping ownership — 2026-10-02
+
+`phase6_device.py` now preserves an existing matching `tcp:5196` mapping, rejects a
+conflicting mapping before changing the device, and uses `--no-rebind` when creating a
+missing mapping. If creation fails, it does not run device-setting cleanup for changes
+it never started. Cleanup removes only its own still-matching mapping, leaves a replacement
+unchanged, and reports inspection/removal failures. The HTTP fixture socket is also closed.
+
+Six regressions execute the real script's setup/finally paths with simulated ADB and HTTP
+server resources: new mapping cleanup after fixture failure, existing-map reuse, conflict,
+concurrent bind, replacement before cleanup, and removal failure. Together with five live
+evidence-admission regressions, all **11 Python tests passed** using
+`python -B -m unittest discover -s tools -p 'test_*.py'`. Both CI workflows include them.
+No emulator settings were changed; the full platform fixture and hosted CI were not rerun.
+
 ## Shared endpoint scheme handling — 2026-10-02
 
 Builder validation, online transitions, synchronization/event request construction and
