@@ -37,12 +37,14 @@ internal class LocalClient(
     private val cache: DiskCoordinator? = null,
     transportFactory: () -> SyncTransport = { OkHttpSyncTransport() },
     random: () -> Double = { kotlin.random.Random.nextDouble() },
+    eventTransportFactory: () -> SyncTransport = { OkHttpSyncTransport(readResponseBody = false) },
 ) : FeatBitClient, CloseAware {
     private val gate = Any()
     private val callbacks = CallbackBudget()
     private val closeCallbacks = CallbackBudget(32)
     private val subscriptionBudget = CallbackBudget()
     private val closeOperation = ResultOperation<CloseResult>(dispatch, closeCallbacks, clock)
+    private val events = Events(gate, options, clock, workers, diagnostics, eventTransportFactory, random)
     private var user = initialUser
     private var cacheKey = contextKey(initialUser)
     private var loadId = 0L
@@ -152,7 +154,7 @@ internal class LocalClient(
         if (offline) return done(Outcome.success(ReadyResult.OFFLINE_LOCAL))
         if (terminal) return done(Outcome.failure(OutcomeCode.TERMINAL_FAILURE, failure))
         readiness()?.let { return done(Outcome.success(it)) }
-        if (waits.size >= 256) return done(Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("operation_capacity")))
+        if (waits.size + events.waiting >= 256) return done(Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("operation_capacity")))
         val op = operation<ReadyResult>()
         waits.add(Wait(op, clock.deadlineAfter(timeout), "ready", generation, modeId) { readiness()!! })
         return op
@@ -167,7 +169,7 @@ internal class LocalClient(
         val key = contextKey(prepared.value!!)
         return synchronized(gate) {
             if (closed) return@synchronized done(Outcome.failure(OutcomeCode.CLOSED, null))
-            if (waits.size >= 256) return@synchronized done(Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("operation_capacity")))
+            if (waits.size + events.waiting >= 256) return@synchronized done(Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("operation_capacity")))
             identityId++
             waits.filter { it.kind == "identity" }.toList().forEach { it.finish(OutcomeCode.SUPERSEDED) }
             adopt(prepared.value, key)
@@ -201,7 +203,7 @@ internal class LocalClient(
         val wait: Wait<ReadyResult>
         synchronized(gate) {
             if (closed) return done(Outcome.failure(OutcomeCode.CLOSED, null))
-            if (waits.size >= 256) return done(Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("operation_capacity")))
+            if (waits.size + events.waiting >= 256) return done(Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("operation_capacity")))
             id = ++identityId
             waits.filter { it.kind == "identity" }.toList().forEach { it.finish(OutcomeCode.SUPERSEDED) }
             wait = Wait(op, clock.deadlineAfter(timeout), "identity", generation, modeId) { readiness()!! }
@@ -242,11 +244,12 @@ internal class LocalClient(
         return synchronized(gate) {
             if (closed) return@synchronized done(Outcome.failure(OutcomeCode.CLOSED, null))
             error?.let { return@synchronized done(Outcome.failure(it.first, Diagnostic(it.second))) }
-            if (waits.size >= 256) return@synchronized done(Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("operation_capacity")))
+            if (waits.size + events.waiting >= 256) return@synchronized done(Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("operation_capacity")))
             if (offline != nextOffline) {
                 modeId++
                 waits.filter { it.kind == "mode" }.toList().forEach { it.finish(OutcomeCode.SUPERSEDED) }
                 offline = nextOffline
+                events.permissions(offline, foreground, network)
                 invalidate()
                 if (offline) waits.filter { it.kind == "ready" }.toList().forEach { it.finish(OutcomeCode.DEFERRED, "offline_transition") }
                 else view = view.copy(confirmed = false, localReady = false)
@@ -266,6 +269,7 @@ internal class LocalClient(
     fun lifecycle(isForeground: Boolean, networkAvailable: Boolean) = synchronized(gate) {
         if (closed) return@synchronized
         foreground = isForeground; network = networkAvailable
+        events.permissions(offline, foreground, network)
         if (online != null) reconcile()
         else if (!permitted()) invalidate() else reconcile()
         publishStatus()
@@ -406,12 +410,21 @@ internal class LocalClient(
 
     private fun <T> evaluate(key: String, fallback: T, convert: (FlagRecord) -> T?): EvaluationDetail<T> {
         if (key.isEmpty()) return EvaluationDetail(key, fallback, EvaluationReason.ERROR)
-        val snapshot = view
-        val record = snapshot.record(key)
-        if (record == null) return EvaluationDetail(key, fallback, if (snapshot.available) EvaluationReason.FLAG_NOT_FOUND else EvaluationReason.CLIENT_NOT_READY)
-        if (record.archived) return EvaluationDetail(key, fallback, EvaluationReason.FLAG_NOT_FOUND)
-        val converted = convert(record) ?: return EvaluationDetail(key, fallback, EvaluationReason.WRONG_TYPE)
-        return EvaluationDetail(key, converted, EvaluationReason.MATCH, record.reason)
+        while (true) {
+            val snapshot = view
+            val record = snapshot.record(key)
+            if (record == null) return EvaluationDetail(key, fallback, if (snapshot.available) EvaluationReason.FLAG_NOT_FOUND else EvaluationReason.CLIENT_NOT_READY)
+            if (record.archived) return EvaluationDetail(key, fallback, EvaluationReason.FLAG_NOT_FOUND)
+            // JSON conversion can be large. Never hold the state gate while parsing it.
+            val converted = convert(record) ?: return EvaluationDetail(key, fallback, EvaluationReason.WRONG_TYPE)
+            val accepted = synchronized(gate) {
+                if (view !== snapshot) false else {
+                    if (snapshot.confirmed && snapshot.records[key] === record && !closed) events.evaluation(user, record)
+                    true
+                }
+            }
+            if (accepted) return EvaluationDetail(key, converted, EvaluationReason.MATCH, record.reason)
+        }
     }
     override fun boolVariation(key: String, fallback: Boolean): Boolean = boolVariationDetail(key, fallback).value
     override fun boolVariationDetail(key: String, fallback: Boolean): EvaluationDetail<Boolean> = evaluate(key, fallback) { Conversion.boolean(it.variation) }
@@ -434,20 +447,19 @@ internal class LocalClient(
         when {
             name.isEmpty() || !numericValue.isFinite() -> Outcome.invalid("invalid_track")
             closed -> Outcome.failure(OutcomeCode.CLOSED, null)
-            options.disableEvents || offline -> Outcome.success(TrackResult.SUPPRESSED)
-            else -> Outcome.failure(OutcomeCode.DISABLED, Diagnostic("events_unavailable"))
+            else -> events.track(user, name, numericValue)
         }
     }
     override fun flush(): Operation<FlushResult> = synchronized(gate) {
         if (closed) done(Outcome.failure(OutcomeCode.CLOSED, null))
-        else if (options.disableEvents || offline) done(Outcome.success(FlushResult.EMPTY)) else unavailable("events_unavailable")
+        else operation<FlushResult>().also { events.flush(it, waits.size + events.waiting < 256) }
     }
     override fun clearCache(scope: CacheScope, timeoutMillis: Long): Operation<CacheClearResult> = synchronized(gate) {
         when {
             !validTimeout(timeoutMillis) -> done(Outcome.invalid("invalid_timeout"))
             closed -> done(Outcome.failure(OutcomeCode.CLOSED, null))
             cache == null -> unavailable("cache_unavailable")
-            waits.size >= 256 -> done(Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("operation_capacity")))
+            waits.size + events.waiting >= 256 -> done(Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("operation_capacity")))
             else -> {
                 val op = operation<CacheClearResult>()
                 val wait = Wait(op, clock.deadlineAfter(timeoutMillis), "cache", generation, modeId) { CacheClearResult.CLEARED }
@@ -554,6 +566,7 @@ internal class LocalClient(
             if (closed) return closeOperation
             closed = true; identityId++; modeId++
             closeDeadline = clock.deadlineAfter(options.closeTimeoutMillis)
+            events.beginClose(closeDeadline)
             invalidate()
             online?.close()
             waits.toList().forEach { it.finish(OutcomeCode.CLOSED) }
@@ -569,13 +582,15 @@ internal class LocalClient(
         synchronized(gate) {
             if (!closed && online != null) reconcile()
             val now = clock.elapsed()
+            events.tick()
             waits.toList().forEach {
                 if (it.kind == "mode" && sessions.isEmpty() && online?.idle != false) it.finish(if (cleanupFailed) OutcomeCode.CLEANUP_FAILED else OutcomeCode.SUCCESS)
                 else if (now >= it.deadline) it.finish(if (it.kind == "mode") OutcomeCode.CLEANUP_FAILED else OutcomeCode.TIMED_OUT, "operation_deadline")
             }
-            if (closed && !cleanupSettled && (sessions.isEmpty() && online?.closedCleanly != false || now >= closeDeadline)) {
+            if (closed && !cleanupSettled && (sessions.isEmpty() && online?.closedCleanly != false && events.pending == 0 && events.idle || now >= closeDeadline)) {
                 cleanupSettled = true
-                result = CloseResult(0, sessions.isEmpty() && !cleanupFailed && online?.closedCleanly != false)
+                val eventIdle = events.idle
+                result = CloseResult(events.shutdown(), sessions.isEmpty() && !cleanupFailed && online?.closedCleanly != false && eventIdle)
             }
         }
         result?.let {
@@ -597,6 +612,5 @@ internal fun onlineError(options: ClientOptions): Pair<OutcomeCode, String>? {
     }
     if (!options.disableEvents && !endpoint(options.eventsUrl, setOf("http", "https"))) return OutcomeCode.INVALID to "invalid_events_endpoint"
     if (options.source == null && options.sdkKey?.trimEnd('=')?.length !in 2..999) return OutcomeCode.INVALID to "invalid_sdk_key"
-    if (!options.disableEvents) return OutcomeCode.DISABLED to "events_unavailable"
     return null
 }

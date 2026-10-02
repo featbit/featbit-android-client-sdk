@@ -1,5 +1,64 @@
 # Verification record
 
+## Event field-format checks removed — 2026-10-02
+
+Removed EventProtocol field-format and individual length checks for event names, flag keys,
+variation IDs, users and custom attributes. IDs are opaque, case-sensitive strings. Track
+still requires a non-empty name and finite numeric value; unique variation mapping, privacy
+filtering, public-model validity and event/batch resource budgets remain unchanged.
+
+`:sdk:testDebugUnitTest :sdk:lintRelease` passed: **120 tests**, zero failures/errors/skips.
+Regression coverage verifies Unicode/spaces/punctuation, long names/keys/attribute values,
+non-UUID IDs and case-distinct IDs are preserved in the serialized event payload. Existing
+missing/duplicate/ambiguous mapping checks still pass. The target-service verifier no longer
+requires Android to mirror the service's Track-name validation. Live service, consumer and
+device checks were not repeated for this change; the Phase 5 results below are historical.
+
+## Phase 5 — 2026-10-02
+
+Implementation, behavior and reproducible commands: [phase-5.md](./phase-5.md).
+
+- Final SDK run: **123 tests passed**, zero failures/errors/skips. Includes the existing
+  86 normal tests, 30 event state/queue/operation tests, 3 real HTTP event tests, and
+  4 explicit target-server tests (3 synchronization, 1 events).
+- Coverage includes filtered call-time snapshots, metadata eligibility, local/remote provenance,
+  group/byte/count capacity, overlapping Flush/loss accounting, callback reentry, shared operation
+  capacity, dispatch revocation/late handles, offline retention, retry budgets, terminal independence,
+  physical request slots, transition deadlines, suspended-timer late responses and finite Close.
+- Target service at `7ecc24aac0a5ad766f6843faabf0eaeb71f1b753`, built locally with .NET 10,
+  uses Fake DB / None MQ / None cache. Real polling/evaluation/Track/Flush/final Close passed.
+  The actual Android request export also passed the target Domain IsValid/message conversion
+  verifier: **PHASE5_CONTRACT_PASS, 3 payloads → 3 messages** (one FlagValue, two CustomEvent).
+  This specifically checks the field-free variation contract, Android appType and filtered user,
+  beyond the controller's potentially misleading HTTP 200 for invalid input.
+- Debug/release AARs, release lint and local Maven staging passed. API inventory and Java 11
+  bytecode passed: unchanged **78 public types**; event/transport types remain internal.
+- Final staged AAR: independent Java and Kotlin 1.9.25 debug/JUnit and release/R8 builds passed.
+  Separate final logs are `build/phase-5-consumer-final-debug.log` and
+  `build/phase-5-consumer-final-release.log`.
+- API 34 emulator `emulator-5554`: both final debug consumers emitted **PHASE5_PASS**
+  (Java 12:33:36 and Kotlin 12:34:00, Europe/Berlin). Actual AAR factory, Java callbacks,
+  Kotlin suspend adapters, Track deduplication, evaluation, private options, Flush, offline
+  retention/resumption and final Close ran against the local target service. Wire filtering
+  content is independently verified by the exported request/Domain check above.
+
+SDK command: `gradlew.bat :sdk:testDebugUnitTest -PliveIntegration :sdk:assembleDebug
+:sdk:assembleRelease :sdk:lintRelease :sdk:publishReleasePublicationToLocalTestRepository`.
+Then `python tools/check_api.py` and `.dotnet/dotnet run --project
+tools/event-contract/EventContract.csproj -- sdk/build/phase-5-target-payload.json`.
+Logs are retained in ignored `build/phase-5-*.log`.
+
+Initial implementation checks caught a Long/Int Kotlin comparison, missing fixture user name,
+missing SourceStatus argument and a test hook installed after dispatch. These were corrected
+before the final passing run. Final review additionally covered callbacks executing before
+delayed timer ticks and bounded request-construction failures. Target-server compilation has
+the pre-existing Microsoft.OpenApi/SharpCompress package warnings described in Phase 4.
+
+Not verified: production gateways or deployed databases/MQ, physical devices, API 21 device
+execution, post-R8 device execution, hosted CI, or real Android lifecycle/Doze/network observers.
+The Kotlin 1.9.24/2.2.10 matrix was not repeated. There is no persistent event queue. Adjacent
+source repositories were not modified. No commit, push or remote publication was performed.
+
 ## Phase 4 — 2026-10-02
 
 Implementation and reproducible server/consumer commands: [phase-4.md](./phase-4.md).

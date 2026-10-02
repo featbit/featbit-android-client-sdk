@@ -37,3 +37,23 @@ The fixture uses an isolated subdirectory under noBackupFilesDir, no service/net
 and leaves one snapshot for the next run. Clear retains active values and the anonymous
 key; post-clear commits may repopulate the cache. Physical-device backup restoration
 and termination at each atomic-write stage remain later acceptance checks.
+
+## Phase 5 event checks
+
+Stage the latest AAR and rebuild both consumers first. Start the target evaluation-server
+Fake fixture as described in [phase-4.md](../docs/phase-4.md), install the debug APKs, then:
+
+```powershell
+adb reverse tcp:5189 tcp:5189
+adb shell am start -S -n co.featbit.consumer.java/.SmokeActivity --ez phase5 true
+adb shell am start -S -n co.featbit.consumer.kotlin/.SmokeActivity --ez phase5 true
+adb logcat -d -s FeatBitConsumer:I '*:S'
+```
+
+Each language must emit `PHASE5_PASS`. These opt-in runs exercise actual AAR factory creation,
+Track before readiness, deduplication, remote evaluation, private-attribute options, Flush,
+offline suppression/retention/resumption and final Close delivery. Java uses callbacks and Kotlin
+uses suspend adapters. The separate JVM live export plus target Domain verifier checks the
+actual filtered wire payload and resulting message content; the Activity does not inspect server
+storage. No production databases/MQ or platform lifecycle observers are involved. Remove the
+test reverse mapping afterward with `adb reverse --remove tcp:5189`.

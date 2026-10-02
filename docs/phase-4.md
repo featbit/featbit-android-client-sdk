@@ -51,7 +51,8 @@ consumer projects. Public API signatures are unchanged.
 
 ## Usage
 
-Online clients currently require events to be disabled because Phase 5 is not implemented:
+This Phase 4 example disables events to isolate synchronization. Phase 5 now supports enabled
+analytics with eventsUrl configured; see [phase-5.md](./phase-5.md).
 
 ```java
 ClientOptions options = ClientOptions.builder()
@@ -94,8 +95,8 @@ confirmation. After invalid Polling data or initial Streaming data timeout, retr
 zero for a full snapshot. Recovery candidates request full data immediately so unchanged
 server state can still confirm takeover. Empty valid full envelopes do establish readiness.
 The server accepts Android token generation, raw client-key HTTP auth and the SDK identifier
-headers. Event `appType`, Track naming and event eligibility protocol migration remain Phase 5
-integration work; no event compatibility claim is made.
+headers. Event compatibility was not tested in Phase 4; the subsequent Phase 5 contract checks
+and current event behavior are documented in [phase-5.md](./phase-5.md).
 
 ## Reproducible verification
 

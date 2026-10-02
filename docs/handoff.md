@@ -4,17 +4,18 @@
 
 ## 当前进度
 
-阶段 1–4 已实现，阶段 5–7 尚未实施。本次接入真实 Streaming/Polling、Identify 会话隔离、
-持续重试、fallback/recovery 和受控生命周期下的后台轮询。没有提交、推送或远程发布。
-相邻服务端源码未修改，仅构建并运行其 Fake provider 做真实协议联调。
-详细实现和服务端差异见 [phase-4.md](./phase-4.md)，实际验证见 [verification.md](./verification.md)。
-事件发送和真实 Android observers 仍未接入；在线使用必须设置 disableEvents(true)。
+阶段 1–5 已实现，阶段 6–7 尚未实施。本次接入评估/Track 事件、隐私过滤、分组去重、
+有界发送/重试、Flush、离线保留与 Close 最终发送。没有提交、推送或远程发布。
+相邻服务端源码未修改，构建并运行其 Fake provider 做真实协议联调；另用目标 Domain
+校验实际 Android 负载及消息转换，避免仅凭 HTTP 200 判断兼容。
+详细实现见 [phase-5.md](./phase-5.md)，实际验证见 [verification.md](./verification.md)。
+真实 Android observers 仍未接入；在线事件默认启用，需要配置 eventsUrl。
 
 ## 先读
 
-1. [实施计划](../plan.md)：阶段边界；下一步阶段 5。
+1. [实施计划](../plan.md)：阶段边界；下一步阶段 6。
 2. [架构](../architecture.md)：状态、会话、缓存与身份持久化规则。
-3. [阶段 4](./phase-4.md)、[阶段 3](./phase-3.md) 与 [阶段 2](./phase-2.md)：网络、持久化和运行时边界。
+3. [阶段 5](./phase-5.md)、[阶段 4](./phase-4.md)、[阶段 3](./phase-3.md) 与 [阶段 2](./phase-2.md)：事件、网络、持久化和运行时边界。
 4. [验证记录](./verification.md)：本次结果与历史结果分开。
 5. [阶段 1](./phase-1.md)：工具链、API 决策及初始默认参数。
 
@@ -32,6 +33,11 @@
 - `internal/OnlineSync.kt`：与 LocalClient 共用 gate 的内置网络状态机、请求授权、重试和单 candidate 接管。
 - `internal/SyncProtocol.kt`：请求、token、精确 Long cursor、消息解析和安全 HTTP 分类。
 - `internal/SyncTransport.kt`：自有 OkHttp、取消晚挂接句柄、禁止重定向和隐式重试、最多四个物理 exchange。
+- `internal/Events.kt`：共用状态 gate 的事件准入、分组/批次、物理请求授权、离线保留、Flush 覆盖与 Close 最终发送。
+- `internal/EventProtocol.kt`：过滤后用户、唯一 variation 映射、Android CustomEvent、事件独立 headers；不做字段格式/长度校验。
+- `EventsTest` / `EventTransportTest` / `LiveEventIntegrationTest`：受控事件竞态、真实 HTTP 和显式目标服务联调。
+- `tools/event-contract`：.NET 10 工具，引用目标 Domain，对实际 Android 请求执行 IsValid 与消息转换断言。
+- `consumer-tests/*/.../EventSmoke.*`：实际 AAR 事件检查，以 Activity extra `phase5=true` 显式启用。
 - `OnlineSyncTest` / `OnlineCacheTest` / `SyncProtocolTest` / `SyncTransportTest`：受控竞争与真实本地网络测试。
 - `LiveSyncIntegrationTest`：显式 -PliveIntegration 联调；服务端未启动会失败，不会自动跳过。
 - `consumer-tests/*/.../NetworkSmoke.*`：实际 AAR 网络检查，以 Activity extra `phase4=true` 显式启用。
@@ -44,7 +50,19 @@
 - 2026-10-01 按用户决定移除 Flag 输入大小、数量和元数据预算限制，覆盖 Bootstrap、Full/Patch、Custom/TestData 和 JSON 文本。保留重复 key 等有效性检查；JSON 解析深度/节点数及线程、回调、事件、缓存容量约束不属于该变更。`Limits` 已替换为只负责 Bootstrap 校验和转换的 `BootstrapRecords`。当时的 40 个测试是阶段 2 历史证据；阶段 3 本次结果见 verification.md。
 - 2026-10-02 后续移除 JSON 的 50,000 节点上限，保留深度 64；移除等待、请求/关闭超时、轮询/flush 间隔及 Flag grace 的固定上限，保留最小值与默认值。截止时间相加溢出时饱和到 `Long.MAX_VALUE`。内部两秒数据源停止预算和运行时容量限制不变。62 个单元测试及 Release lint 通过，未重跑设备测试。
 
-- 真实内置网络已接入。事件仍未接入；内置来源和 Custom 在线创建当前均需关闭事件。
+- 真实内置网络和事件均已接入。disableEvents(false) 为默认；有效 eventsUrl 和 sdkKey 是启用路径的前提。
+- 事件只保存在内存；每批最多 50 条/256 KiB、一个物理请求、最多 3 次尝试、24 小时 elapsed 最大年龄。
+  总共 8 MiB 编码内容预算（含开放组去重键和批次预留）、256 非空组，外加有界对象元数据。
+- 2026-10-02 按用户决定移除 EventProtocol 的字段格式及单字段长度检查，不复制服务端的
+  eventName、flagKey、variationId、用户/属性限制；ID 按原字符串精确比较，不要求 UUID。
+  保留 Track 名称非空/数值有限、variation 唯一映射、隐私过滤及事件/批次资源预算。
+  去重保留首次时间；隐私过滤先于留存和去重，不能修改同步/缓存上下文。
+- Flush 覆盖接受前仍未完成的事件，等待使用 requestTimeoutMillis。DISABLED、DEFERRED、超时、
+  终止错误不是送达；历史丢失不污染下一次 Flush，重叠 Flush 不能重复计数。
+- 离线/后台/超时撤销请求后，物理槽位保留到回调确认，晚到 2xx/4xx 不可改变新工作。
+  事件终止状态与同步独立；网络恢复、Identify、online 不得清除。
+- 目标服务已移除 sendToExperiment；Android 不恢复该字段。服务端会对无效负载返回 200，
+  所以兼容证据必须同时包括目标验证器/消息转换。详见 phase-5.md 的源码基线和限制。
 - 请求一旦捕获 baseline，不允许追溯采用晚到缓存；304 和 Patch 均验证实际请求基线。
   Full 可正常替换较高 cursor 的旧数据，缓存继续使用阶段 3 的逻辑提交顺序。
 - 服务端无增量可能返回空 200 或不发 Streaming 数据；不能作为确认。无效 Polling/初次数据超时后
@@ -66,17 +84,17 @@
 - 每次 Identify、新来源、pause/offline/close 均隔离旧 sink。匿名准备与已提交上下文的 wait 分离。
   内部 AnonymousRepository.withCurrent 在仓库 metadata gate 下验证 revision 再采用；该 gate 不做 I/O。
 - Close 的清理不依赖普通 waiter 或主线程回调容量；超时后不能声称杀死了阻塞的第三方线程。
-- 同步读取不做磁盘/网络 I/O；Phase 5 加事件时必须保持同一上下文/记录/资格的线性化边界。
+- 同步读取不做磁盘/网络 I/O；转换在 gate 外完成，事件准入前重验 view，保持同一上下文/记录/资格边界。
 - 日志只输出 SDK 自有诊断码，不转发扩展提供的字符串或 Throwable。
 
 ## 工作区和规范
 
-主目录 `D:\Workspace\FeatBit\featbit-android-client-sdk`。本次阶段 4 开始时工作区干净。
-当前未提交修改为阶段 4 实现、测试及文档；先检查 git status，保留它们。
+主目录 `D:\Workspace\FeatBit\featbit-android-client-sdk`。本次阶段 5 开始时工作区干净。
+当前未提交修改为阶段 5 实现、测试及文档；先检查 git status，保留它们。
 用户禁止批量/递归删除文件，只可一次删除一个明确路径文件。
 
-阶段 4 核对共享同步规范、协议参考、mobile 约束、JS SDK 与 evaluation-server 实现。
-源码基线及实际联调范围见 phase-4.md；后续使用前重新核对。
+阶段 4–5 核对共享规范、协议参考、mobile 约束、JS SDK 与 evaluation-server 实现。
+源码基线及实际联调范围见 phase-4.md / phase-5.md；后续使用前重新核对。
 规范以英文内容、当前 plan/architecture 及已接受决策为准。
 
 JDK `C:\Program Files\Microsoft\jdk-17.0.11.9-hotspot`；Android SDK
@@ -84,12 +102,12 @@ JDK `C:\Program Files\Microsoft\jdk-17.0.11.9-hotspot`；Android SDK
 SDK Kotlin 1.9.25，Java 11 字节码，minSdk 21 / compileSdk 34。
 本地 Maven 坐标 `co.featbit:featbit-client-android:0.1.0-SNAPSHOT`，输出到 `build/test-repository`。
 
-## 下一步：阶段 5
+## 下一步：阶段 6
 
-按 plan 实现事件、Flush 和 Close 最终发送。保持读取所选上下文/记录/事件资格的线性化边界，
-disableEvents、offline、隐私过滤和事件发送独立终止状态不能由网络恢复绕过。
-先核对不含 sendToExperiment 的约定事件负载与实际服务端兼容性，以及 Android appType 和 Track 名称。
-不要通过恢复旧字段或复制 Browser appType 来掩盖协议差异。真实 Android observers 留在阶段 6。
+按 plan 接入真实 Android 生命周期/网络 observers，复用当前 lifecycle 输入和状态机。
+首次同步前应用已知可见性，覆盖 Activity 旋转、多窗口、进程前后台及 Wi-Fi/蜂窝切换。
+验证 Doze/暂停后的 elapsed deadline、后台轮询及两秒事件 transition flush。
+disableEvents、offline、隐私过滤和独立终止状态不能被平台恢复绕过；前台恢复必须先封存后台组。
 
 继续沿用现有项目、三个工厂和独立消费者，不要重建工程。重新验证本次实际改动，不能继承历史 PASS。
 完整物理设备、部署数据库/MQ、备份恢复和各原子替换阶段的进程终止覆盖仍属阶段 6–7 汇总验收。

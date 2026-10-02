@@ -1,6 +1,6 @@
 package co.featbit.android.api
 
-/** Creates the local runtime. Built-in networking and persistence arrive in later phases. */
+/** Creates the SDK runtime with local evaluation, synchronization, persistence and analytics. */
 public interface ClientFactory {
     /** Implementations retain only applicationContext; creation never waits for network readiness. */
     public fun create(applicationContext: android.content.Context, options: ClientOptions): Operation<FeatBitClient>
@@ -32,8 +32,10 @@ public interface FeatBitClient {
     public fun jsonTextVariation(key: String, fallback: String): String
     public fun jsonTextVariationDetail(key: String, fallback: String): EvaluationDetail<String>
     public fun allVariations(): Map<String, EvaluationDetail<String>>
+    /** Named metric with a non-empty name. Group-deduplicated. */
     public fun track(name: String): Outcome<TrackResult>
     public fun track(name: String, numericValue: Double): Outcome<TrackResult>
+    /** Covers outstanding accepted events; waits at most requestTimeoutMillis. Timeout does not cancel delivery. */
     public fun flush(): Operation<FlushResult>
     public fun clearCache(scope: CacheScope, timeoutMillis: Long): Operation<CacheClearResult>
     public fun subscribeChanges(listener: ChangeListener): Outcome<ChangeSubscription>

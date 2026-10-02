@@ -20,7 +20,7 @@ internal interface SyncTransport {
 }
 
 /** Owned by one client. No redirects, implicit HTTP retries, or shared application resources. */
-internal class OkHttpSyncTransport : SyncTransport {
+internal class OkHttpSyncTransport(private val readResponseBody: Boolean = true) : SyncTransport {
     private val client = OkHttpClient.Builder().followRedirects(false).followSslRedirects(false)
         .retryOnConnectionFailure(false).connectTimeout(0, TimeUnit.MILLISECONDS)
         .readTimeout(0, TimeUnit.MILLISECONDS).writeTimeout(0, TimeUnit.MILLISECONDS).build()
@@ -54,7 +54,11 @@ internal class OkHttpSyncTransport : SyncTransport {
             call.enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) { release(); listener.failed(null) }
                 override fun onResponse(call: Call, response: Response) {
-                    try { response.use { listener.response(it.code, if (it.code == 200) it.body?.string() ?: "" else "", it.header("Retry-After")) } }
+                    try {
+                        val result = response.use { Triple(it.code, if (readResponseBody && it.code == 200) it.body?.string() ?: "" else "", it.header("Retry-After")) }
+                        release()
+                        listener.response(result.first, result.second, result.third)
+                    }
                     catch (_: IOException) { listener.failed(null) }
                     finally { release() }
                 }

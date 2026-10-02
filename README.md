@@ -2,12 +2,13 @@
 
 Kotlin implementation with Java-compatible public APIs, targeting Android API 21+.
 
-**Current state: Phase 4 online synchronization.** The project builds debug/release AARs with
+**Current state: Phase 5 events and delivery.** The project builds debug/release AARs with
 local evaluation, Bootstrap, TestData/Custom sources, Identify, online/offline intent,
 subscriptions, coroutine adapters, bounded Close, persistent cache and anonymous identity.
 Built-in Streaming/Polling, reconnect, Identify isolation, optional fallback/recovery and
-controlled background polling are implemented. Analytics delivery and real Android lifecycle
-observers remain later-phase work. Online clients currently require `disableEvents(true)`.
+controlled background polling are implemented. Evaluation/Track events, privacy filtering,
+bounded queues/retries, Flush and final Close delivery are implemented. Configure `eventsUrl`
+for enabled analytics; real Android lifecycle observers remain Phase 6 work.
 Do not use this snapshot as a production feature-flag SDK.
 
 - [Implementation plan](./plan.md)
@@ -16,6 +17,7 @@ Do not use this snapshot as a production feature-flag SDK.
 - [Phase 2 runtime, usage and boundaries](./docs/phase-2.md)
 - [Phase 3 persistence, clearing and identity](./docs/phase-3.md)
 - [Phase 4 online synchronization and integration checks](./docs/phase-4.md)
+- [Phase 5 events, privacy, Flush and Close](./docs/phase-5.md)
 - [Verification results](./docs/verification.md)
 - [手动验证指南（Android Studio / 模拟器）](./docs/manual-verification.md)
 - [开发交接与当前进度](./docs/handoff.md)

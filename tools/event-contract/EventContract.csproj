@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EvaluationServerDir Condition="'$(EvaluationServerDir)' == ''">../../../featbit/modules/evaluation-server</EvaluationServerDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(EvaluationServerDir)/src/Domain/Domain.csproj" />
+  </ItemGroup>
+</Project>

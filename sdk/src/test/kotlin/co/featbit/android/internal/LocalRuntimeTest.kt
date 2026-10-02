@@ -340,7 +340,7 @@ public class LocalRuntimeTest {
         assertTrue(h.client.isOffline())
         assertEquals(OutcomeCode.DISABLED, h.client.clearCache(CacheScope.NAMESPACE, 10).getResult()!!.code)
         assertEquals(TrackResult.SUPPRESSED, h.client.track("metric").value)
-        assertEquals(FlushResult.EMPTY, h.client.flush().getResult()!!.value)
+        assertEquals(OutcomeCode.DISABLED, h.client.flush().getResult()!!.code)
         h.close()
     }
     @Test public fun typedGenericAndJsonConversionsHaveIndependentSemantics() {

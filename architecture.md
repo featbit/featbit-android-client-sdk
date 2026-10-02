@@ -1,6 +1,6 @@
 # FeatBit Android Client SDK Architecture
 
-Date: 2026-10-02. Status: Phases 1–4 implemented; Phases 5–7 remain planned. See [Phase 4 implementation](./docs/phase-4.md) and [verification](./docs/verification.md) for actual tested boundaries.
+Date: 2026-10-02. Status: Phases 1–5 implemented; Phases 6–7 remain planned. See [Phase 5 implementation](./docs/phase-5.md) and [verification](./docs/verification.md) for actual tested boundaries.
 
 This document turns the accepted scope in [the development plan](./plan.md) into component boundaries, state ownership, concurrency rules, and implementation checkpoints. Names and additional design choices below are proposals. They do not silently resolve pending product decisions or establish tested behavior.
 
@@ -350,7 +350,7 @@ call-time immutable result/context
   -> acknowledgement or final loss + flush completion
 ```
 
-The Android model intentionally omits the retiring `sendToExperiment` field. Variation metadata means the top-level `variationOptions` ID/value pairs; event admission must not depend on a removed model field. The current shared protocol, JS SDK and evaluation service still use `sendToExperiment`. Phase 5 must verify the agreed field-free event contract against the migrated service before claiming event compatibility; do not reintroduce or synthesize the removed field.
+The Android model intentionally omits the retiring `sendToExperiment` field. Variation metadata means the top-level `variationOptions` ID/value pairs; event admission must not depend on a removed model field. Shared protocol text and JS still refer to it, but the pinned target service has removed it. Phase 5 verified the field-free payload using real HTTP and the target Domain validator/message conversion; see phase-5.md for evidence and deployment limits. Do not reintroduce or synthesize the removed field.
 
 Evaluation events require successful conversion, remote origin and confirmation for the active online context. Track does not require initialization. Explicit offline, disableEvents, event terminal failure and closing suppress admission. Visibility alone does not suppress collection while the process can execute. A synchronization terminal failure does not independently disable valid event collection/delivery.
 

@@ -110,8 +110,8 @@ stable major release; Phase 1 snapshot contracts may change only with explicit b
   copied when supplied to the builder and exposed as an unmodifiable snapshot. Missing options
   remain null, distinct from an empty list.
   The obsolete `sendToExperiment` field and `AnalyticsMetadata` wrapper are not exposed.
-  The current shared wire protocol, JS SDK and evaluation-server still use the field. Phase 5
-  event compatibility requires validating the agreed field-free payload against the migrated
+  Shared wire protocol text and JS SDK still use the field; the target evaluation-server has
+  removed it. Phase 5 validated the agreed field-free payload against the migrated
   service; this model change does not establish that compatibility.
 - `TestDataFactory.create(initialFlags)` accepts immutable `BootstrapFlag` values, with no
   caller-managed flag timestamps. `TestData.clientOptions(user)` binds the source with events/cache

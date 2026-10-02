@@ -45,6 +45,13 @@ class SmokeActivity : Activity() {
     }
 
     private fun runChecks() {
+        if (intent.getBooleanExtra("phase5", false)) {
+            result.text = "正在检查阶段 5 事件发送…"
+            EventSmoke.verify(applicationContext) { message -> runOnUiThread {
+                result.text = message; Log.i("FeatBitConsumer", message)
+            } }
+            return
+        }
         if (intent.getBooleanExtra("phase4", false)) {
             result.text = "正在检查阶段 4 网络同步…"
             NetworkSmoke.verify(applicationContext) { message -> runOnUiThread {

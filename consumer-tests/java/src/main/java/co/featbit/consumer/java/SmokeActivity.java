@@ -45,6 +45,13 @@ public final class SmokeActivity extends Activity {
     }
 
     private void runChecks() {
+        if (getIntent().getBooleanExtra("phase5", false)) {
+            result.setText("正在检查阶段 5 事件发送…");
+            EventSmoke.verify(getApplicationContext(), message -> runOnUiThread(() -> {
+                result.setText(message); Log.i("FeatBitConsumer", message);
+            }));
+            return;
+        }
         if (getIntent().getBooleanExtra("phase4", false)) {
             result.setText("正在检查阶段 4 网络同步…");
             NetworkSmoke.verify(getApplicationContext(), message -> runOnUiThread(() -> {

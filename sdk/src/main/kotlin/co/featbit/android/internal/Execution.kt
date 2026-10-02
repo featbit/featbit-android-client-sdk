@@ -97,6 +97,12 @@ internal fun mainDispatch(): Dispatch {
 internal class Diagnostics(private val options: ClientOptions, private val clock: Clock,
     private val worker: Workers = BoundedWorkers(1, 128)) {
     private val times = LinkedHashMap<String, Long>()
+    private val losses = LinkedHashMap<String, Long>()
+    fun loss(code: String) {
+        synchronized(times) { losses[code] = (losses[code] ?: 0L).let { if (it == Long.MAX_VALUE) it else it + 1 } }
+        report(code)
+    }
+    fun lossCounts(): Map<String, Long> = synchronized(times) { losses.toMap() }
     fun report(code: String) {
         if (options.logger == null || options.logLevel == LogLevel.NONE || options.logLevel.ordinal < LogLevel.WARN.ordinal) return
         synchronized(times) {
@@ -105,7 +111,13 @@ internal class Diagnostics(private val options: ClientOptions, private val clock
             if (times.size >= 128) times.remove(times.keys.first())
             times[code] = now
         }
-        worker.execute { try { options.logger.log(LogLevel.WARN, Diagnostic(code)) } catch (_: Exception) { } }
+        worker.execute { try { options.logger.log(LogLevel.WARN, Diagnostic(code, synchronized(times) { losses[code]?.toString() })) } catch (_: Exception) { } }
     }
-    fun close() = worker.close()
+    fun close() {
+        if (options.logger != null && options.logLevel != LogLevel.NONE && options.logLevel.ordinal >= LogLevel.WARN.ordinal)
+            lossCounts().forEach { (code, count) -> worker.execute {
+                try { options.logger.log(LogLevel.WARN, Diagnostic(code, count.toString())) } catch (_: Exception) { }
+            } }
+        worker.close()
+    }
 }

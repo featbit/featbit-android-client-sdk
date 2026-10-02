@@ -34,7 +34,7 @@ android {
         disable += "GradleDependency"
     }
     testOptions.unitTests.all {
-        if (!providers.gradleProperty("liveIntegration").isPresent) it.exclude("**/LiveSyncIntegrationTest*")
+        if (!providers.gradleProperty("liveIntegration").isPresent) it.exclude("**/Live*IntegrationTest*")
     }
 }
 
@@ -74,7 +74,7 @@ afterEvaluate {
                 artifactId = "featbit-client-android"
                 pom {
                     name.set("FeatBit Android Client SDK")
-                    description.set("FeatBit Android client with online synchronization, local evaluation, cache and anonymous identity persistence; analytics and Android lifecycle integration remain in development.")
+                    description.set("FeatBit Android client with online synchronization, local evaluation, analytics, cache and anonymous identity persistence; Android lifecycle integration remains in development.")
                     url.set("https://github.com/featbit/featbit-android-client-sdk")
                     licenses { license { name.set("MIT License"); url.set("https://opensource.org/licenses/MIT") } }
                     scm { url.set("https://github.com/featbit/featbit-android-client-sdk") }
