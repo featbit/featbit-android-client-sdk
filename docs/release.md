@@ -6,6 +6,47 @@ repository proves that a downloadable Central artifact works.
 
 ## Local commands
 
+### Windows: full live and emulator acceptance
+
+Start one API 34 emulator in Android Studio, then run from the SDK root in
+Windows PowerShell 5.1 or PowerShell 7:
+
+```powershell
+.\tools\run-live-acceptance.ps1
+# Optional preflight without building, starting the service or running tests:
+.\tools\run-live-acceptance.ps1 -CheckOnly
+# Select explicitly when more than one emulator is running:
+.\tools\run-live-acceptance.ps1 -Serial emulator-5554
+```
+
+This wrapper checks JDK 17, Python 3.8+, Android platform 34/build-tools 34.0.0 and
+35.0.0, the existing debug keystore, .NET SDK 10 and the adjacent
+`featbit/modules/evaluation-server` checkout. It uses environment settings or common
+Windows installation paths; override with `-JavaHome`, `-AndroidHome`, `-DotnetPath`
+or `-Python` if needed. `-Version` defaults to `0.1.0-SNAPSHOT`.
+
+The wrapper builds and starts its own Fake/None server on port 5189, then runs all
+four consumer rows through `acceptance.py --live --serial`. It rejects an occupied
+service port rather than reusing or stopping an unknown process. Its `finally` block
+stops only its own server and restores process environment variables and the working
+directory, including when a build or check fails. The device helpers restore their
+temporary settings/mappings. Allow the run to finish; forcibly closing the terminal
+can prevent cleanup. Keep the emulator free from manual interaction during checks.
+Platform network checks wait up to 45 seconds for Android to establish or remove
+the requested Internet-capable transport, then assert SDK state with the ordinary
+12-second deadline. `NETWORK_READY` records independent OS and SDK state. An
+Android transition timeout remains a failed run; rebuild the probe APK when updating
+the platform script. Each platform subprocess has a 480-second overall budget.
+
+Launcher/server logs are in `build/live-acceptance/<run>/`. The nested runner prints
+its separate `build/phase7/<run>/` evidence directory and writes `report.json` there.
+Existing evidence is retained. The script prints the Git revision and working-tree
+status; commit intended changes first when evidence must identify a clean commit.
+It does not create/start an emulator, publish remotely, or cover physical devices
+and deployed database/MQ persistence.
+
+### Individual entry points
+
 Use `tools/acceptance.py` as the combined acceptance entry point. It calls
 `tools/platform_device_checks.py` for platform checks and `tools/live_device_checks.py`
 for installed-APK live checks when requested. These helpers also support focused reruns;

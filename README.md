@@ -46,5 +46,10 @@ Add `--serial emulator-5554` to install and execute Debug/R8 test APKs. This add
 requires build-tools 35.0.0 for the Kotlin 2.2.10 consumer; the core SDK compiler stays 1.9.25.
 See the release guide for per-run evidence, signing preparation and unexecuted release gates.
 
+On Windows, start an emulator and run `.\tools\run-live-acceptance.ps1`
+to build/start the Fake/None service and run the full live/emulator matrix with
+automatic service cleanup. Use `-CheckOnly` to check prerequisites first; see the
+[release guide](docs/release.md#windows-full-live-and-emulator-acceptance).
+
 `consumer-tests/` contains independent Java/Kotlin compilation and R8 fixtures, not samples.
 Samples are deferred. OpenFeature is a separate product and is not a dependency.

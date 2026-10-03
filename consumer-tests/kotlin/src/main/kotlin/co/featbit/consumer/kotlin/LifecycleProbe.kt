@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.util.Log
 import android.widget.TextView
@@ -31,14 +33,24 @@ class LifecycleProbeReceiver : BroadcastReceiver() {
 private object LifecycleProbe {
     private var client: FeatBitClient? = null
     private var version = 0
-    private fun emit(kind: String, detail: String = "") {
+    private fun emit(kind: String, detail: String = "", context: Context? = null) {
         val info = client?.getConnectionInformation()
-        Log.i("FeatBitPhase6", JSONObject().put("kind", kind).put("detail", detail)
+        val output = JSONObject().put("kind", kind).put("detail", detail)
             .put("instance", version).put("pid", android.os.Process.myPid())
             .put("background", info?.pauseReasons?.contains(PauseReason.BACKGROUND))
             .put("networkPaused", info?.pauseReasons?.contains(PauseReason.NETWORK_UNAVAILABLE))
             .put("offline", client?.isOffline()).put("confirmed", info?.remoteConfirmed)
-            .put("status", info?.status?.name).put("value", client?.stringVariation("phase6", "fallback")).toString())
+            .put("status", info?.status?.name).put("value", client?.stringVariation("phase6", "fallback"))
+        if (context != null) {
+            // Independent OS evidence: do not infer transport readiness from SDK state.
+            val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            val networks = manager.allNetworks.mapNotNull { manager.getNetworkCapabilities(it) }
+                .filter { it.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) }
+            output.put("osInternet", networks.isNotEmpty())
+                .put("osWifi", networks.any { it.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) })
+                .put("osCellular", networks.any { it.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) })
+        }
+        Log.i("FeatBitPhase6", output.toString())
     }
     fun command(context: Context, intent: Intent) {
         val command = intent.getStringExtra("command") ?: "snapshot"
@@ -62,7 +74,7 @@ private object LifecycleProbe {
                     client?.subscribeStatus { emit("status") }
                 }
             }
-            "snapshot" -> emit("snapshot", intent.getStringExtra("token") ?: "")
+            "snapshot" -> emit("snapshot", intent.getStringExtra("token") ?: "", context)
             "identify" -> client?.identify(User.builder("phase6-other").name("Other").build().value!!,
                 intent.getStringExtra("waitMillis")?.toLongOrNull() ?: 1_000)?.observe { emit("identify", it.code.name) }
             "await" -> client?.awaitReady(1_000)?.observe { emit("await", it.code.name) }

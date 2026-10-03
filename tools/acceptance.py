@@ -182,7 +182,7 @@ def device_checks(serial, language, consumer, row, run, command):
         else:
             raise RuntimeError(label + " runtime timed out")
         if language == "kotlin":
-            command(label + "-platform", [sys.executable, ROOT / "tools/platform_device_checks.py", "--adb", adb, "--serial", serial], timeout=240)
+            command(label + "-platform", [sys.executable, ROOT / "tools/platform_device_checks.py", "--adb", adb, "--serial", serial], timeout=480)
 
 
 if __name__ == "__main__":

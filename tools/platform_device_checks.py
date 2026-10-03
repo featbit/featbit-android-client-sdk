@@ -96,6 +96,23 @@ def state(**expected):
     return until(lambda: snapshot(**expected), str(expected))
 
 
+def network_ready(**expected):
+    # Radio commands return before Android has established/lost the network.
+    # Give the emulator 45 seconds, then keep the normal SDK assertion deadline.
+    latest = None
+
+    def check():
+        nonlocal latest
+        latest = snapshot()
+        return latest and all(latest.get(key) == value for key, value in expected.items())
+
+    try:
+        until(check, "Android network transition " + str(expected), seconds=45)
+    except AssertionError as error:
+        raise AssertionError(f"{error}; last snapshot: {latest}") from error
+    print("NETWORK_READY " + json.dumps(latest, sort_keys=True), flush=True)
+
+
 def foreground():
     adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
     adb("shell", "wm", "dismiss-keyguard")
@@ -176,13 +193,17 @@ try:
     until(lambda: sum(v["kind"] == "activity-created" for v in logs()) > activity_count, "Activity recreation on rotation")
     passed("Activity rotation retains process client")
 
+    network_ready(osWifi=True)
     adb("shell", "svc", "wifi", "disable")
+    network_ready(osWifi=False, osCellular=True)
     state(networkPaused=False)
     count = len(polls)
     until(lambda: len(polls) > count, "polling after Wi-Fi to cellular switch")
     adb("shell", "svc", "data", "disable")
+    network_ready(osInternet=False)
     state(networkPaused=True); quiet()
     adb("shell", "svc", "wifi", "enable")
+    network_ready(osWifi=True, osCellular=False)
     state(networkPaused=False)
     count = len(polls); until(lambda: len(polls) > count, "network recovery")
     passed("Wi-Fi/cellular handover, total loss and network recovery")
@@ -256,6 +277,7 @@ try:
     reset(local=True)
     adb("shell", "svc", "wifi", "disable")
     adb("shell", "svc", "data", "disable")
+    network_ready(osInternet=False)
     foreground(); state(value="local", networkPaused=False)
     command("close")
     until(lambda: any(v["kind"] == "closed" and v["detail"] == "SUCCESS:true" for v in logs()), "local close")

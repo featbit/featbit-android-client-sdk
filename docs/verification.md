@@ -6,6 +6,86 @@ Current tool names: `acceptance.py`, `platform_device_checks.py` and
 used by those runs. Evidence paths and report formats are unchanged; current commands
 are in the [release guide](./release.md).
 
+## Emulator network transition timing — 2026-10-03
+
+Run `build/phase7/20261003-123547-f32916e2/` failed the Kotlin 2.2.10 Release
+platform check while waiting for `networkPaused=false` after enabling Wi-Fi.
+Captured `build/network-logcat.log` shows Wi-Fi enabled at 12:48:52.001, but the
+Wi-Fi network only connected at 12:49:16.035, after the script's 12-second deadline.
+Cleanup enabled cellular at 12:49:04, and the SDK cleared its network pause then.
+This differs from the earlier ADB system-stall failure recorded below.
+
+The test-only consumer probe now reports Internet-capable OS networks independently
+of SDK pause state. The platform script verifies Wi-Fi/cellular handover, total
+loss, Wi-Fi recovery and disconnected TestData prerequisites with a 45-second
+Android transition budget, followed by the unchanged 12-second SDK state deadline.
+It prints `NETWORK_READY` snapshots and includes the last snapshot on transition
+timeout. The parent process budget is 480 seconds; timeouts remain failures.
+SDK implementation and public APIs are unchanged. Original failed evidence is preserved.
+
+Validation: all 11 Python tool tests passed. A fresh
+`python -B tools/acceptance.py --rows kotlin-2.2.10 --serial emulator-5554` run
+completed with `requested checks passed` in `build/phase7/20261003-125220-ec20eede/`:
+139 SDK tests, consumer Debug/Release builds, JUnit/lint, both installed runtime
+smokes and both complete platform checks passed. Both platform logs end with
+`PHASE6_DEVICE_PASS`, and no reverse mapping remained. This focused run did not
+repeat the other compiler rows or live target-server integration.
+
+## Emulator system stall and platform retry — 2026-10-03
+
+Run `build/phase7/20261003-122827-601255ce/` stopped at the Kotlin 1.9.24
+Release platform check: `wm dismiss-keyguard` exceeded its 20-second ADB budget,
+and cleanup's `am force-stop` also timed out. Captured device Logcat
+(`build/platform-failure-logcat.log`) includes system_server pre-watchdog output,
+a 38-second system UI dispatch and a Google Search process ANR at the same time.
+This was a device-command timeout, not a failing SDK behavior assertion.
+
+After the emulator recovered, force-stop cleanup and dismiss-keyguard both succeeded.
+The same standalone platform script was rerun against the installed consumer without
+code changes or relaxed timeouts. All scenarios and cleanup passed, ending with
+`PHASE6_DEVICE_PASS`; log: `build/platform-retry-20261003.log`. No reverse mapping
+remained. The original failed matrix report is preserved and is not converted into
+a full-matrix pass by this focused retry.
+
+## Windows live-acceptance launcher — 2026-10-03
+
+`tools/run-live-acceptance.ps1` supports Windows PowerShell 5.1 and PowerShell 7. It checks tools and
+the running emulator, builds/starts a dedicated Fake/None server, runs all four
+consumer rows with live and emulator checks, and stops its own service in `finally`.
+It preserves process environment variables (including absent versus empty values)
+and the caller's working directory. It rejects an occupied port 5189.
+
+Validation:
+
+- After the initial PowerShell 7-only requirement was removed, preflight passed in
+  both Windows PowerShell 5.1.19041.6456 and PowerShell 7. Native stderr capture and
+  Python preflight quoting were adjusted for 5.1. Two controlled acceptance probes
+  under 5.1 wrote stdout/stderr and exited with 0/7 after real server builds/startups.
+  Success/failure handling, service cleanup, environment and working-directory
+  restoration passed in both cases. Log: `build/launcher-ps51-validation.log`.
+  These launcher probes do not represent another full SDK matrix run.
+- `-CheckOnly` passed on the local Windows environment without starting a service.
+- A second preflight while the test service was running rejected the occupied port
+  and left the existing service process unchanged.
+- A full launcher run on SDK commit `3891b25a0e3a5185c57be1c755ac0492f2589874`
+  plus launcher/documentation changes completed successfully. Launcher logs:
+  `build/live-acceptance/20261003-115730-3c943d7e/`; matrix evidence:
+  `build/phase7/20261003-115741-3388f718/`. There were **143 passing SDK tests**,
+  four passing consumer build/Debug/R8 rows, six passing platform runs and
+  **16 passing installed-APK synchronization/event checks**. The target report is
+  `target-device-runs/20261003-121107-be43e53d/report.json`. The wrapper stopped
+  its service after success, and temporary ADB reverse mappings were removed.
+- A controlled substitute for the acceptance command exited with code 7 after a
+  real server startup. The wrapper propagated failure and stopped the server.
+  This exposed a null-to-empty environment restoration issue; after fixing that
+  helper, the failure probe confirmed exact environment and directory restoration.
+  Final probe logs: `build/live-acceptance/20261003-121421-5480fae6/`.
+  This deliberate failure probe is separate from the successful matrix evidence.
+
+The full matrix preceded only the environment-restoration helper correction; no
+SDK/runtime behavior changed. Physical-device, database/MQ and formal release
+limitations remain as listed in the conformance gates.
+
 ## Consumer screen labels — 2026-10-03
 
 Consumer screens now describe local runtime, synchronization, events and platform
