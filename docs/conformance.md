@@ -31,6 +31,10 @@ device properties. The phase report identifies which evidence directory was actu
 
 ## Outstanding release gates
 
+Hosted library/consumer CI passed for commit `14fb4fd` across all four consumer rows;
+see the [run and evidence record](./verification.md#hosted-library-and-consumer-ci--2026-10-03).
+This closes the ordinary hosted CI check for that commit, not the release-signing workflow.
+
 These cannot be converted to PASS by JVM mocks, historical results, or API-34 emulator logs:
 
 - Physical-device natural sleep/App Standby, vendor restrictions, VPN, missing-permission
@@ -44,7 +48,7 @@ These cannot be converted to PASS by JVM mocks, historical results, or API-34 em
 - Exhaustive diagnostics injection at every path and log level, slow/reentrant logger and
   full resource-leak measurement. All-level loss-count/reentrant/throwing-logger and existing
   bounded-worker/rate-limit tests provide partial evidence, not exhaustive path coverage.
-- Hosted CI and credential-backed release signing/Central validation and fresh download.
+- Credential-backed release-candidate workflow, release signing/Central validation and fresh download.
 
 P06/P08/P09 durable events and iOS are N/A because unsupported, not passed. No persistent
 event queue, OpenFeature Provider, Compose/KMP integration or samples are added here.

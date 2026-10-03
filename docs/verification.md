@@ -1,5 +1,36 @@
 # Verification record
 
+## Hosted library and consumer CI — 2026-10-03
+
+[Library and consumer contracts run 37112255715](https://github.com/featbit/featbit-android-client-sdk/actions/runs/37112255715)
+completed successfully for commit `14fb4fd612a5d4bc63b6d209572b1a05d7cdb620`.
+The GitHub Actions API confirmed success for all four jobs, their acceptance steps
+and artifact uploads:
+
+| Consumer row | Job result | Uploaded evidence |
+| --- | --- | --- |
+| Java | Success | `reports-java` |
+| Kotlin 1.9.24 | Success | `reports-kotlin-1.9.24` |
+| Kotlin 1.9.25 | Success | `reports-kotlin-1.9.25` |
+| Kotlin 2.2.10 | Success | `reports-kotlin-2.2.10` |
+
+Each job ran the Python script regressions and
+`python3 tools/phase7_acceptance.py --rows <consumer>` on Ubuntu/JDK 17 with the
+default artifact version `0.1.0-SNAPSHOT`. The configured acceptance covers SDK
+Debug/Release AAR builds, non-live JVM tests, Release lint, local Maven publication,
+API/bytecode checks, representative conformance checks, and independent consumer
+Debug/R8 builds, JVM tests, lint and dependency/plugin reports.
+
+The four artifacts were present and unexpired when checked; the API reports expiry
+at `2027-01-01T09:12:19Z`. Raw reports remain attached to this run rather than committed
+to Git. Job status and artifact metadata were verified; the ZIP contents were not
+downloaded or independently audited in this documentation update.
+
+This establishes hosted build/consumer CI for the stated commit. No `--live` or
+`--serial` was supplied: it does not add device, live-service, database/MQ,
+credential-backed signing or Central publication/download evidence. Historical
+results below retain their original scope.
+
 ## Linux timeout/retry fixture address — 2026-10-03
 
 The uploaded GitHub Actions SDK log reported two failures among 139 tests:

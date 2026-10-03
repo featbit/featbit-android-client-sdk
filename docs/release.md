@@ -77,8 +77,10 @@ The separate `release-candidate.yml` workflow accepts a version only on its matc
 `v<version>` tag, reruns the artifact matrix and stages a signed repository. It requires
 the `release` environment and SIGNING_KEY/SIGNING_PASSWORD secrets. Signing is opt-in;
 ordinary builds do not need credentials. No remote publishing endpoint is configured.
-The hosted workflow and credential-backed signing require a real authorized run before
+The hosted release-candidate workflow and credential-backed signing require a real authorized run before
 being claimed verified. Do not print, commit or archive signing credentials.
+The ordinary library/consumer CI has passed separately; see the
+[hosted CI record](./verification.md#hosted-library-and-consumer-ci--2026-10-03).
 
 Before formal publication, resolve every applicable acceptance gate in [conformance](./conformance.md),
 review license/dependency notices, decide the release version, verify Central namespace/account
