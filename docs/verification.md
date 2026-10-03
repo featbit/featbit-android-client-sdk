@@ -6,6 +6,60 @@ Current tool names: `acceptance.py`, `platform_device_checks.py` and
 used by those runs. Evidence paths and report formats are unchanged; current commands
 are in the [release guide](./release.md).
 
+## Consumer screen labels — 2026-10-03
+
+Consumer screens now describe local runtime, synchronization, events and platform
+lifecycle checks by purpose instead of development phase. All fixed screen text,
+including titles, buttons, progress, results and scope descriptions, is English.
+Scope text follows the selected check. Existing Activity extras, fixture data and Logcat PASS/FAIL markers
+remain unchanged for the acceptance scripts.
+
+Both interactive consumer Debug APKs were rebuilt against the Maven AAR from
+`build/phase7/20261003-113008-f65e2fdc/repository` and installed on `emulator-5554`.
+Java/Kotlin local runtime, synchronization and event checks all passed (six launches);
+network checks used the Fake/None service. UI hierarchy captures verified English
+PASS text without phase labels or Chinese characters, while Logcat retained the
+original markers. The platform Activity's English text was also verified.
+Build log: `build/consumer-ui-english-build.log`; UI captures:
+`build/consumer-ui-english/`. The service and temporary reverse mapping were cleaned up.
+This follow-up checked Debug screen text; the complete matrix below predates this
+UI-only change and was not rerun for it.
+
+## Combined live and emulator matrix — 2026-10-03
+
+Command: `python -B tools/acceptance.py --live --serial emulator-5554`.
+SDK baseline: clean commit `6b2af8728b12be8eb75e1c9e9330b2a10cc67638`;
+artifact version `0.1.0-SNAPSHOT`. Evidence directory:
+`build/phase7/20261003-113008-f65e2fdc/`.
+Its `report.json` finishes with `requested checks passed`.
+
+- **143 SDK tests passed**, zero failures/errors/skips: 139 non-live checks plus
+  four explicitly executed target-service tests. SDK AAR builds, Release lint,
+  publication, the 78-type API baseline/Java 11 check and conformance report passed.
+- Java and Kotlin 1.9.24/1.9.25/2.2.10 independent consumers passed Debug/R8 builds,
+  JUnit and lint, followed by installed Debug and test-signed R8 runtime checks
+  on API 34 emulator `emulator-5554`. Gradle reused eligible build/test cache outputs;
+  explicit live tests and device launches ran for this invocation.
+- All six Kotlin Debug/R8 platform runs emitted `PHASE6_DEVICE_PASS`, with no
+  cleanup failures. The runs cover controlled background/rotation/network changes,
+  forced Doze/resumption, event transition deadlines and local TestData behavior.
+- Target Domain verification reported three valid payloads and three target messages.
+  The installed-APK target report at
+  `target-device-runs/20261003-114235-d59d5192/report.json` reports **16 checks passed**:
+  four consumer rows × Debug/R8 × synchronization/events. Local runtime checks
+  are recorded separately by the main runner.
+
+The evaluation server at commit `7ecc24aac0a5ad766f6843faabf0eaeb71f1b753` was
+rebuilt with .NET 10 into `build/acceptance-server` and started with DbProvider=Fake,
+MqProvider=None, CacheProvider=None on port 5189. Its build retained existing
+Microsoft.OpenApi/SharpCompress NuGet advisory warnings. The test service was stopped
+after acceptance; temporary ADB reverse mappings were removed. Emulator setting
+cleanup completed. No SDK implementation or adjacent repository source was changed.
+
+This is current-commit emulator and Fake/None protocol evidence, not physical-device
+natural sleep, deployed database/MQ persistence, trusted release signing or Central
+publication/download acceptance. Those release gates remain open.
+
 ## Hosted library and consumer CI — 2026-10-03
 
 [Library and consumer contracts run 37112255715](https://github.com/featbit/featbit-android-client-sdk/actions/runs/37112255715)

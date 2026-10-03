@@ -22,7 +22,7 @@ class SmokeActivity : Activity() {
             setPadding(padding, padding, padding, padding)
         }
         content.addView(TextView(this).apply {
-            text = "Kotlin · SDK 本地运行时检查"
+            text = "Kotlin · SDK acceptance checks"
             textSize = 22f
         })
         result = TextView(this).apply {
@@ -34,11 +34,15 @@ class SmokeActivity : Activity() {
         lastRun = TextView(this)
         content.addView(lastRun)
         content.addView(Button(this).apply {
-            text = "重新检查"
+            text = "Run again"
             setOnClickListener { runChecks() }
         })
         content.addView(TextView(this).apply {
-            text = "验证独立 AAR 的本地运行时、缓存与匿名身份持久化。\n不验证网络同步或事件发送。"
+            text = when {
+                intent.getBooleanExtra("phase5", false) -> "Checks event delivery, privacy filtering, Flush, offline recovery and Close using the published AAR."
+                intent.getBooleanExtra("phase4", false) -> "Checks Streaming, Polling, Identify, offline recovery and Close using the published AAR."
+                else -> "Checks the local runtime, cache and anonymous identity persistence using the published AAR.\nDoes not cover network synchronization or event delivery."
+            }
         })
         setContentView(ScrollView(this).apply { addView(content) })
         // Keep first-frame renderer stalls outside SDK operation wait budgets.
@@ -58,31 +62,31 @@ class SmokeActivity : Activity() {
 
     private fun runChecks() {
         if (intent.getBooleanExtra("phase5", false)) {
-            result.text = "正在检查阶段 5 事件发送…"
+            result.text = "Checking event delivery..."
             EventSmoke.verify(applicationContext) { message -> runOnUiThread {
-                result.text = message; Log.i("FeatBitConsumer", message)
+                result.text = message.replace("PHASE5_", "Events "); Log.i("FeatBitConsumer", message)
             } }
             return
         }
         if (intent.getBooleanExtra("phase4", false)) {
-            result.text = "正在检查阶段 4 网络同步…"
+            result.text = "Checking network synchronization..."
             NetworkSmoke.verify(applicationContext) { message -> runOnUiThread {
-                result.text = message; Log.i("FeatBitConsumer", message)
+                result.text = message.replace("PHASE4_", "Synchronization "); Log.i("FeatBitConsumer", message)
             } }
             return
         }
         runCount++
-        lastRun.text = "正在进行第 $runCount 次检查…"
+        lastRun.text = "Running check $runCount..."
         try {
             ModelSmoke.verify()
-            result.text = "模型 PASS · 正在检查本地运行时…"
+            result.text = "Models PASS · Checking the local runtime..."
             val run = runCount
             RuntimeSmoke.verify(applicationContext) { message -> runOnUiThread {
                 if (run == runCount && !isFinishing) {
                     result.text = message
                     Log.i("FeatBitConsumer", message)
                     val time = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.getDefault()).format(java.util.Date())
-                    lastRun.text = "已完成第 $run 次检查 · $time"
+                    lastRun.text = "Completed check $run at $time"
                 }
             } }
         } catch (failure: AssertionError) {
@@ -95,9 +99,9 @@ class SmokeActivity : Activity() {
     }
 
     private fun showFailure(failure: Throwable) {
-        result.text = "FAIL · 检查失败\n\n$failure\n\n在 Logcat 中搜索 FeatBitConsumer 查看堆栈。"
+        result.text = "FAIL · Check failed\n\n$failure\n\nSearch Logcat for FeatBitConsumer to view the stack trace."
         Log.e("FeatBitConsumer", "Kotlin model checks FAIL", failure)
         val time = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.getDefault()).format(java.util.Date())
-        lastRun.text = "已完成第 $runCount 次检查 · $time"
+        lastRun.text = "Completed check $runCount at $time"
     }
 }

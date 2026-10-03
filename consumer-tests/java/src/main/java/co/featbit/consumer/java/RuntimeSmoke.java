@@ -63,7 +63,7 @@ public final class RuntimeSmoke {
             FeatBitClient client = created.getValue();
             client.awaitReady(2000).observe(ready -> client.close().observe(closed -> {
                 if (ready.getValue() != ReadyResult.CUSTOM_LOCAL || !closed.getValue().getCleanupComplete()) completion.accept("FAIL: Java custom lifecycle");
-                else completion.accept("PASS · Java runtime: TestData、Custom、读取、订阅、Identify、Offline、Close");
+                else completion.accept("PASS · Java runtime: TestData, Custom, reads, subscriptions, Identify, Offline, Close");
             }));
         });
     }

@@ -16,7 +16,7 @@ class LifecycleProbeActivity : Activity() {
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
         Log.i("FeatBitPhase6", JSONObject().put("kind", "activity-created").put("pid", android.os.Process.myPid()).toString())
-        setContentView(TextView(this).apply { text = "Phase 6 lifecycle fixture\nControlled by tools/platform_device_checks.py" })
+        setContentView(TextView(this).apply { text = "Platform lifecycle checks\nAutomated foreground/background, network transition and sleep recovery checks." })
     }
     override fun onMultiWindowModeChanged(inMultiWindowMode: Boolean, newConfig: android.content.res.Configuration) {
         super.onMultiWindowModeChanged(inMultiWindowMode, newConfig)
