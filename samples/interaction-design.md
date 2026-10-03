@@ -58,6 +58,9 @@ The user bottom sheet lists Alex/free and Sam/pro, marks the selected sample use
 **Switch user**. Selecting the already selected preset is a no-op. While Identify is pending,
 show **Switching to Sam…**, disable repeated switching, mode/client changes, and ordering;
 allow navigation and passive inspection. Stop showing the old user's business values as current.
+When an admitted Identify operation settles, automatically dismiss the user sheet,
+including on a readiness timeout; keep the outcome visible on the main screen.
+An immediately rejected request keeps the sheet open so the user can retry.
 
 A valid admitted user change adopts the target context before remote confirmation. A rejected
 request retains the previous selection. A readiness timeout retains the target preset with an

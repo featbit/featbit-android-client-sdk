@@ -35,6 +35,7 @@ class CafeForms(private val activity: MainActivity) {
         progress?.text = s.busy ?: if (s.waitTimedOut) text(R.string.identity_timeout) else text(if (s.local) R.string.no_targeting else R.string.remote_targeting)
         editorActions.forEach { it.isEnabled = s.available }; validateEditor?.invoke()
         if (session.editorKey == null && kind == "editor") sheet?.dismiss()
+        if (!session.userSheet && kind == "users") sheet?.dismiss()
         if (session.userSheet && sheet == null) showUsers()
         else if (session.editorKey != null && sheet == null) showEditor(session.editorKey!!)
     }

@@ -188,6 +188,7 @@ class SampleSession(private val context: Context) {
         scope.launch {
             val result = settled(op, 6000)
             if (revision == generation) {
+                userSheet = false
                 refresh(c)
                 update { it.copy(busy = null, waitTimedOut = result.code == OutcomeCode.TIMED_OUT, message = "Identify: ${result.value ?: result.code}") }
                 log("Identify ${people[index].name}: ${result.value ?: result.code}")

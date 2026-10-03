@@ -6,6 +6,13 @@ This is sample evidence, not the SDK release-acceptance matrix.
 
 ## Automated checks
 
+- User-sheet dismissal follow-up: the focused `completedUserSwitchClosesSheet`
+  Debug instrumentation test passed on the API 34 emulator. It selects a different
+  user through the actual sheet controls, checks automatic dismissal after Identify
+  settles, and confirms the sheet stays closed after Activity recreation.
+  Log: `../build/user-sheet-test.log`. This check uses Local TestData; Live timeout
+  and rejection paths were not rerun for this change.
+
 - Debug and minified R8 Release APK builds succeeded.
 - Three business unit tests passed: decimal HALF_UP pricing and range fallback,
   valid menu parsing / exact IDs / unknown fields, invalid menu shapes.

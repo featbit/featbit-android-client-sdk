@@ -41,6 +41,23 @@ class SampleDeviceTest {
         android.os.ParcelFileDescriptor.AutoCloseInputStream(descriptor).use { it.readBytes() }
         assertTrue("Screenshot missing: $name", file.length() > 1000)
     }
+    @Test fun completedUserSwitchClosesSheet() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            lateinit var session: SampleSession
+            scenario.onActivity { session = it.session }
+            waitFor { session.state.value.available }
+            scenario.onActivity { session.draft.local = true; session.connect() }
+            waitFor { session.state.value.available && session.state.value.local }
+            val target = 1 - session.state.value.user
+            scenario.onActivity { session.userChoice = session.state.value.user; it.forms.showUsers() }
+            onView(withText(org.hamcrest.Matchers.startsWith(session.people[target].name + "\n"))).perform(click())
+            onView(org.hamcrest.Matchers.allOf(withText(R.string.switch_user), isAssignableFrom(com.google.android.material.button.MaterialButton::class.java))).perform(click())
+            waitFor { session.state.value.available && session.state.value.user == target && !session.userSheet }
+            onView(withText(R.string.switch_user)).check(doesNotExist())
+            scenario.recreate()
+            onView(withText(R.string.switch_user)).check(doesNotExist())
+        }
+    }
     @Test fun localBusinessEditingIdentityOfflineAndRecreation() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             lateinit var session: SampleSession
