@@ -19,6 +19,16 @@ Debug/R8/JUnit/lint 通过，六次 Kotlin 平台检查通过。修正首帧启�
 
 ## Kotlin sample app（2026-10-03）
 
+- Connection 的 Streaming fallback 设计已同步到 README、interaction-design、implementation-guide、
+  setup-and-acceptance、DESIGN 和 image-prompts；图为 `samples/ui-connection-fallback-proposal.png`。
+  Streaming 显示默认关闭的 Fallback to polling，开启后要求 Polling URL；直接 Polling 隐藏该开关，
+  保留草稿但不提交 fallback=true。Apply 前验证，实际降级/恢复由 SDK 管理。
+  **Kotlin sample 已实现；Java 仍待实现。** Inspect 根据运行中 SDK 状态显示 Polling fallback active，
+  不使用未提交的草稿推断状态。API 34 模拟器已验证开关、URL 校验、无效 Apply 保留当前连接、
+  模式切换与旋转草稿保留。S26–S28/S32 仅完成上述表单范围，S29–S31 的受控故障/恢复尚未重跑；
+  完整范围见 `samples/kotlin/VERIFICATION.md`，不得将 SDK 测试当作 sample 联调证据。
+
+
 - 原设计图已按最新交互原路径更新：`ui-overview-v2.png`、`ui-checkout.png`、
   `ui-connection-users.png`；`ui-design.png` 同步为总览副本，避免 Java sample 使用旧图。
   总览 Flags 页展示 Local Demo，保留 Restore all demo flags，删除列表评估面板；

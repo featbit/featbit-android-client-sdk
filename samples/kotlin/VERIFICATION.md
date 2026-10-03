@@ -99,3 +99,24 @@ icons), and 6 (photo aspect / side bands) were scored resolved. This scores thos
 corrections, not pixel-exact equivalence on every device. Classic's pinned action
 and scrolling price breakdown are the documented 48dp native adaptation.
 The final tablet capture was recaptured fully ready using the R8 Release APK.
+
+
+## Connection fallback settings (2026-10-03)
+
+Kotlin implements the three-state Connection design: Streaming with fallback off/on and
+explicit Polling. Only active endpoints are submitted; Inspect derives fallback activity
+from the running SDK configuration, effective mode and recovery status.
+
+Validation on the API 34 emulator:
+- Debug and instrumentation APK assembly, Debug lint and the three business unit tests passed.
+- `SampleDeviceTest#connectionFallbackDraftAndValidation` passed: default-off switch,
+  missing/invalid Polling URL validation, invalid Apply retaining the active Local client
+  and open form, valid endpoint validation, mode changes, retained fallback choice,
+  Activity recreation, inactive URL exclusion and Local ignoring Live drafts.
+- Native screenshot inspected: `../build/connection-fallback-on.png`. The English helper
+  wraps correctly; the form scrolls to the Apply action.
+
+This covers the form portions of S26–S28/S32, not their entire acceptance scope. This change
+has not rerun controlled live fallback/recovery/terminal-error scenarios S29–S31, Release
+Live TLS, physical devices, or large-font/keyboard coverage for the expanded form. Existing
+SDK tests and earlier sample Live results are not new end-to-end fallback evidence.

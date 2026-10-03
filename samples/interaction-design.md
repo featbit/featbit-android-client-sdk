@@ -30,9 +30,10 @@ without applying and preserves its draft for the current process. Dismissing dur
 operation does not cancel SDK work; progress remains visible in the shared status area.
 
 - Local selection explains **No service, targeting, analytics, or production cache**.
-- Live selection shows masked Client SDK Key, Streaming/Polling selector, applicable sync URL,
-  Events enabled switch, and Events URL. Disable/hide the inactive transport URL from submission.
-  Keep its draft for later editing. Disable Events URL submission when events are disabled.
+- Live selection shows masked Client SDK Key, Streaming/Polling selector, applicable sync URLs,
+  Events enabled switch, and Events URL. Streaming can additionally enable the fallback path
+  specified below. Hide inactive fields and exclude them from validation/submission, retaining
+  their drafts. Disable Events URL submission when events are disabled.
 - Empty required fields receive inline errors. Schemes and enabled-path validation follow the
   SDK configuration contract. Use secure fictional placeholders; do not rewrite the user's deployment path.
 - **Apply and reconnect** validates a complete proposed configuration before touching the current
@@ -48,6 +49,44 @@ operation does not cancel SDK work; progress remains visible in the shared statu
   alive: show **Waiting for remote data · Wait timed out**, allow available local/fallback use,
   and let subsequent SDK status updates indicate recovery. No automatic client-recreation loop.
 - Selecting Local from a terminal/failed connection uses the same serialized replacement path.
+
+### Streaming fallback settings
+
+![Streaming fallback settings](./ui-connection-fallback-proposal.png)
+
+The Kotlin Connection form implements this design, including the SDK polling fallback
+option. Java remains planned and must follow the same contract.
+The new board governs transport settings; the connection/identity board still documents
+validation and user switching.
+
+| Selected mode | Visible transport fields | Required for submission |
+| --- | --- | --- |
+| Streaming, fallback off (default) | Streaming URL; Fallback to polling switch off | Streaming URL |
+| Streaming, fallback on | Streaming URL; switch on; Polling URL below it | Both URLs |
+| Polling | Polling URL only; no fallback switch | Polling URL |
+
+Use the label **Fallback to polling**. With the switch off, show:
+
+> Automatically use polling if streaming temporarily fails.
+
+With the switch on, show this exact helper text, wrapping without truncation:
+
+> While the app is in the foreground, automatically switches to polling after 30 seconds of continuous temporary streaming failures. Periodically attempts to restore streaming.
+
+Direct Polling shows **Uses polling directly. Does not retry streaming.**
+Switching modes or toggling fallback preserves URL and fallback drafts in this process.
+Returning from Polling to Streaming restores the previous fallback choice. Hidden settings
+are not applied. Do not derive a Polling URL from the Streaming URL: deployments may differ.
+Edits take effect only after **Apply and reconnect**. Missing or invalid required URLs show
+inline errors and leave the running client unchanged. Preserve the Events controls below
+transport settings. Keep the form scrollable at large font scales and with the keyboard open.
+
+In Inspect, preserve separate Configured and Effective modes. Show **Polling fallback active**
+only when the running SDK reports actual fallback, not merely when the option is enabled or
+when an unapplied draft changes. Initial readiness timeout and fallback are separate states.
+Transient failures may cause automatic fallback; authentication/terminal errors do not.
+
+### Readiness and user switching
 
 Show a readiness timeout after the sample's 5-second initial-readiness or user-switch wait.
 This ends that wait, not ongoing synchronization. Conflicting actions remain serialized;

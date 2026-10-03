@@ -1,4 +1,9 @@
 <resources>
+<string name="polling_fallback">Fallback to polling</string>
+<string name="polling_fallback_help">Automatically use polling if streaming temporarily fails.</string>
+<string name="polling_fallback_enabled_help">While the app is in the foreground, automatically switches to polling after 30 seconds of continuous temporary streaming failures. Periodically attempts to restore streaming.</string>
+<string name="direct_polling_help">Uses polling directly. Does not retry streaming.</string>
+<string name="polling_fallback_active">Polling fallback active</string>
 <string name="app_name">FeatBit Café</string>
 <string name="demo">Demo</string>
 <string name="flags">Flags</string>

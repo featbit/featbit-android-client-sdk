@@ -75,6 +75,10 @@ class SampleSession(private val context: Context) {
         if (endpoint.isBlank()) errors[if (draft.mode == SyncMode.STREAMING) "streamingUrl" else "pollingUrl"] = "Synchronization URL is required"
         if (draft.events && draft.eventsUrl.isBlank()) errors["eventsUrl"] = "Events URL is required"
         val endpoints = mutableMapOf((if (draft.mode == SyncMode.STREAMING) "streamingUrl" else "pollingUrl") to endpoint)
+        if (draft.mode == SyncMode.STREAMING && draft.pollingFallback) {
+            endpoints["pollingUrl"] = draft.polling
+            if (draft.polling.isBlank()) errors["pollingUrl"] = "Polling URL is required when fallback is enabled"
+        }
         if (draft.events) endpoints["eventsUrl"] = draft.eventsUrl
         endpoints.forEach { (field, value) ->
             val uri = runCatching { java.net.URI(value) }.getOrNull()
@@ -89,7 +93,14 @@ class SampleSession(private val context: Context) {
     }
     private fun liveOptions(): ClientOptions.Builder = ClientOptions.builder().user(people[state.value.user].user())
         .sdkKey(draft.key).mode(draft.mode).disableEvents(!draft.events).apply {
-            if (draft.mode == SyncMode.STREAMING) streamingUrl(draft.streaming) else pollingUrl(draft.polling)
+            if (draft.mode == SyncMode.STREAMING) {
+                streamingUrl(draft.streaming)
+                pollingFallback(draft.pollingFallback)
+                if (draft.pollingFallback) pollingUrl(draft.polling)
+            } else {
+                pollingUrl(draft.polling)
+                pollingFallback(false)
+            }
             if (draft.events) eventsUrl(draft.eventsUrl)
         }
 

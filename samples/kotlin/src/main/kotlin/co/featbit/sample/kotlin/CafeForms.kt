@@ -75,8 +75,18 @@ class CafeForms(private val activity: MainActivity) {
                 setOnClickListener { d.mode = transport; activity.navigate() }
             }) }
             add(parent, radios, 4)
-            if (d.mode == SyncMode.STREAMING) fields["streamingUrl"] = field(parent, text(R.string.streaming_url), d.streaming) { d.streaming = it }.apply { placeholderText = "wss://evaluation.example.com" }
-            else fields["pollingUrl"] = field(parent, text(R.string.polling_url), d.polling) { d.polling = it }.apply { placeholderText = "https://evaluation.example.com" }
+            if (d.mode == SyncMode.STREAMING) {
+                fields["streamingUrl"] = field(parent, text(R.string.streaming_url), d.streaming) { d.streaming = it }.apply { placeholderText = "wss://evaluation.example.com" }
+                add(parent, MaterialSwitch(activity).apply {
+                    text = text(R.string.polling_fallback); minHeight = dp(56); isChecked = d.pollingFallback
+                    setOnCheckedChangeListener { _, checked -> d.pollingFallback = checked; activity.navigate() }
+                }, 8)
+                add(parent, label(text(if (d.pollingFallback) R.string.polling_fallback_enabled_help else R.string.polling_fallback_help), 12f, false, color(R.color.cafe_muted)))
+            }
+            if (d.mode == SyncMode.POLLING || d.pollingFallback) {
+                fields["pollingUrl"] = field(parent, text(R.string.polling_url), d.polling) { d.polling = it }.apply { placeholderText = "https://evaluation.example.com" }
+                if (d.mode == SyncMode.POLLING) add(parent, label(text(R.string.direct_polling_help), 12f, false, color(R.color.cafe_muted)), 4)
+            }
             add(parent, MaterialSwitch(activity).apply {
                 text = text(R.string.events); minHeight = dp(56); isChecked = d.events
                 setOnCheckedChangeListener { _, checked -> d.events = checked; activity.navigate() }

@@ -41,6 +41,54 @@ class SampleDeviceTest {
         android.os.ParcelFileDescriptor.AutoCloseInputStream(descriptor).use { it.readBytes() }
         assertTrue("Screenshot missing: $name", file.length() > 1000)
     }
+    @Test fun connectionFallbackDraftAndValidation() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            lateinit var session: SampleSession
+            scenario.onActivity { session = it.session }
+            waitFor { session.state.value.available }
+            scenario.onActivity {
+                session.draft.local = false; session.draft.mode = co.featbit.android.api.SyncMode.STREAMING
+                session.draft.pollingFallback = false; session.draft.key = "test-key"
+                session.draft.streaming = "wss://evaluation.example.com"; session.draft.polling = ""
+                session.draft.events = false; session.formOpen = true; it.navigate()
+                assertTrue(session.validateDraft().isEmpty())
+            }
+            onView(withText(R.string.polling_fallback)).check(matches(isNotChecked())).perform(scrollTo(), click())
+            onView(withText(R.string.apply_reconnect)).perform(scrollTo(), click())
+            onView(withText("Polling URL is required when fallback is enabled")).check(matches(isDisplayed()))
+            scenario.onActivity {
+                assertTrue(session.draft.pollingFallback)
+                assertTrue(session.validateDraft().containsKey("pollingUrl"))
+                assertTrue(session.formOpen)
+                assertTrue(session.state.value.available)
+                assertTrue(session.state.value.local) // Editing the draft has not reconnected.
+                session.draft.polling = "https://evaluation.example.com"
+                assertTrue(session.validateDraft().isEmpty())
+                session.draft.polling = "wss://wrong-scheme.example.com"
+                assertTrue(session.validateDraft().containsKey("pollingUrl"))
+                session.draft.polling = "https://evaluation.example.com"
+                it.navigate()
+            }
+            scenario.recreate()
+            onView(withText(R.string.polling_fallback)).check(matches(isChecked()))
+            capture("connection-fallback-on")
+            onView(withText(org.hamcrest.Matchers.startsWith("Polling\n"))).perform(scrollTo(), click())
+            onView(withText(R.string.polling_fallback)).check(doesNotExist())
+            scenario.onActivity {
+                session.draft.streaming = "invalid inactive URL"
+                assertTrue(session.validateDraft().isEmpty()) // Retained fallback must be excluded in Polling.
+                assertTrue(session.draft.pollingFallback)
+            }
+            onView(withText(org.hamcrest.Matchers.startsWith("Streaming\n"))).perform(scrollTo(), click())
+            onView(withText(R.string.polling_fallback)).check(matches(isChecked())).perform(scrollTo(), click())
+            scenario.onActivity {
+                session.draft.streaming = "wss://evaluation.example.com"; session.draft.polling = "invalid inactive URL"
+                assertTrue(session.validateDraft().isEmpty())
+                session.draft.local = true
+                assertTrue(session.validateDraft().isEmpty())
+            }
+        }
+    }
     @Test fun flagListKeepsEvaluationInDetails() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             lateinit var session: SampleSession

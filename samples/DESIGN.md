@@ -114,6 +114,14 @@ Above font scale 1.15, compact checkout pricing/actions become vertical. Size ch
 
 Classic keeps the order action and simulation helper above navigation while the photo, sizes, and price breakdown scroll. This is an explicit native adaptation preserving 48dp radio/button targets; conceptual tight radio spacing and the full-width photo do not all fit in one phone viewport. Do not promise pixel-exact rendering across devices.
 
+## Connection fallback control
+
+Implemented in Kotlin; Java remains planned: [three-state board](./ui-connection-fallback-proposal.png).
+Use a native switch below Streaming URL, off by default. Expand the required Polling URL
+when enabled; hide the switch for direct Polling. Preserve the established field, switch,
+helper and button styles. Long helper text wraps and the form scrolls without hiding actions.
+The exact behavior/copy is owned by the [interaction contract](./interaction-design.md).
+
 ## Elevation & Depth
 
 Demo flag shortcuts reuse the open-detail icon with a 48dp touch target. Each opens

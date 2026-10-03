@@ -58,6 +58,22 @@ sample contract, not fabricated server metadata. The combined Boolean/String pan
 comparison, not a batch-save feature. Actual editors use the sheet/full-height behavior in the
 interaction specification.
 
+## Streaming fallback proposal — ui-connection-fallback-proposal.png
+
+Concept board implemented in Kotlin, with focused emulator form checks recorded in
+[kotlin/VERIFICATION.md](./kotlin/VERIFICATION.md); live failure/recovery acceptance remains
+pending. Three Connection forms:
+Streaming with fallback off (default), Streaming with fallback on and a required Polling URL,
+and direct Polling without Streaming URL or fallback controls. Preserve Events and Apply.
+The enabled helper is exactly:
+
+> While the app is in the foreground, automatically switches to polling after 30 seconds of continuous temporary streaming failures. Periodically attempts to restore streaming.
+
+Keep this copy complete and readable. Settings do not change the running client until Apply;
+invalid active endpoints preserve the existing client. URLs are fictional placeholders.
+This board extends the transport settings of the connection/identity board; it does not
+replace its user-switch or error-state contract.
+
 ## Review scope
 
 Visually inspected generated boards for legibility, navigation, user presets, prices, and SDK

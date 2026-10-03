@@ -88,6 +88,42 @@ status, not a rollback. A terminal readiness outcome likewise does not prove rej
 identity change. If an unexpected superseded result occurs, the latest app revision owns the UI.
 Do not infer identity from flag values or create a new client merely to change users.
 
+## Streaming fallback integration
+
+The [Connection design](./interaction-design.md)
+and [three-state board](./ui-connection-fallback-proposal.png) are implemented in Kotlin.
+`ConnectionDraft`, `CafeForms`, and `SampleSession.liveOptions()` own the draft, form and
+SDK configuration respectively. Java must follow the same contract when implemented.
+
+Use an in-process Boolean fallback draft, initially false, alongside the existing transport
+URL drafts. Preserve it across form navigation, mode changes and Activity recreation, but
+not process death. Build options from the submitted snapshot, not mutable form state:
+
+| Mode and fallback | SDK builder settings |
+| --- | --- |
+| Streaming, off | `mode(STREAMING)`, `streamingUrl(...)`, `pollingFallback(false)` |
+| Streaming, on | `mode(STREAMING)`, `streamingUrl(...)`, `pollingUrl(...)`, `pollingFallback(true)` |
+| Polling | `mode(POLLING)`, `pollingUrl(...)`, `pollingFallback(false)`; omit Streaming URL |
+
+Do not submit a retained true fallback draft in direct Polling mode: the SDK rejects it
+with `fallback_requires_streaming`. Local TestData ignores all Live transport drafts.
+Validate both active endpoints before retiring the current client, preserving the existing
+scheme, Debug cleartext and deployment-path rules. An inactive URL must not block Apply.
+Keep user, key and Events configuration unchanged by the choice of fallback policy.
+
+The SDK owns the continuous 30-second foreground transient-failure window, polling schedule,
+cooldown and Streaming recovery probes. Do not add sample timers, manual fallback transports,
+or repeated client creation to implement recovery. Successful valid Streaming recovery returns
+the effective mode to Streaming. HTTP 401/403 and terminal failures do not trigger a bypass.
+
+Use the running client's `ConnectionInformation` for Inspect. This sample does not enable
+background polling: configured Streaming plus effective Polling and non-NONE recovery can
+identify fallback. Do not infer it from the draft or from `effectiveMode` alone if background
+polling is added later. Keep recovery/candidate failure distinct from initial readiness waits;
+recovery is not a promise of remote confirmation. Form checks have emulator evidence;
+controlled failure/recovery acceptance remains pending. See the
+[verification record](./kotlin/VERIFICATION.md) and [acceptance specification](./setup-and-acceptance.md).
+
 ## Build and launch contract
 
 Use JDK 17 and the repository's Android toolchain baseline (SDK/compileSdk 34, minSdk 21,

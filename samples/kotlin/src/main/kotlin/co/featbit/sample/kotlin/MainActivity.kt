@@ -346,6 +346,8 @@ class MainActivity : AppCompatActivity() {
         val info = s.status
         keyValue(parent, text(R.string.configured), info?.configuredMode?.name?.lowercase()?.replaceFirstChar { it.uppercase() } ?: "—", glyph = R.drawable.ic_wifi)
         keyValue(parent, text(R.string.effective), info?.effectiveMode?.name?.lowercase()?.replaceFirstChar { it.uppercase() } ?: "—", glyph = R.drawable.ic_sync)
+        if (!s.local && info?.configuredMode == SyncMode.STREAMING && info.effectiveMode == SyncMode.POLLING && info.recovery != RecoveryStatus.NONE)
+            note(parent, text(R.string.polling_fallback_active), false)
         keyValue(parent, text(R.string.local_data), text(if (info?.localDataAvailable == true) R.string.available else R.string.unavailable), glyph = R.drawable.ic_database)
         keyValue(parent, text(R.string.remote_confirmed), text(if (info?.remoteConfirmed == true) R.string.yes else R.string.no), glyph = R.drawable.ic_check); line(parent)
         add(parent, MaterialSwitch(this@MainActivity).apply {

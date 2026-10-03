@@ -140,8 +140,8 @@ in both apps. Support light/dark themes, system font scaling, accessible touch t
 system Back, and window/keyboard insets. Adapt navigation and content for wider windows.
 
 The revised overview shows Sam/pro. Canonical presets remain Alex/free and Sam/pro.
-The original `ui-design.png` is retained as a superseded concept, not implementation authority.
-The coffee photo is conceptual imagery and is not yet a separate implementation asset.
+`ui-design.png` mirrors the current overview. The app coffee crop uses the independent
+`shared/assets/cafe-reference.png`, which is not replaced when design boards change.
 Images illustrate composition; exact strings, data, and interaction rules are governed by
 these documents. All implementations present the same product imagery and visual system.
 
@@ -190,6 +190,12 @@ summarizes the current SDK state without implying a remote connection in Local m
 - Never invent per-flag cache provenance, queue lengths, transport traces, or delivery receipts.
 
 ### Connection
+
+The Kotlin sample implements Streaming fallback settings. See the
+[three-state proposal](./ui-connection-fallback-proposal.png) and
+[interaction contract](./interaction-design.md).
+Streaming exposes **Fallback to polling**, off by default; enabling it requires a Polling URL.
+Direct Polling hides the fallback control. Settings apply only after **Apply and reconnect**.
 
 - Choose **Local Demo** or **Live Connection**.
 - Live configuration contains Client SDK Key, Streaming/Polling selection, applicable sync

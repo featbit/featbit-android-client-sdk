@@ -41,6 +41,7 @@ data class Business(val compact: Boolean = false, val promo: String = "Fresh cof
     }
 }
 data class ConnectionDraft(var local: Boolean = true, var key: String = "", var mode: SyncMode = SyncMode.STREAMING,
+    var pollingFallback: Boolean = false,
     var streaming: String = "", var polling: String = "", var events: Boolean = true, var eventsUrl: String = "")
 data class ReadRecord(val value: String, val reason: String, val fallback: String, val user: String, val time: String, val stale: Boolean = false)
 data class ActivityEntry(val time: String, val message: String)

@@ -1,7 +1,8 @@
 # Demonstration environment and behavioral acceptance
 
 This language-independent specification defines the demonstration environment and expected
-observable behavior for every implementation. No sample scenarios have been executed yet.
+observable behavior for every implementation. Existing Kotlin evidence is recorded in
+[kotlin/VERIFICATION.md](./kotlin/VERIFICATION.md); Java remains planned.
 Build/run commands, device networking, and engineering checks live in the
 [implementation guide](./implementation-guide.md).
 
@@ -68,5 +69,25 @@ status notifications. SDK events may deduplicate; do not require one server even
 | S25 | Dark mode, large fonts, narrow/wide windows | Readable, operable native UI and consistent business behavior | Visible controls, accurate values, and unchanged semantics |
 
 Record the implementation identifier, SDK version, device/OS, scenario result, and actual scope.
-No scenarios have been executed for these unimplemented samples. After implementation, attach
-evidence links; this specification alone is not a PASS claim.
+Kotlin implements the fallback settings below and has focused emulator form checks; see
+[verification scope](./kotlin/VERIFICATION.md). Controlled failure/recovery checks remain
+pending, and Java is not implemented. Existing SDK fallback tests do not prove that the
+sample configuration UI works.
+Attach implementation evidence links; this specification alone is not a PASS claim.
+
+## Streaming fallback settings acceptance
+
+Use a controlled service/proxy that can fail Streaming temporarily while keeping Polling
+healthy. Keep the app foreground and connectivity available during the failure-window test;
+a complete network outage cannot demonstrate successful Polling fallback. Use the existing
+SDK timing; do not confuse the sample's five-second readiness wait with the fallback window.
+
+| ID | Scenario | Expected behavior |
+| --- | --- | --- |
+| S26 | Fresh Live Streaming draft | Fallback off; only Streaming URL required; no fallback-active status |
+| S27 | Enable fallback with missing/invalid Polling URL | Field appears with inline validation; Apply preserves existing client; a valid URL enables submission |
+| S28 | Toggle fallback off; switch to Polling and back; rotate | Drafts retained; inactive URLs excluded from validation/submission; direct Polling never receives fallback=true |
+| S29 | Submit Streaming with fallback enabled; sustain transient Streaming failure while Polling is healthy | In foreground, after the SDK's continuous 30-second window, effective mode becomes Polling; Configured stays Streaming; Polling fallback active appears; data can refresh |
+| S30 | Restore Streaming after fallback | SDK probes after cooldown; valid synchronized recovery restores effective Streaming and clears fallback-active indication without user action; failed probes retain Polling |
+| S31 | Disable fallback, use direct Polling, or receive terminal authentication failure | Disabled fallback keeps transient Streaming retries; direct Polling does not probe Streaming; terminal errors remain visible and are not bypassed |
+| S32 | Edit without Apply; leave/reopen form; switch Local/Live; inspect large text/keyboard | Running settings unchanged before Apply; Local ignores Live drafts; form remains usable; Events configuration independent; process restart resets draft defaults |
