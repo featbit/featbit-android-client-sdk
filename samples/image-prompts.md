@@ -2,7 +2,7 @@
 
 Generated with the built-in image generation tool, not the CLI/API fallback. These are
 consolidated final prompts incorporating the correction passes, for future design continuity.
-Use the original `ui-design.png` only as a visual-style reference; it has superseded content.
+`ui-design.png` now mirrors `ui-overview-v2.png`; both contain the current overview.
 Images are concept artifacts, not implementation or device-verification evidence.
 
 ## Shared visual prompt
@@ -18,8 +18,11 @@ of Kotlin and Java; language-specific launcher names need not appear in each scr
 
 Preserve the three-screen Demo/Flags/Inspect board. Show Sam, avatar S, plan: pro in Demo.
 Compact checkout combines amount and order button into a horizontal action surface with
-base price/discount near the amount. Keep the simulated-payment disclaimer. In Flags,
-label the result Last explicit evaluation and give its observation time. Inspect distinguishes
+base price/discount below the amount, with the discount shortcut immediately after the badge.
+Show four flag-detail shortcuts: promo, checkout layout, menu, discount. Keep the simulated-payment
+disclaimer. The Flags panel demonstrates Local Demo and includes Restore all demo flags.
+Live mode hides this button. Remove the entire list evaluation panel; evaluation stays in details.
+The Local-only helper in the board is a design annotation, not required app copy. Inspect distinguishes
 local Track acceptance from transport delivery and storage confirmation.
 
 ## Checkout comparison — ui-checkout.png
@@ -28,16 +31,22 @@ Two full screens, classic flag=false with Alex/free and compact flag=true with S
 Classic has a vertical radio list and subtotal/discount/total breakdown with full-width button;
 compact has segmented sizes and unified amount/button surface. Both select Regular, base USD 5.00,
 10% discount, USD 4.50 total and the same promo. No prices beside individual sizes: all sizes cost
-the same. Preserve selection, pricing, and event behavior; only layout differs.
+the same. Preserve selection, pricing, and event behavior; only layout differs. Both layouts
+show four flag-detail shortcuts. Compact puts the discount shortcut immediately after the
+discount badge, not beside the total; with zero discount it remains beside the total.
+Classic keeps its order action above navigation while its content scrolls.
 
 ## Connection and identity — ui-connection-users.png
 
 Three screens: Live connection form with masked client key, sync mode and URL, enabled Events,
 missing Events URL validation; a waiting/timeout Demo with fallback USD 5.00 and fallback promo
-Fresh coffee, made for you.; a user switch sheet showing Alex/free as Previous and Sam/pro as
-the target while waiting. Events helper says Send evaluation and custom analytics events.
-Do not describe Events as receiving flag updates. Use an indeterminate spinner, not a percentage
-progress bar. A timeout does not undo an admitted identity change.
+Fresh coffee, made for you.; a user switch sheet before submission with Alex/free current and
+Sam/pro selected. The enabled Switch user button submits Identify. Events helper says Send evaluation and custom analytics events.
+Do not describe Events as receiving flag updates. The footer explicitly requires the sheet to
+remain open while pending and close when an admitted operation settles, including timeout;
+immediate rejection keeps it open. A timeout does not undo an admitted identity change.
+The waiting screen is a condensed state illustration; use the checkout board for the complete
+menu/layout. The fixed hero headline itself is not a flag shortcut.
 
 ## Local editing and evaluation — ui-flag-editing.png
 
@@ -56,3 +65,13 @@ semantics. Corrected generated per-size prices, the Events helper, timeout fallb
 the pending-user label/progress representation. Written contracts govern exact copy and behaviors
 abbreviated in the pictures. Native layout measurements, dark-theme/font-scale behavior, and
 runtime accessibility remain implementation-time checks, not validated by these images.
+
+## Revision 2026-10-03
+
+Replaced overview, checkout and connection/identity boards in place using image edits.
+Retained the detail/editor board because detail evaluation remains supported. Checked the
+Local restore action, absent list evaluation, four checkout shortcuts and discount placement,
+and the automatic-dismissal annotation. These are shared Kotlin/Java implementation references,
+not new device-test evidence. Use native 48dp touch targets and the written contracts for exact
+layout/copy. The independent `shared/assets/cafe-reference.png` remains unchanged: it supplies
+the app coffee crop and must not be replaced with the revised overview.

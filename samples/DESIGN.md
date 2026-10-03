@@ -116,6 +116,12 @@ Classic keeps the order action and simulation helper above navigation while the 
 
 ## Elevation & Depth
 
+Demo flag shortcuts reuse the open-detail icon with a 48dp touch target. Each opens
+the corresponding in-app flag detail. In Compact checkout, place the discount
+shortcut immediately after the discount badge in the offer row; when no discount
+badge is shown, place it next to the total. The Flags list contains snapshots and
+detail links only; explicit evaluation and its result belong in the detail view.
+
 Tonal surfaces, outlines, and dividers carry most of the hierarchy. Bottom navigation explicitly has zero elevation. Native Material buttons, dialogs, sheets, ripples, focus states, and motion retain their theme behavior; the app does not define a custom shadow or animation scale. Do not invent CSS shadows or motion timings as extracted tokens.
 
 ## Shapes

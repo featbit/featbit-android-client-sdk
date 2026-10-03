@@ -6,6 +6,33 @@ This is sample evidence, not the SDK release-acceptance matrix.
 
 ## Automated checks
 
+- Discount shortcut placement follow-up: moved the Compact checkout shortcut to
+  the right of the discount badge. The Debug build and
+  `demoFlagButtonsOpenMatchingDetails` passed again on the API 34 emulator (both
+  checkout layouts). Inspected `../build/discount-link-position.png`; build log:
+  `../build/discount-link-build.log`. Zero-discount placement was reviewed in code,
+  not separately exercised in this device run.
+
+- Flags list simplification: removed the evaluation panel and its selector state.
+  `flagListKeepsEvaluationInDetails` passed on the API 34 emulator: the list has no
+  evaluation controls, while opening the promo detail and evaluating still records
+  its result. The Debug build passed and the updated APK was installed.
+  Screenshot inspected: `../build/flags-list-without-evaluation.png`.
+
+- Historical evaluation selector (subsequently removed from the Flags list):
+  `evaluationPanelFollowsExplicitReadAndAllowsSelection` passed
+  on the API 34 emulator. A detail-page promo evaluation becomes the Flags panel's
+  selection; it survives Activity recreation. Selecting the menu flag leaves reads
+  unchanged until Evaluate is clicked, which records the selected flag's result.
+  Screenshot: `../build/evaluation-selector.png`. This was a focused Debug/Local test.
+
+- Demo flag shortcuts: `demoFlagButtonsOpenMatchingDetails` passed on the API 34
+  phone emulator, clicking all four shortcuts in both Compact and Classic layouts
+  and checking each destination key. Debug APKs built and were installed. Captures
+  `../build/flag-links-compact.png` and `../build/flag-links-classic.png` were inspected;
+  log: `../build/flag-links-test.log`. This follow-up did not repeat tablet, large-font,
+  Live service or Release/R8 checks.
+
 - User-sheet dismissal follow-up: the focused `completedUserSwitchClosesSheet`
   Debug instrumentation test passed on the API 34 emulator. It selects a different
   user through the actual sheet controls, checks automatic dismissal after Identify

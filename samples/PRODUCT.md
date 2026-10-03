@@ -15,7 +15,7 @@ Kotlin and the future Java app share this authority.
 - Layout: Demo / Flags / Inspect, native sheets and Back; 600dp+ uses a navigation rail.
 - Visual language: warm neutral surfaces, espresso actions, amber warnings, restrained green success,
   Roboto, real coffee photograph. English UI text. No default lavender component surfaces.
-- First viewport: business hero and compact checkout; Flags exposes its evaluation action;
+- First viewport: business hero and compact checkout; Flags lists snapshots, with evaluation in flag details;
   Inspect groups connection, events, and recent activity. Large text remains scrollable.
 - Interaction: boolean changes checkout layout while preserving selected size and amount;
   editable Local flags remain distinct from remote Live evaluations. Actual Outcomes stay truthful.

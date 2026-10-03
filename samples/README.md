@@ -13,6 +13,15 @@ and acceptance criteria. Language-specific integration code differs; product beh
 
 ## Run the sample
 
+On the Demo screen, the open-detail icon beside each flag-driven component opens
+its matching flag: checkout layout, promo message, discount pricing, or cup-size menu.
+These shortcuts are available in both Compact and Classic checkout layouts.
+In Compact checkout, the discount shortcut sits immediately to the right of the
+discount badge (for example, **10% off**). With zero discount, the badge is hidden
+and the shortcut remains next to the total price.
+The Flags list shows current snapshots. Open a flag's detail page to use
+**Evaluate flag** and inspect its last explicit result. The list has no evaluation panel.
+
 The Kotlin sample is available now; the Java sample is not implemented yet.
 Use JDK 17 and install Android SDK Platform 34. An API 34 emulator is recommended
 for the first run; the app supports Android API 21 and later.
@@ -102,6 +111,13 @@ product/platform requirements. Async APIs, widgets, file structure, and build to
   module organization, build/run instructions, and engineering verification.
 
 ## 3. Visual reference
+
+Updated 2026-10-03 for both Kotlin and Java implementations. The overview shows Flags
+in Local Demo, including **Restore all demo flags** (hidden in Live mode), without a list
+evaluation panel. Checkout diagrams show all four flag shortcuts and the discount shortcut
+after the badge. The connection board documents automatic user-sheet dismissal.
+`ui-design.png` is an identical copy of the current overview. See [image review notes](./image-prompts.md)
+for condensed states and implementation boundaries.
 
 ![FeatBit Café: Demo, Flags, and Inspect UI concept](./ui-overview-v2.png)
 

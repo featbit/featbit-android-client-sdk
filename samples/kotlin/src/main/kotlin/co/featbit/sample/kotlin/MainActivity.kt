@@ -201,7 +201,10 @@ class MainActivity : AppCompatActivity() {
         user.addView(button(text(R.string.switch_user_short), true) { session.userChoice = s.user; session.userSheet = true; forms.showUsers() }.apply { isEnabled = s.available && !s.flushPending; strokeWidth = 0; setBackgroundColor(android.graphics.Color.TRANSPARENT) }, LinearLayout.LayoutParams(-2, dp(48)))
         add(parent, user, 8)
         val b = s.business
-        add(parent, label(b.promo, 14f, true, color(R.color.cafe_primary)).apply { setOnClickListener { openFlag(session.specs[1].key) }; contentDescription = "${b.promo}. ${text(R.string.view_promo_flag)}" }, 12)
+        val promo = row()
+        promo.addView(label(b.promo, 14f, true, color(R.color.cafe_primary)), LinearLayout.LayoutParams(0, -2, 1f))
+        promo.addView(icon(R.drawable.ic_open, text(R.string.view_promo_flag)) { openFlag(session.specs[1].key) }, LinearLayout.LayoutParams(dp(48), dp(48)))
+        add(parent, promo, 4)
         if (b.compact) add(parent, label(text(R.string.hero_title), 28f, true))
         add(parent, ImageView(this@MainActivity).apply {
             setImageBitmap(coffee()); scaleType = ImageView.ScaleType.FIT_CENTER
@@ -232,32 +235,49 @@ class MainActivity : AppCompatActivity() {
                 }
                 group.addView(choice, if (wrapChoices) LinearLayout.LayoutParams(-1, -2) else LinearLayout.LayoutParams(0, dp(48), 1f))
             }
-            add(parent, group, 8)
+            val menu = row()
+            menu.addView(group, LinearLayout.LayoutParams(0, -2, 1f))
+            menu.addView(icon(R.drawable.ic_open, text(R.string.view_menu_flag)) { openFlag(session.specs[3].key) }, LinearLayout.LayoutParams(dp(48), dp(48)))
+            add(parent, menu, 8)
             val checkout = LinearLayout(this@MainActivity).apply {
                 orientation = if (bigText) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL; background = shape(color(R.color.cafe_surface), 12, true); setPadding(dp(10), dp(8), dp(10), dp(8))
             }
-            val pricing = if (bigText) column() else row()
-            pricing.addView(label("$${b.total.toPlainString()}", 24f, true).apply { setOnClickListener { openFlag(session.specs[2].key) } })
+            val pricing = column()
+            val amount = row()
+            amount.addView(label("$${b.total.toPlainString()}", 24f, true))
+            val discountLink = icon(R.drawable.ic_open, text(R.string.view_discount_flag)) { openFlag(session.specs[2].key) }
+            pricing.addView(amount)
             if (b.discount > 0) {
                 val offer = row()
                 offer.addView(label("$5.00", 10f, false, color(R.color.cafe_muted)).apply { paintFlags = paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG })
                 offer.addView(label("${number(b.discount)}% off", 10f, false, color(R.color.cafe_primary)).apply { background = shape(color(R.color.cafe_tonal), 20); setPadding(dp(6), dp(3), dp(6), dp(3)) }, LinearLayout.LayoutParams(-2, -2).apply { marginStart = dp(8) })
+                offer.addView(discountLink, LinearLayout.LayoutParams(dp(48), dp(48)))
                 pricing.addView(offer, LinearLayout.LayoutParams(-2, -2).apply { marginStart = dp(6) })
+            } else {
+                amount.addView(discountLink, LinearLayout.LayoutParams(dp(48), dp(48)))
             }
             checkout.addView(pricing, if (bigText) LinearLayout.LayoutParams(-1, -2) else LinearLayout.LayoutParams(0, -2, 1f))
             checkout.addView(button(text(R.string.place_order)) { session.order() }.apply { isEnabled = s.available },
                 if (bigText) LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) } else LinearLayout.LayoutParams(dp(if (wide) 190 else 130), -2).apply { marginStart = dp(8) })
             add(parent, checkout, 8)
         } else {
-            title(parent, text(R.string.choose_size), 6)
+            val menuHeading = row()
+            menuHeading.addView(label(text(R.string.choose_size), 16f, true), LinearLayout.LayoutParams(0, -2, 1f))
+            menuHeading.addView(icon(R.drawable.ic_open, text(R.string.view_menu_flag)) { openFlag(session.specs[3].key) }, LinearLayout.LayoutParams(dp(48), dp(48)))
+            add(parent, menuHeading, 6)
             val group = RadioGroup(this@MainActivity)
             b.menu.sizes.forEach { size -> group.addView(androidx.appcompat.widget.AppCompatRadioButton(this@MainActivity).apply {
                 text = size.label; id = View.generateViewId(); minHeight = dp(48); isChecked = size.id == s.selectedSize
                 setOnClickListener { session.selectSize(size.id) }
             }) }
             add(parent, group); line(parent, 6); keyValue(parent, text(R.string.subtotal), "$5.00")
-            keyValue(parent, "Discount (${number(b.discount)}%)", "-$${BigDecimal("5.00").subtract(b.total).toPlainString()}")
+            val discount = row()
+            val discountValue = column()
+            keyValue(discountValue, "Discount (${number(b.discount)}%)", "-$${BigDecimal("5.00").subtract(b.total).toPlainString()}")
+            discount.addView(discountValue, LinearLayout.LayoutParams(0, -2, 1f))
+            discount.addView(icon(R.drawable.ic_open, text(R.string.view_discount_flag)) { openFlag(session.specs[2].key) }, LinearLayout.LayoutParams(dp(48), dp(48)))
+            add(parent, discount)
             line(parent, 6); keyValue(parent, text(R.string.total), "$${b.total.toPlainString()}", true)
         }
         if (b.compact) add(parent, label(text(R.string.simulated_order), 12f, false, color(R.color.cafe_muted)).apply { gravity = Gravity.CENTER }, 8)
@@ -288,16 +308,13 @@ class MainActivity : AppCompatActivity() {
             if (index != 0) line(parent, 0)
         }
         if (session.specs.none { it.key.contains(session.filter, true) }) note(parent, text(R.string.no_matches), false)
-        val panel = column().apply { background = shape(color(R.color.cafe_panel), 12, true); setPadding(dp(14), dp(10), dp(14), dp(10)) }
-        evaluation(panel, session.specs.first(), s); add(parent, panel, 10)
         add(parent, label(text(R.string.no_browse_events), 12f, false, color(R.color.cafe_muted)), 12)
         if (s.local) add(parent, button(text(R.string.restore_all), true) {
             forms.confirm(text(R.string.restore_all), text(R.string.restore_all_warning)) { session.edit(null, restoreAll = true) }
         }.apply { isEnabled = s.available }, 12)
     }
-    private fun evaluation(parent: LinearLayout, spec: FlagSpec, s: ScreenState, showKey: Boolean = true): Unit = with(ui) {
+    private fun evaluation(parent: LinearLayout, spec: FlagSpec, s: ScreenState): Unit = with(ui) {
         add(parent, label(text(R.string.last_evaluation), 14f, true))
-        if (showKey) add(parent, label(spec.key, 14f, true), 6)
         val read = s.reads[spec.key]
         if (read == null) add(parent, label(text(R.string.not_evaluated), 12f, false, color(R.color.cafe_muted)), 6)
         else {
@@ -316,7 +333,7 @@ class MainActivity : AppCompatActivity() {
         keyValue(card, text(R.string.value), s.snapshot[key]?.value ?: text(R.string.missing_flag))
         keyValue(card, text(R.string.expected_type), if (spec.type == ValueType.JSON) "JSON" else spec.type.name.lowercase().replaceFirstChar { it.uppercase() })
         line(card, 14)
-        val panel = column(); evaluation(panel, spec, s, false); add(card, panel, 14)
+        val panel = column(); evaluation(panel, spec, s); add(card, panel, 14)
         if (s.local) {
             add(card, button(text(R.string.edit_local)) { session.editorKey = key; session.editorText = session.localValue(key); forms.showEditor(key) }.apply { isEnabled = s.available }, 10)
             add(card, button(text(R.string.restore_default), true) { session.edit(key, spec.initial) }.apply { isEnabled = s.available; strokeWidth = 0 }, 4)

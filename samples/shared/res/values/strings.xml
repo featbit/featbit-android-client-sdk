@@ -26,6 +26,8 @@
 <string name="new_checkout">New checkout</string>
 <string name="classic_checkout">Classic checkout</string>
 <string name="view_checkout_flag">View checkout flag</string>
+<string name="view_menu_flag">View menu flag</string>
+<string name="view_discount_flag">View discount flag</string>
 <string name="product_description">Double espresso · silky milk</string>
 <string name="invalid_menu">Invalid menu configuration. Using the basic menu.</string>
 <string name="invalid_discount">Invalid discount. Using 0%.</string>

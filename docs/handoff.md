@@ -19,6 +19,21 @@ Debug/R8/JUnit/lint 通过，六次 Kotlin 平台检查通过。修正首帧启�
 
 ## Kotlin sample app（2026-10-03）
 
+- 原设计图已按最新交互原路径更新：`ui-overview-v2.png`、`ui-checkout.png`、
+  `ui-connection-users.png`；`ui-design.png` 同步为总览副本，避免 Java sample 使用旧图。
+  总览 Flags 页展示 Local Demo，保留 Restore all demo flags，删除列表评估面板；
+  结账图包含四类快捷按钮及折扣标签右侧按钮；用户图注明操作结束自动关闭规则。
+  `ui-flag-editing.png` 的详情评估仍有效，未改动；应用咖啡资源 `shared/assets/cafe-reference.png`
+  保持原样。设计图是共享参考，不替代设备验收；图示范围见 `samples/image-prompts.md`。
+
+- 最新 UI 调整：Switch user 的已接纳操作结束后自动关闭底部窗口，立即拒绝则保留。
+  Demo 的文案、布局、菜单、折扣均提供对应 flag 详情快捷按钮；Compact 折扣按钮位于
+  折扣标签右侧，无折扣时位于总价旁。Flags 列表已删除整个评估面板及选择状态，
+  显式评估与结果仅保留在详情页。
+- 上述交互已做 API 34 模拟器 Debug 专项验证，当前布局已检查截图；不是完整
+  Live/Release/R8/平板/大字体矩阵重跑。具体范围和证据见
+  [Kotlin verification](../samples/kotlin/VERIFICATION.md)。
+
 - `samples/` 已增加独立 Gradle 构建，当前仅实现 `:kotlin`；Java sample 仍待实现。
 - 两种语言继续共用 [设计文档](../samples/README.md) 与 `samples/shared/` 资源，未修改 SDK 实现或相邻仓库。
 - Kotlin app 包含 Local TestData 演示、Live Streaming/Polling、用户切换、Flag 编辑与评估、Track/Flush 和诊断。

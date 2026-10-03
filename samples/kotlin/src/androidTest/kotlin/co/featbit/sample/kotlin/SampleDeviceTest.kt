@@ -41,6 +41,47 @@ class SampleDeviceTest {
         android.os.ParcelFileDescriptor.AutoCloseInputStream(descriptor).use { it.readBytes() }
         assertTrue("Screenshot missing: $name", file.length() > 1000)
     }
+    @Test fun flagListKeepsEvaluationInDetails() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            lateinit var session: SampleSession
+            scenario.onActivity { session = it.session }
+            waitFor { session.state.value.available }
+            scenario.onActivity { session.draft.local = true; session.connect() }
+            waitFor { session.state.value.available && session.state.value.local }
+            scenario.onActivity { session.destination = "Flags"; session.detailKey = null; it.navigate() }
+            onView(withText(R.string.last_evaluation)).check(doesNotExist())
+            onView(withText(R.string.evaluate)).check(doesNotExist())
+            capture("flags-list-without-evaluation")
+            val promo = session.specs[1].key
+            onView(withText(promo)).perform(click())
+            onView(withText(R.string.evaluate)).perform(scrollTo(), click())
+            scenario.onActivity { assertTrue(session.state.value.reads.containsKey(promo)) }
+            androidx.test.espresso.Espresso.pressBack()
+            onView(withText(R.string.last_evaluation)).check(doesNotExist())
+            onView(withText(R.string.evaluate)).check(doesNotExist())
+        }
+    }
+    @Test fun demoFlagButtonsOpenMatchingDetails() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            lateinit var session: SampleSession
+            scenario.onActivity { session = it.session }
+            waitFor { session.state.value.available }
+            scenario.onActivity { session.draft.local = true; session.connect() }
+            waitFor { session.state.value.available && session.state.value.local }
+            val links = listOf(R.string.view_checkout_flag to 0, R.string.view_promo_flag to 1,
+                R.string.view_discount_flag to 2, R.string.view_menu_flag to 3)
+            for (compact in listOf(true, false)) {
+                scenario.onActivity { session.edit(session.specs[0].key, compact.toString()); session.destination = "Demo"; session.detailKey = null; it.navigate() }
+                waitFor { session.state.value.available && session.state.value.business.compact == compact }
+                capture(if (compact) "flag-links-compact" else "flag-links-classic")
+                for ((description, index) in links) {
+                    onView(withContentDescription(description)).perform(scrollTo(), click())
+                    scenario.onActivity { assertEquals(session.specs[index].key, session.detailKey) }
+                    androidx.test.espresso.Espresso.pressBack()
+                }
+            }
+        }
+    }
     @Test fun completedUserSwitchClosesSheet() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             lateinit var session: SampleSession
@@ -86,7 +127,9 @@ class SampleDeviceTest {
             scenario.onActivity { session.dismissMessage() }
             onView(org.hamcrest.Matchers.allOf(withId(R.id.nav_flags), isDisplayed())).perform(click())
             onView(withText("4 demo flags")).check(matches(isDisplayed()))
+            scenario.onActivity { it.openFlag(session.specs[0].key) }
             onView(withText("Evaluate flag")).perform(scrollTo(), click())
+            androidx.test.espresso.Espresso.pressBack()
             waitFor { session.state.value.reads.isNotEmpty() }
             capture("phone-flags")
             scenario.onActivity { session.edit(session.specs[0].key, "false") }
