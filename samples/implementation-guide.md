@@ -1,6 +1,6 @@
 # Android sample implementation guide
 
-Status: engineering plan only; no sample application or build scaffolding exists yet.
+Status: Kotlin app and independent sample build implemented. Java app remains planned.
 
 This guide explains how the Kotlin and Java Android implementations realize the
 [language-independent product design](./README.md) and [interaction contract](./interaction-design.md).
@@ -22,8 +22,8 @@ Use the current repository toolchain as the starting point. Do not upgrade the S
 toolchain solely to build a sample. Consume the published local Maven/AAR artifact;
 do not access SDK internal packages. Formal remote artifact publication is not a prerequisite.
 
-The planned locations are `samples/kotlin/` and `samples/java/`, under an independent
-sample Gradle build. Build files and module scaffolding are future implementation work.
+The Kotlin app lives in `samples/kotlin/`, under an independent sample Gradle build.
+`samples/java/` is reserved for the future Java app and is not included in Gradle settings.
 Keep one shared README/design and common flag/user examples; do not maintain separate,
 potentially conflicting product specifications for the two languages.
 
@@ -43,7 +43,7 @@ wait does not cancel the underlying operation. Handle registration failures and 
 When reconnecting, account for Close results, including incomplete cleanup or undelivered events.
 
 Both apps share XML layouts, strings, themes, drawables, and canonical sample-data assets
-through a planned resource-only `samples/shared/` source directory. Each app includes those
+through a resource-only `samples/shared/` source directory. Each app includes those
 directories in its own build; this is not a shared SDK wrapper. Keep client ownership,
 initialization, subscription cleanup, Identify, evaluation, Track, and Flush code in the
 respective language module. Java sample integration code must not depend on Kotlin sample code.
@@ -105,20 +105,19 @@ Both samples must resolve `co.featbit:featbit-client-android:0.1.0-SNAPSHOT` the
 with shared `sdkVersion` and `testRepository` Gradle properties for alternate local artifacts.
 The SDK version used for publication must equal the version consumed by both apps.
 
-Planned sample commands from repository root, after implementation:
+Kotlin sample commands from repository root (JDK 17 and Android SDK required):
 
 ```powershell
-.\gradlew.bat -p samples :kotlin:assembleDebug :java:assembleDebug
+.\gradlew.bat -p samples :kotlin:assembleDebug :kotlin:assembleRelease
 .\gradlew.bat -p samples :kotlin:installDebug
-.\gradlew.bat -p samples :java:installDebug
 ```
 
-Open `samples/` as the independent Gradle project in Android Studio, select the Kotlin or Java
+Open `samples/` as the independent Gradle project in Android Studio, select the Kotlin
 run configuration, and launch on an emulator or connected device. On Linux/macOS the equivalent
 commands use `bash ./gradlew`. A missing local SDK artifact must produce an actionable setup
 instruction, not an undocumented fallback to an unrelated remote version.
 
-Planned structure:
+Structure (Java is planned):
 
 - `samples/kotlin/`: Kotlin application and SDK integration.
 - `samples/java/`: Java application and SDK integration.
@@ -126,8 +125,10 @@ Planned structure:
 - `samples/shared/assets/`: common canonical demo-data assets and product image when supplied.
 - Root sample Gradle settings/build configuration and these shared design documents.
 
-These directories are planned, not scaffolding added by this design update. No shared runtime
-library should hide the integration calls. Each app can compile independently of the other.
+The Kotlin integration is readable in `SampleSession.kt`; the shared directory contains no runtime
+SDK wrapper. App-specific code can compile independently of the future Java module.
+The Release APK enables R8 and uses the debug signing key for local demonstration only.
+It is not a production distribution signing configuration.
 
 ## Endpoints and local development
 
@@ -137,8 +138,9 @@ library should hide the integration calls. Each app can compile independently of
   is the emulator itself. Use the service's actual exposed port and deployment base path.
 - A physical device uses a reachable host LAN address/DNS name, with server binding and firewall
   configured appropriately. Do not use emulator-only addressing on a physical device.
-- Planned Debug-only network security configuration permits cleartext solely for the documented
-  local emulator host. Any additional LAN host must be an explicit developer configuration.
+- Debug-only network security configuration permits cleartext solely for the documented
+  local emulator host. Any additional LAN host must be an explicit developer configuration in both
+  `network_security_config.xml` and the Debug-only validation in `SampleSession.validateDraft`.
   Production/Release sample manifests retain platform cleartext restrictions. Never weaken TLS
   certificate verification to make a development endpoint connect.
 - Release/R8 Live checks therefore need HTTPS/WSS or a separately documented test-only build
@@ -162,3 +164,28 @@ For deterministic rare failures (Create/Close failure, capacity rejection, stale
 use focused sample-side tests or controlled fixtures during implementation. Never add an exported
 test receiver or simulate a success state in the ordinary sample UI to make acceptance pass.
 
+
+## Deterministic sample tests
+
+```powershell
+.\gradlew.bat -p samples :kotlin:testDebugUnitTest :kotlin:lintDebug :kotlin:lintRelease
+.\gradlew.bat -p samples :kotlin:assembleDebug :kotlin:assembleDebugAndroidTest
+# Separate terminal; binds only to the developer machine's loopback interface:
+python samples/tools/protocol_fixture.py
+# adb must be on PATH; use an Android emulator (10.0.2.2 is host loopback):
+adb install -r samples/kotlin/build/outputs/apk/debug/kotlin-debug.apk
+adb install -r samples/kotlin/build/outputs/apk/androidTest/debug/kotlin-debug-androidTest.apk
+adb shell am instrument -w -e live true co.featbit.sample.kotlin.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+Without `-e live true`, the fixture-dependent Live test is skipped. The Local test needs no service.
+The fixture exercises real SDK HTTP/WebSocket requests and event delivery with fictional data;
+it does not replace acceptance against a deployed FeatBit environment. Stop it with Ctrl+C.
+The ordinary sample APK contains no fixture URL, preset real key, exported test receiver, or test hook.
+Only the separately installed instrumentation APK drives these checks. Captures are written to its
+target app's external `files/screenshots` directory.
+
+Set `sdk.dir` in untracked `samples/local.properties`, or configure `ANDROID_HOME`.
+If dependency resolution reports a missing `co.featbit` artifact, publish the SDK with the first
+command above, then build again. `-PtestRepository=<absolute Maven directory>` and
+`-PsdkVersion=<version>` can select another locally published SDK.

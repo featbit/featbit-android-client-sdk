@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-03T16:39:55.2952816Z",
+  "title": "Design System: FeatBit Café",
+  "extensions": {
+    "platform": "Android native Views / Material3",
+    "units": {
+      "layout": "dp",
+      "text": "sp"
+    },
+    "sourceRoot": "kotlin/src/main/kotlin/co/featbit/sample/kotlin",
+    "nightColors": {
+      "cafe-surface": "#1C1917",
+      "cafe-text": "#F4EFEA",
+      "cafe-muted": "#C7BFB7",
+      "cafe-primary": "#EDB68B",
+      "cafe-on-primary": "#3D210F",
+      "cafe-tonal": "#4B3527",
+      "cafe-outline": "#675B52",
+      "cafe-panel": "#27221E",
+      "cafe-good-bg": "#223B28",
+      "cafe-good": "#A6D9AD",
+      "cafe-warn-bg": "#49391F",
+      "cafe-warn": "#F5D58E",
+      "cafe-error": "#FFB4AB"
+    },
+    "nightTheme": {
+      "explicitlyMapped": [
+        "primary",
+        "on-primary",
+        "primary-container",
+        "on-primary-container",
+        "surface",
+        "on-surface",
+        "on-surface-variant",
+        "outline",
+        "error"
+      ],
+      "inheritedMaterialRoles": [
+        "secondary",
+        "secondary-container",
+        "on-secondary-container",
+        "surface-container-low",
+        "surface-container",
+        "surface-container-high",
+        "surface-container-highest",
+        "surface-variant"
+      ]
+    },
+    "breakpoints": [
+      {
+        "name": "navigation-rail",
+        "value": "600dp"
+      }
+    ],
+    "nativeLayout": {
+      "touchTargetMinimum": "48dp",
+      "classicActions": "Pinned above navigation; breakdown scrolls",
+      "largeTextThreshold": "fontScale > 1.15",
+      "wideContent": "min(620dp, screenWidthDp - 80dp)"
+    },
+    "nativeDepth": {
+      "otherControls": "Inherited Material3 elevation, focus, ripple, and motion; no extracted bespoke shadow or timing scale",
+      "bottomNavigationElevation": "0dp"
+    },
+    "photo": {
+      "source": "cafe-reference.png",
+      "scaleType": "FIT_CENTER",
+      "decoder": "BitmapRegionDecoder",
+      "assetPolicy": "Unchanged approved artwork",
+      "region": [
+        83,
+        411,
+        480,
+        598
+      ]
+    },
+    "rendering": {
+      "htmlCssPreviews": false,
+      "reason": "Native extraction: no invented CSS dimensions, web interaction states, or synthesized tonal ramps. Native source metadata replaces browser previews."
+    },
+    "reviewCaptures": [
+      ".impeccable/review/release-phone.png",
+      ".impeccable/review/phone-classic.png",
+      ".impeccable/review/phone-detail-stale.png",
+      ".impeccable/review/phone-editor-json.png",
+      ".impeccable/review/tablet.png",
+      ".impeccable/review/phone-dark.png",
+      ".impeccable/review/phone-font130.png"
+    ]
+  },
+  "components": [
+    {
+      "kind": "button",
+      "refersTo": "button-primary",
+      "source": "CafeViews.kt: button",
+      "nativeClass": "MaterialButton",
+      "name": "Primary Button",
+      "description": "Sentence case, at least 48dp tall; native themed enabled and disabled states."
+    },
+    {
+      "name": "Outlined Button",
+      "nativeClass": "MaterialButton",
+      "description": "Material outlined style with the same helper dimensions.",
+      "source": "CafeViews.kt: button(outline = true)",
+      "kind": "button"
+    },
+    {
+      "name": "Outlined Input",
+      "nativeClass": "TextInputLayout / TextInputEditText",
+      "description": "Inline error, password toggle, multiline and monospace JSON variants.",
+      "source": "CafeForms.kt: field",
+      "kind": "input"
+    },
+    {
+      "name": "Navigation",
+      "nativeClass": "BottomNavigationView / NavigationRailView",
+      "description": "Checked primary ink, tonal indicator, rail from 600dp.",
+      "source": "MainActivity.kt: onCreate / render; shared/res/layout/activity_main.xml",
+      "kind": "nav"
+    },
+    {
+      "name": "Checkout Badge",
+      "nativeClass": "TextView",
+      "description": "Tonal background, primary text, 20dp radius and 11sp medium label.",
+      "source": "MainActivity.kt: demo",
+      "kind": "chip"
+    },
+    {
+      "kind": "card",
+      "refersTo": "checkout",
+      "source": "MainActivity.kt: demo",
+      "nativeClass": "LinearLayout",
+      "name": "Checkout",
+      "description": "Outlined purchase summary; vertical layout above font scale 1.15."
+    },
+    {
+      "kind": "custom",
+      "refersTo": "warning",
+      "source": "CafeViews.kt: note",
+      "nativeClass": "LinearLayout / ImageView / TextView",
+      "name": "Warning Note",
+      "description": "Amber warning with icon, text, and polite live announcement."
+    },
+    {
+      "name": "Local Editor Sheet",
+      "nativeClass": "BottomSheetDialog / NestedScrollView",
+      "description": "Expanded sheet with drag handle, native fields, inline validation, Save and secondary actions.",
+      "source": "CafeForms.kt: showEditor / openSheet",
+      "kind": "custom"
+    }
+  ],
+  "narrative": {
+    "rules": [
+      {
+        "name": "The Evidence Rule",
+        "section": "colors",
+        "body": "Color accompanies the actual state label; green must not imply remote confirmation or delivery beyond the documented outcome."
+      }
+    ],
+    "donts": [
+      "Don't turn conceptual artwork into an all-device pixel-exact claim.",
+      "Don't invent web tokens, bespoke shadows, or animation timings for inherited Material behavior.",
+      "Don't report Java implementation, live-service verification, or screenshot coverage beyond the evidence actually obtained."
+    ],
+    "dos": [
+      "Do preserve the approved café palette, photo, and product contract across Kotlin and the future Java sample.",
+      "Do keep dimensions in dp, text in sp, and primary controls at least 48dp tall.",
+      "Do use native screenshots to assess native rendering, including night and larger text."
+    ],
+    "northStar": "FeatBit Café",
+    "keyCharacteristics": [
+      "Warm surfaces and espresso action emphasis.",
+      "A real coffee photograph preserved from the approved asset.",
+      "Native Views, Material controls, and visible state labels.",
+      "Scrollable content and platform adaptations for larger text and tablets."
+    ],
+    "overview": "Warm neutral surfaces, espresso actions, restrained status colors, native Android controls, and the approved coffee photograph define the implemented visual system. Roboto on the reviewed Android environment keeps the interface familiar and readable. The photograph and purchase preview provide the café character; diagnostic content remains compact and clear.\n\nThis is an extraction of the Kotlin implementation, with shared resources intended for the future Java sample. It does not supersede [README.md](./README.md), [interaction-design.md](./interaction-design.md), or [setup-and-acceptance.md](./setup-and-acceptance.md). Those documents and the approved `ui-overview-v2.png`, `ui-checkout.png`, `ui-connection-users.png`, and `ui-flag-editing.png` remain the product and composition authority. [PRODUCT.md](./PRODUCT.md) records that direction."
+  }
+}

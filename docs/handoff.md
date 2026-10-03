@@ -17,6 +17,14 @@ Debug/R8/JUnit/lint 通过，六次 Kotlin 平台检查通过。修正首帧启�
 阶段 7 重跑 Fake/None 目标服务协议及 Domain 消息校验；设备 HTTP fixture 与该联调均不替代数据库/MQ 验收。
 在线事件默认启用，需要配置 eventsUrl。
 
+## Kotlin sample app（2026-10-03）
+
+- `samples/` 已增加独立 Gradle 构建，当前仅实现 `:kotlin`；Java sample 仍待实现。
+- 两种语言继续共用 [设计文档](../samples/README.md) 与 `samples/shared/` 资源，未修改 SDK 实现或相邻仓库。
+- Kotlin app 包含 Local TestData 演示、Live Streaming/Polling、用户切换、Flag 编辑与评估、Track/Flush 和诊断。
+- 构建/安装/受控协议测试步骤见 [implementation-guide.md](../samples/implementation-guide.md)；实际证据及限制见 [Kotlin verification](../samples/kotlin/VERIFICATION.md)。
+- 原生布局保留 48dp 点击区域、大字体滚动及平板导航栏；Classic 的订单操作固定于底部。概念图不作为所有设备逐像素一致的声明。
+
 ## 最新交接：验收入口与验证范围（2026-10-03）
 
 - 统一验收入口为 `tools/acceptance.py`；设备辅助脚本为 `platform_device_checks.py` 和

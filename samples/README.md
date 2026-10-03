@@ -1,13 +1,74 @@
 # FeatBit Café — Shared Sample App Design
 
-Status: design only; neither sample app has been implemented.
+Status: Kotlin sample implemented in `kotlin/`; Java implementation remains planned.
+Build and run: [implementation guide](./implementation-guide.md). Verification scope: [Kotlin validation](./kotlin/VERIFICATION.md).
+Native visual tokens and implementation adaptations: [visual system](./DESIGN.md).
 
 Design revision: 2026-10-03. The expanded interactions, state rules, business contract,
 and behavioral acceptance below are accepted design scope. Engineering decisions are documented separately.
 
-This document is the shared design for the future **Kotlin and Java Android samples**.
+This document is the shared design for the **Kotlin and Java Android samples**.
 Both apps demonstrate the same business scenario, screens, flag contract, SDK behavior,
 and acceptance criteria. Language-specific integration code differs; product behavior does not.
+
+## Run the sample
+
+The Kotlin sample is available now; the Java sample is not implemented yet.
+Use JDK 17 and install Android SDK Platform 34. An API 34 emulator is recommended
+for the first run; the app supports Android API 21 and later.
+
+### 1. Publish the SDK locally
+
+From the repository root (`featbit-android-client-sdk/`), run:
+
+**Windows PowerShell:**
+
+```powershell
+.\gradlew.bat :sdk:publishReleasePublicationToLocalTestRepository
+```
+
+**Linux/macOS:**
+
+```bash
+bash gradlew :sdk:publishReleasePublicationToLocalTestRepository
+```
+
+The sample resolves the default SDK version, `0.1.0-SNAPSHOT`, from
+`build/test-repository/`. Repeat this publication step after changing the SDK.
+
+### 2. Open the sample in Android Studio
+
+1. Select **File → Open** and open the **`samples/` directory**, which contains
+   its own `settings.gradle.kts`. Open this directory rather than the repository
+   root or the `samples/kotlin/` module directory.
+2. Set **Gradle JDK** to **JDK 17** in Android Studio's Gradle settings.
+3. Wait for Gradle sync to finish. If `co.featbit:featbit-client-android` cannot
+   be resolved, complete the local publication step above and sync again.
+4. Select the **kotlin** app run configuration and a running emulator or connected
+   Android device, then click **Run**. Use the **debug** build variant for development.
+
+The launcher app is named **FeatBit Café Kotlin**. It starts with a local TestData
+demo, so no SDK key or running FeatBit service is needed for the first launch.
+For Live mode, follow the [environment setup](./setup-and-acceptance.md) and
+[endpoint instructions](./implementation-guide.md#endpoints-and-local-development).
+
+### Optional: install from the command line
+
+With an emulator or device connected, run from the repository root:
+
+```powershell
+# Windows PowerShell
+.\samples\gradlew.bat -p samples :kotlin:installDebug
+```
+
+```bash
+# Linux/macOS
+bash samples/gradlew -p samples :kotlin:installDebug
+```
+
+Then open **FeatBit Café Kotlin** on the device. See the
+[implementation guide](./implementation-guide.md#build-and-launch-contract)
+for custom SDK versions and repository locations.
 
 ## 1. Purpose and scope
 
