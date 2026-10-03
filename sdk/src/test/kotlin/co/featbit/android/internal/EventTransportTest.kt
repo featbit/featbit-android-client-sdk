@@ -10,7 +10,7 @@ public class EventTransportTest {
     private fun client(server: MockWebServer): LocalClient {
         val source = ControlledSource()
         val options = ClientOptions.builder().user(user("http", "secret")).sdkKey("test-key").source(source)
-            .eventsUrl(server.url("/prefix").toString()).cacheEnabled(false).privateAttribute("plan")
+            .eventsUrl(server.boundUrl("/prefix").toString()).cacheEnabled(false).privateAttribute("plan")
             .eventHeader("X-Event", "only-event").requestTimeoutMillis(1000).closeTimeoutMillis(1000).build().value!!
         return LocalClient(options, options.initialUser!!, source.capabilities(), Dispatch { it() }, JvmClock,
             BoundedWorkers(), DeadlineTicker(), Diagnostics(options, JvmClock), random = { 0.0 }).also { it.start() }
@@ -54,7 +54,8 @@ public class EventTransportTest {
             try {
                 client.track("one")
                 assertEquals(OutcomeCode.TIMED_OUT, await(client.flush()).code)
-                assertNotNull(server.takeRequest(5, TimeUnit.SECONDS)); assertNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+                assertNotNull("Initial hung request was not received", server.takeRequest(5, TimeUnit.SECONDS))
+                assertNotNull("Retry after cancellation was not received", server.takeRequest(5, TimeUnit.SECONDS))
                 val later = await(client.flush())
                 assertTrue(later.value in setOf(FlushResult.EMPTY, FlushResult.ALL_DELIVERED))
             } finally { await(client.close()) }

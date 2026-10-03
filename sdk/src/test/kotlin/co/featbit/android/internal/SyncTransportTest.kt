@@ -5,6 +5,7 @@ import okhttp3.*
 import okhttp3.mockwebserver.*
 import org.junit.Assert.*
 import org.junit.Test
+import java.net.InetAddress
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -21,10 +22,14 @@ internal fun <T> await(operation: Operation<T>, timeout: Long = 10_000): Outcome
     check(latch.await(timeout, TimeUnit.MILLISECONDS)) { "Operation did not complete" }
     return operation.getResult()!!
 }
+// A failed localhost route can send later attempts to ::1 although the fixture only binds IPv4.
+// Pin the listening address so timeout/retry tests exercise the same server on every attempt.
+internal fun MockWebServer.boundUrl(path: String): HttpUrl =
+    url(path).newBuilder().host(InetAddress.getByName(hostName).hostAddress!!).build()
 internal fun networkOptions(server: MockWebServer, mode: SyncMode): ClientOptions = ClientOptions.builder()
     .user(user("A")).sdkKey("fake-key").mode(mode).disableEvents(true).cacheEnabled(false)
-    .streamingUrl(server.url("/prefix").toString().replaceFirst("http", "ws"))
-    .pollingUrl(server.url("/prefix").toString()).pollingIntervalMillis(1000).requestTimeoutMillis(2000)
+    .streamingUrl(server.boundUrl("/prefix").toString().replaceFirst("http", "ws"))
+    .pollingUrl(server.boundUrl("/prefix").toString()).pollingIntervalMillis(1000).requestTimeoutMillis(2000)
     .synchronizationHeader("X-Gateway", "scope-sync").eventHeader("X-Event", "scope-events").build().value!!
 
 public class SyncTransportTest {

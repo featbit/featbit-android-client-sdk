@@ -1,5 +1,29 @@
 # Verification record
 
+## Linux timeout/retry fixture address — 2026-10-03
+
+The uploaded GitHub Actions SDK log reported two failures among 139 tests:
+`EventTransportTest.realHungRequestTimeoutCancelsAndAllowsLaterRetry` and
+`SyncTransportTest.realPollingTimeoutRecoversAndCloseRetainsData`.
+Both failures were reproduced with the existing compiled JVM tests in a Linux
+Temurin 17 container, while the seven transport tests passed on Windows.
+Temporary transport diagnostics showed that after the initial IPv4 request was
+canceled, later attempts used `localhost/::1` and failed with connection refused;
+the MockWebServer fixture was listening on IPv4. Those diagnostics were removed.
+
+The shared network options and event fixture now resolve the default server host
+to one numeric address before constructing request URLs. Timeout, cancellation,
+retry and recovery assertions remain enabled with their original time budgets;
+production transport and retry policy are unchanged. Event request assertions now
+distinguish a missing initial request from a missing retry.
+
+- Windows Gradle: **139 non-live tests passed**, zero failures/errors/skips;
+  log `build/ci-transport-fixed.log`.
+- Linux Temurin 17 JUnitCore: the same full set of **139 tests passed** using
+  the Gradle test runtime classpath; log `build/ci-linux-fixed.log`.
+- `git diff --check` passed. This Linux JVM run is not a full Linux Android build,
+  consumer matrix, hosted Actions rerun, device test or live-service acceptance.
+
 ## Platform fixture reverse-mapping ownership — 2026-10-02
 
 `phase6_device.py` now preserves an existing matching `tcp:5196` mapping, rejects a
