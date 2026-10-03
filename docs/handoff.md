@@ -37,7 +37,7 @@ Debug/R8/JUnit/lint 通过，六次 Kotlin 平台检查通过。修正首帧启�
 - `internal/RuntimeFactory.kt`：异步验证/创建、自动属性、真实缓存与匿名存储接入。
 - `internal/AndroidPlatformMonitor.kt` / `PlatformState.kt`：主线程安装与解除平台监听、初始状态原子接入、多网络集合及 Doze 权限。
 - `PlatformLifecycleTest`：后台初建、grace/candidate/休眠截止时间、事件组及平台撤权回归。
-- `consumer-tests/kotlin/.../LifecycleProbe.kt` / `tools/phase6_device.py`：实际 AAR 的独立平台验证入口；默认不注册，显式 `-Pphase6Probe=true` 才合并 Debug/Release 测试探针 manifest。入口不属于 SDK AAR。
+- `consumer-tests/kotlin/.../LifecycleProbe.kt` / `tools/platform_device_checks.py`：实际 AAR 的独立平台验证入口；默认不注册，显式 `-Pphase6Probe=true` 才合并 Debug/Release 测试探针 manifest。入口不属于 SDK AAR。
 - `internal/Persistence.kt`：AtomicFile、完整上下文指纹、namespace coordinator、匿名仓库。
 - `internal/OnlineSync.kt`：与 LocalClient 共用 gate 的内置网络状态机、请求授权、重试和单 candidate 接管。
 - `internal/SyncProtocol.kt`：请求、token、精确 Long cursor、消息解析和安全 HTTP 分类。
@@ -126,7 +126,7 @@ SDK Kotlin 1.9.25，Java 11 字节码，minSdk 21 / compileSdk 34。
 ## 下一步：补齐发布验收
 
 按 verification 中未执行项补齐真机深度休眠、设备/OS 兼容性及多窗口等平台验收。
-运行 `python tools/phase7_acceptance.py` 汇总真实 AAR、Java/Kotlin 独立工具链矩阵及规范追踪表；
+运行 `python tools/acceptance.py` 汇总真实 AAR、Java/Kotlin 独立工具链矩阵及规范追踪表；
 `--serial emulator-5554` 执行 Debug/R8 设备检查，`--live` 要求目标 Fake/None 服务已启动。
 每次输出独立 `build/phase7/<run>/report.json`，不能把较早失败目录或部分矩阵当作完整通过。
 Core 编译器仍为 Kotlin 1.9.25；2.2.10 消费者使用独立 AGP 8.10.1/Gradle 8.11.1。

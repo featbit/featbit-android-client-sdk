@@ -41,7 +41,7 @@ the local test Maven repository `build/test-repository/`. The Maven coordinates 
 `co.featbit:featbit-client-android`; the local development version is `0.1.0-SNAPSHOT`.
 Nothing is published remotely by these commands.
 
-For the isolated Java/Kotlin compiler matrix, use `python tools/phase7_acceptance.py`.
+For the isolated Java/Kotlin compiler matrix, use `python tools/acceptance.py`.
 Add `--serial emulator-5554` to install and execute Debug/R8 test APKs. This additionally
 requires build-tools 35.0.0 for the Kotlin 2.2.10 consumer; the core SDK compiler stays 1.9.25.
 See the release guide for per-run evidence, signing preparation and unexecuted release gates.

@@ -45,9 +45,9 @@ class ReverseMappingTest(unittest.TestCase):
         output = io.StringIO()
         with patch("subprocess.run", side_effect=run), patch("http.server.ThreadingHTTPServer"), \
                 patch("threading.Thread"), patch("time.sleep"), \
-                patch.object(sys, "argv", ["phase6_device.py"]), contextlib.redirect_stdout(output):
+                patch.object(sys, "argv", ["platform_device_checks.py"]), contextlib.redirect_stdout(output):
             with self.assertRaises(RuntimeError) as raised:
-                runpy.run_path(str(Path(__file__).with_name("phase6_device.py")), run_name="__main__")
+                runpy.run_path(str(Path(__file__).with_name("platform_device_checks.py")), run_name="__main__")
         return mappings, calls, str(raised.exception), output.getvalue()
 
     def test_new_mapping_is_removed_after_fixture_failure(self):

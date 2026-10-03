@@ -72,7 +72,7 @@ Use JDK 17 / Android SDK 34 and the existing independent consumers:
 python tools/check_api.py
 .\gradlew.bat -p consumer-tests -Pphase6Probe=true :java:assembleDebug :java:assembleRelease :java:testDebugUnitTest :kotlin:assembleDebug :kotlin:assembleRelease :kotlin:testDebugUnitTest
 adb -s emulator-5554 install -r consumer-tests/kotlin/build/outputs/apk/debug/kotlin-debug.apk
-python tools/phase6_device.py --adb adb --serial emulator-5554
+python tools/platform_device_checks.py --adb adb --serial emulator-5554
 ```
 
 `PlatformLifecycleTest` covers initial-state adoption, network-set handovers, grace,

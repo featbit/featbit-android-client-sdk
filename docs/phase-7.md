@@ -4,6 +4,11 @@ Implemented 2026-10-02. SDK source baseline `6eff0ddf7e04eccba3863a2404a2d34edeb
 plus the current Phase 7 changes. This is local release preparation; no commit, push,
 Central upload or GitHub Release was performed. Full release acceptance remains open.
 
+Script names below describe the historical Phase 7 implementation and commands.
+Current entry points are `tools/acceptance.py` (formerly `phase7_acceptance.py`) and
+`tools/live_device_checks.py` (formerly `phase7_live_device.py`); see the
+[release guide](./release.md) for current commands. Historical evidence paths remain valid.
+
 ## Implementation
 
 - `tools/phase7_acceptance.py` creates an isolated Maven repository and four independent

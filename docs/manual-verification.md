@@ -7,7 +7,7 @@
 ## 1. 准备环境
 
 阶段 6 平台验证使用独立入口：先用 `-Pphase6Probe=true` 构建并安装 Kotlin 消费者 APK（Debug 或 R8 Release），再在仓库根目录运行
-`python tools/phase6_device.py --adb C:/Users/Falcon/AppData/Local/Android/Sdk/platform-tools/adb.exe`。
+`python tools/platform_device_checks.py --adb C:/Users/Falcon/AppData/Local/Android/Sdk/platform-tools/adb.exe`。
 它控制模拟器前后台、旋转、网络和 forced-idle，并在退出时恢复设置；详见[阶段 6](./phase-6.md)。
 普通构建默认不注册探针入口。脚本 PASS 不代表真机深度休眠或目标服务数据库验收通过。
 

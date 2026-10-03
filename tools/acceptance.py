@@ -139,7 +139,7 @@ def main():
                 report["rows"][row]["device"] = "debug and R8 smoke passed"
             save()
         if args.live and args.serial:
-            command("target-devices", [sys.executable, ROOT / "tools/phase7_live_device.py", run, "--serial", args.serial], timeout=900)
+            command("target-devices", [sys.executable, ROOT / "tools/live_device_checks.py", run, "--serial", args.serial], timeout=900)
         report["result"] = "requested checks passed"
     except Exception as error:
         report["result"] = "failed"
@@ -182,7 +182,7 @@ def device_checks(serial, language, consumer, row, run, command):
         else:
             raise RuntimeError(label + " runtime timed out")
         if language == "kotlin":
-            command(label + "-platform", [sys.executable, ROOT / "tools/phase6_device.py", "--adb", adb, "--serial", serial], timeout=240)
+            command(label + "-platform", [sys.executable, ROOT / "tools/platform_device_checks.py", "--adb", adb, "--serial", serial], timeout=240)
 
 
 if __name__ == "__main__":

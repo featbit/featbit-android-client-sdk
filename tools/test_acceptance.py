@@ -3,7 +3,7 @@ import unittest
 import uuid
 import xml.etree.ElementTree as ET
 
-from phase7_acceptance import ROOT, validate_live_evidence
+from acceptance import ROOT, validate_live_evidence
 
 
 class LiveEvidenceTest(unittest.TestCase):

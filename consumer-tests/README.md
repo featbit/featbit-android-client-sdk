@@ -1,6 +1,6 @@
 # Device model and local runtime checks
 
-For Phase 7 run `python tools/phase7_acceptance.py --serial emulator-5554` from the SDK root.
+For combined acceptance run `python tools/acceptance.py --serial emulator-5554` from the SDK root.
 It creates separate consumer roots and Wrappers for Java and Kotlin 1.9.24/1.9.25/2.2.10,
 resolves only the freshly staged Maven artifact, runs lint/Debug/R8/JUnit and installs both
 variants. R8 APKs are signed with the local debug test key solely for these checks. Shared
@@ -10,7 +10,7 @@ See [release commands and toolchains](../docs/release.md). The interactive proje
 uses its default Kotlin 1.9.25/AGP 8.5.2/Gradle 8.7; use the runner for the full matrix.
 
 Phase 6 adds an opt-in public-AAR lifecycle fixture. After staging the current SDK and
-building the Kotlin APK with `-Pphase6Probe=true` and installing it, run `python tools/phase6_device.py` from the
+building the Kotlin APK with `-Pphase6Probe=true` and installing it, run `python tools/platform_device_checks.py` from the
 repository root (use `--adb` for its full path). See [Phase 6](../docs/phase-6.md) for
 commands, emulator setting changes and acceptance boundaries. The exported probe receiver
 is test-only and is not part of the SDK AAR. Probe registration is absent by default in

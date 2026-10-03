@@ -6,17 +6,22 @@ repository proves that a downloadable Central artifact works.
 
 ## Local commands
 
+Use `tools/acceptance.py` as the combined acceptance entry point. It calls
+`tools/platform_device_checks.py` for platform checks and `tools/live_device_checks.py`
+for installed-APK live checks when requested. These helpers also support focused reruns;
+there is no need to run every historical development phase separately.
+
 Set JAVA_HOME to JDK 17 and ANDROID_HOME to the Android SDK. Install platform 34 and
 build-tools 34.0.0 and 35.0.0. Run from this repository:
 
 ```sh
-python tools/phase7_acceptance.py
+python tools/acceptance.py
 # Also install/run Debug and actual R8 Release fixtures on an existing emulator:
-python tools/phase7_acceptance.py --serial emulator-5554
+python tools/acceptance.py --serial emulator-5554
 # Require the explicitly started Fake/None target evaluation service:
-python tools/phase7_acceptance.py --live
+python tools/acceptance.py --live
 # Also run installed Debug/R8 consumers against the target:
-python tools/phase7_acceptance.py --live --serial emulator-5554
+python tools/acceptance.py --live --serial emulator-5554
 ```
 
 Each invocation creates `build/phase7/<timestamp>-<unique-id>/`, its Maven repository,
@@ -45,7 +50,7 @@ APKs register the exported lifecycle probe; never distribute them.
 The SDK remains Kotlin 1.9.25 / AGP 8.5.2 / Gradle 8.7 / JDK 17, targeting Java 11.
 Live mode requires .NET 10 and the adjacent evaluation-server checkout for actual Domain
 validation of the exported payload. To rerun only device interoperability on already built
-and test-signed APKs: `python tools/phase7_live_device.py <evidence-directory> --serial emulator-5554`.
+and test-signed APKs: `python tools/live_device_checks.py <evidence-directory> --serial emulator-5554`.
 Consumer configurations:
 
 | Compiler | AGP | Gradle | JDK |

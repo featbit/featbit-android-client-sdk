@@ -23,7 +23,7 @@ device properties. The phase report identifies which evidence directory was actu
 | Cache and anonymous persistence | Persistence | PersistenceTest, OnlineCacheTest, Kotlin PersistenceSmoke |
 | Streaming/Polling/fallback/headers | OnlineSync, SyncProtocol, SyncTransport | OnlineSyncTest, SyncProtocolTest, SyncTransportTest; LiveSyncIntegrationTest |
 | Analytics/privacy/Flush/terminal isolation | Events, EventProtocol | EventsTest, EventTransportTest; LiveEventIntegrationTest plus tools/event-contract |
-| Real lifecycle/network/Doze | AndroidPlatformMonitor, PlatformState | PlatformLifecycleTest; phase6_device.py on installed Debug/R8 consumers |
+| Real lifecycle/network/Doze | AndroidPlatformMonitor, PlatformState | PlatformLifecycleTest; platform_device_checks.py on installed Debug/R8 consumers |
 | Attribute schema and same-key resampling | RuntimeFactory.enrich | Kotlin AttributeSmoke on installed Debug/R8 consumers |
 | Version consistency/no read I/O | SdkInfo, LocalClient | ReleaseContract with StrictMode, all consumer versions |
 | Callback/Flow disposal | Execution, CoroutineAdapters | LocalRuntimeTest and consumer RuntimeSmoke |

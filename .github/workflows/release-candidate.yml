@@ -40,7 +40,7 @@ jobs:
       - name: Run independent artifact matrix
         env:
           RELEASE_VERSION: ${{ inputs.version }}
-        run: python3 tools/phase7_acceptance.py --version "$RELEASE_VERSION"
+        run: python3 tools/acceptance.py --version "$RELEASE_VERSION"
       - name: Stage signed publication (no remote upload)
         env:
           RELEASE_VERSION: ${{ inputs.version }}

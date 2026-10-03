@@ -1,5 +1,11 @@
 # Verification record
 
+Current tool names: `acceptance.py`, `platform_device_checks.py` and
+`live_device_checks.py` replace `phase7_acceptance.py`, `phase6_device.py` and
+`phase7_live_device.py`, respectively. Historical commands below retain the names
+used by those runs. Evidence paths and report formats are unchanged; current commands
+are in the [release guide](./release.md).
+
 ## Hosted library and consumer CI — 2026-10-03
 
 [Library and consumer contracts run 37112255715](https://github.com/featbit/featbit-android-client-sdk/actions/runs/37112255715)

@@ -2,7 +2,7 @@
 
 This is a Kotlin implementation with Java-compatible public APIs. The local development
 artifact is `co.featbit:featbit-client-android:0.1.0-SNAPSHOT`; it is not a published Central
-release. Use the isolated Maven repository printed by `tools/phase7_acceptance.py` for
+release. Use the isolated Maven repository printed by `tools/acceptance.py` for
 local integration. Android API 21+ and Java 11 bytecode are required. Preserve the merged
 AndroidX Startup process-lifecycle initializer. INTERNET and ACCESS_NETWORK_STATE are
 ordinary manifest permissions. No foreground service, wake lock or battery exemption is needed.

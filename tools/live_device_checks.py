@@ -1,6 +1,6 @@
 """Run existing AAR consumer APKs against the explicitly started Fake/None target service.
 
-Use after phase7_acceptance.py --serial. Does not build, start the service, or publish.
+Use after acceptance.py --serial. Does not build, start the service, or publish.
 Requires both PHASE4_PASS and PHASE5_PASS from each installed APK's new process.
 """
 import argparse
