@@ -45,6 +45,56 @@ status; commit intended changes first when evidence must identify a clean commit
 It does not create/start an emulator, publish remotely, or cover physical devices
 and deployed database/MQ persistence.
 
+### Linux/macOS: full live and emulator acceptance
+
+From the SDK checkout, with an API 34 emulator already booted:
+
+```bash
+bash tools/run-live-acceptance.sh --check-only
+bash tools/run-live-acceptance.sh
+# Select explicitly when multiple emulators are running:
+bash tools/run-live-acceptance.sh --serial emulator-5554
+```
+
+The Bash 3.2-compatible entry point invokes `tools/run_live_acceptance.py` using
+`python3` (override with `PYTHON=/path/to/python3`). Python 3.8+, Git, Bash, JDK 17,
+.NET SDK 10, Android platform 34 and build-tools 34.0.0/35.0.0 are required.
+Set `JAVA_HOME`, `ANDROID_HOME` (or `ANDROID_SDK_ROOT`) and optionally
+`DOTNET_HOST_PATH`; command options `--java-home`, `--android-home`, `--dotnet`
+override them. `--version` defaults to `0.1.0-SNAPSHOT`.
+Linux defaults to `~/Android/Sdk`; macOS defaults to `~/Library/Android/sdk` and
+uses `/usr/libexec/java_home -v 17` when JAVA_HOME is absent. Use an emulator image
+matching the host architecture, including ARM64 on Apple Silicon.
+
+Keep the SDK and `featbit` checkouts beside one another; the service must exist at
+`../featbit/modules/evaluation-server`. An existing `~/.android/debug.keystore`
+is required. Build a Debug app to create it, or generate a disposable test key in CI
+before invoking the launcher:
+
+```bash
+mkdir -p "$HOME/.android"
+if [ ! -f "$HOME/.android/debug.keystore" ]; then
+  "$JAVA_HOME/bin/keytool" -genkeypair -noprompt \
+    -keystore "$HOME/.android/debug.keystore" -storepass android \
+    -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 \
+    -validity 10000 -dname 'CN=Android Debug,O=Android,C=US'
+fi
+```
+
+The Python launcher builds and starts the Fake/None service on port 5189, waits for
+its own startup log and a TCP connection, then calls the same
+`acceptance.py --live --serial` matrix. It captures console/server logs in
+`build/live-acceptance/<run>/`; matrix evidence remains in `build/phase7/<run>/`.
+It rejects an occupied port and stops only its own service process group after
+success, failure or a handled interruption. Child environments and working
+directories do not modify the calling shell. SIGKILL or host termination cannot
+run cleanup. No emulator is created, no tools are installed and nothing is published.
+
+This entry point can be invoked by a Linux/macOS CI job after the same prerequisites
+are prepared; no live CI workflow is added by this change. Linux launcher regression
+tests pass under WSL with controlled tools. Full Linux/macOS live/device matrices
+and a native macOS launcher run remain unverified; see the verification record.
+
 ### Individual entry points
 
 Use `tools/acceptance.py` as the combined acceptance entry point. It calls

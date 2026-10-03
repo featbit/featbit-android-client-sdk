@@ -51,5 +51,11 @@ to build/start the Fake/None service and run the full live/emulator matrix with
 automatic service cleanup. Use `-CheckOnly` to check prerequisites first; see the
 [release guide](docs/release.md#windows-full-live-and-emulator-acceptance).
 
+On Linux/macOS, use `bash tools/run-live-acceptance.sh` after starting an emulator.
+Add `--check-only` to validate prerequisites. The Bash entry point delegates service
+management and acceptance to Python; see the
+[Linux/macOS guide](docs/release.md#linuxmacos-full-live-and-emulator-acceptance)
+for dependencies and validation scope.
+
 `consumer-tests/` contains independent Java/Kotlin compilation and R8 fixtures, not samples.
 Samples are deferred. OpenFeature is a separate product and is not a dependency.

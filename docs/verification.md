@@ -1,5 +1,27 @@
 # Verification record
 
+## Bash and Python live-acceptance launcher — 2026-10-03
+
+Added `tools/run-live-acceptance.sh` and `tools/run_live_acceptance.py` for Linux/macOS.
+The Bash entry forwards arguments and exit status; Python performs prerequisite
+checks, owns the Fake/None process, admits readiness from its own plain/structured
+startup logs plus a TCP connection, invokes the existing full live matrix, captures
+logs and cleans up owned processes. The Windows PowerShell entry is unchanged.
+
+Validation under WSL Ubuntu 22.04: Bash syntax/help passed and all 23 Python tool
+tests passed. Controlled end-to-end Bash runs exercised paths with spaces, complete
+preflight, service startup with the target's structured log format, acceptance
+stdout/stderr, success and nonzero exit, environment isolation and service cleanup.
+Other tests cover occupied-port rejection without stopping the listener, readiness
+failure, handled interruption cleanup and real POSIX process termination. Generated
+test fixtures/logs are retained under `build/launcher-tests/`.
+On Windows, 20 tests passed and the three POSIX integration tests were skipped.
+
+A real WSL `--check-only` invocation correctly failed with `Executable not found: java`.
+No Linux Android/JDK/.NET environment was installed for this change. Full Linux/macOS
+live/device acceptance and native macOS execution remain unverified; controlled
+launcher tests do not replace those release checks. No GitHub workflow was added.
+
 Current tool names: `acceptance.py`, `platform_device_checks.py` and
 `live_device_checks.py` replace `phase7_acceptance.py`, `phase6_device.py` and
 `phase7_live_device.py`, respectively. Historical commands below retain the names
