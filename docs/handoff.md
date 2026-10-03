@@ -1,6 +1,6 @@
 # Android SDK 开发交接
 
-更新时间：2026-10-02（Europe/Berlin）。
+更新时间：2026-10-03（Europe/Berlin）。
 
 ## 当前进度
 
@@ -16,6 +16,40 @@ Debug/R8/JUnit/lint 通过，六次 Kotlin 平台检查通过。修正首帧启�
 本地/同步/事件检查全部通过；以 `final-summary.json` 及其指向的最终 target 报告为准。
 阶段 7 重跑 Fake/None 目标服务协议及 Domain 消息校验；设备 HTTP fixture 与该联调均不替代数据库/MQ 验收。
 在线事件默认启用，需要配置 eventsUrl。
+
+## 最新交接：验收入口与验证范围（2026-10-03）
+
+- 统一验收入口为 `tools/acceptance.py`；设备辅助脚本为 `platform_device_checks.py` 和
+  `live_device_checks.py`。旧 phase 文件名已替换，历史证据目录仍为 `build/phase7/`。
+- Windows 一键入口：`.\tools\run-live-acceptance.ps1`；支持 Windows
+  PowerShell 5.1/7。负责环境检查、构建/启动 Fake/None 服务、完整联调与模拟器矩阵、日志和服务清理。
+- Linux/macOS 入口：`bash tools/run-live-acceptance.sh`；Bash 只转发参数，
+  `tools/run_live_acceptance.py` 负责环境检查、服务管理、日志和进程清理。
+  用 `--check-only` 预检；需 JDK 17、Python 3.8+、Android SDK、.NET 10、调试签名、
+  相邻 `featbit/modules/evaluation-server` 源码和已启动的模拟器。详见 [release.md](./release.md)。
+- 本机 Windows 工具链已配置；WSL Ubuntu 未安装 Java，`JAVA_HOME` 为空，实际 Bash 预检报
+  `Executable not found: java`。Windows 安装的工具不等于 WSL 已具备 Linux 工具链。
+  当前本机完整验收应在 PowerShell 执行 `.\tools\run-live-acceptance.ps1`。
+- 消费者验收界面已改为英文功能描述；内部 fixture 字段与机器日志的 phase 标记保留。
+- 平台检查已区分 Android 网络切换和 SDK 状态响应：独立 OS 网络探针最多等待 45 秒，
+  就绪后保留 12 秒 SDK 断言期限；平台子进程总预算为 480 秒。失败不转为通过，记录最后状态。
+
+当前验证证据：
+
+- Windows 完整一键验收曾通过：`build/live-acceptance/20261003-115730-3c943d7e/`，
+  对应 `build/phase7/20261003-115741-3388f718/`；143 个 SDK 测试、四组消费者、
+  六次平台检查和 16 项目标服务设备检查通过。该记录早于后续平台等待及 Bash 入口修改。
+- 平台等待修复后专项重跑：`build/phase7/20261003-125220-ec20eede/`；139 个 SDK 测试、
+  Kotlin 2.2.10 构建/JUnit/lint、Debug/R8 runtime 与两次完整平台检查通过。
+  此次没有重跑其他编译器行和真实目标服务联调；旧失败证据保留。
+- Bash/Python 启动器：WSL Linux 下 23 个工具测试通过，含受控端到端启动、失败和清理；
+  Windows 下 20 个通过、3 个 POSIX 测试跳过。Linux/macOS 完整设备矩阵和原生 macOS
+  启动器尚未验证。尚未新增完整 live/emulator GitHub workflow；现有 CI 不代表此项已验收。
+
+下一步：若需要当前提交的完整发布候选证据，先提交预期变更，再用对应系统的一键入口重跑完整矩阵，
+保留本次报告及基线。若迁移到 Linux/macOS 或 GitHub runner，先准备该环境自身的工具链与模拟器，
+再执行预检及完整验收。物理设备自然休眠、真实 VPN、数据库/MQ 持久化、详尽诊断穷举和
+受信任签名发布等关卡仍以 [conformance.md](./conformance.md) 为准，不得用模拟器/受控测试代替。
 
 ## 先读
 
