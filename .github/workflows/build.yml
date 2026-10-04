@@ -23,6 +23,8 @@ jobs:
           packages: platform-tools
       - run: sdkmanager 'platforms;android-34' 'build-tools;34.0.0' 'build-tools;35.0.0'
       - uses: gradle/actions/setup-gradle@v4
+      - name: Check code formatting
+        run: bash gradlew spotlessCheck --console=plain
       - name: Check acceptance scripts
         run: python3 -B -m unittest discover -s tools -p 'test_*.py'
       - name: Stage and consume isolated Maven publication

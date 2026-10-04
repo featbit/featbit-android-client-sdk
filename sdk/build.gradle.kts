@@ -9,6 +9,7 @@ plugins {
 }
 
 group = "co.featbit"
+
 version = providers.gradleProperty("sdkVersion").getOrElse("0.1.0-SNAPSHOT")
 
 android {
@@ -25,7 +26,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions { jvmTarget = "11"; freeCompilerArgs += "-Xexplicit-api=strict" }
+    kotlinOptions {
+        jvmTarget = "11"
+        freeCompilerArgs += "-Xexplicit-api=strict"
+    }
     sourceSets {
         getByName("main").java.srcDir("src/main/kotlin")
         getByName("test").java.srcDir("src/test/kotlin")
@@ -44,8 +48,18 @@ android {
             // Service state is not a Gradle input: a previous success is never live evidence.
             it.outputs.upToDateWhen { false }
             it.outputs.doNotCacheIf("Live integration requires current service responses") { true }
-            val payload = file(providers.gradleProperty("liveEventPayload")
-                .getOrElse(layout.buildDirectory.file("phase-5-target-payload.json").get().asFile.absolutePath))
+            val payload =
+                file(
+                    providers
+                        .gradleProperty("liveEventPayload")
+                        .getOrElse(
+                            layout.buildDirectory
+                                .file("phase-5-target-payload.json")
+                                .get()
+                                .asFile
+                                .absolutePath
+                        )
+                )
             it.systemProperty("featbit.liveEventPayload", payload.absolutePath)
             it.outputs.file(payload)
             it.doFirst {
@@ -68,6 +82,7 @@ dependencies {
 }
 
 val candidateRuntime by configurations.creating { isCanBeConsumed = false }
+
 dependencies {
     candidateRuntime("org.jetbrains.kotlin:kotlin-stdlib:1.9.25")
     candidateRuntime("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
@@ -75,21 +90,22 @@ dependencies {
     candidateRuntime("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     candidateRuntime("androidx.lifecycle:lifecycle-process:2.8.7")
 }
+
 tasks.register("resolveCandidateRuntime") {
     doLast { candidateRuntime.resolve().sortedBy { it.name }.forEach { println(it.name) } }
 }
 
-val documentationJar by tasks.registering(Jar::class) {
-    archiveClassifier.set("javadoc")
-    from(tasks.named("dokkaHtml"))
-}
+val documentationJar by
+    tasks.registering(Jar::class) {
+        archiveClassifier.set("javadoc")
+        from(tasks.named("dokkaHtml"))
+    }
 
 afterEvaluate {
     // Resolve Android variants, not multiplatform desktop defaults.
     val runtimeAttributes = configurations.getByName("releaseRuntimeClasspath").attributes
     runtimeAttributes.keySet().forEach { key ->
-        @Suppress("UNCHECKED_CAST")
-        val typedKey = key as org.gradle.api.attributes.Attribute<Any>
+        @Suppress("UNCHECKED_CAST") val typedKey = key as org.gradle.api.attributes.Attribute<Any>
         candidateRuntime.attributes.attribute(typedKey, runtimeAttributes.getAttribute(typedKey)!!)
     }
     publishing {
@@ -100,22 +116,51 @@ afterEvaluate {
                 artifactId = "featbit-client-android"
                 pom {
                     name.set("FeatBit Android Client SDK")
-                    description.set("FeatBit Android client with lifecycle-aware online synchronization, local evaluation, analytics, cache and anonymous identity persistence.")
+                    description.set(
+                        "FeatBit Android client with lifecycle-aware online synchronization, local evaluation, analytics, cache and anonymous identity persistence."
+                    )
                     url.set("https://github.com/featbit/featbit-android-client-sdk")
-                    licenses { license { name.set("MIT License"); url.set("https://opensource.org/licenses/MIT") } }
+                    licenses {
+                        license {
+                            name.set("MIT License")
+                            url.set("https://opensource.org/licenses/MIT")
+                        }
+                    }
                     scm { url.set("https://github.com/featbit/featbit-android-client-sdk") }
-                    developers { developer { id.set("featbit"); name.set("FeatBit Contributors"); url.set("https://github.com/featbit") } }
+                    developers {
+                        developer {
+                            id.set("featbit")
+                            name.set("FeatBit Contributors")
+                            url.set("https://github.com/featbit")
+                        }
+                    }
                 }
             }
         }
-        repositories { maven {
-            name = "localTest"
-            url = uri(providers.gradleProperty("testRepository").getOrElse(rootProject.layout.buildDirectory.dir("test-repository").get().asFile.absolutePath))
-        } }
+        repositories {
+            maven {
+                name = "localTest"
+                url =
+                    uri(
+                        providers
+                            .gradleProperty("testRepository")
+                            .getOrElse(
+                                rootProject.layout.buildDirectory
+                                    .dir("test-repository")
+                                    .get()
+                                    .asFile
+                                    .absolutePath
+                            )
+                    )
+            }
+        }
     }
     if (providers.gradleProperty("signPublication").orNull == "true") {
         signing {
-            useInMemoryPgpKeys(providers.environmentVariable("SIGNING_KEY").get(), providers.environmentVariable("SIGNING_PASSWORD").get())
+            useInMemoryPgpKeys(
+                providers.environmentVariable("SIGNING_KEY").get(),
+                providers.environmentVariable("SIGNING_PASSWORD").get(),
+            )
             sign(publishing.publications["release"])
         }
     }

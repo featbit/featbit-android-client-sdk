@@ -1,17 +1,28 @@
-plugins { id("com.android.application"); id("org.jetbrains.kotlin.android") }
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+}
+
 android {
     namespace = "co.featbit.sample.kotlin"
     compileSdk = 34
     buildFeatures { buildConfig = true }
     defaultConfig {
         applicationId = "co.featbit.sample.kotlin"
-        minSdk = 21; targetSdk = 34; versionCode = 1; versionName = "1.0"
+        minSdk = 21
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     sourceSets.getByName("main").apply {
-        res.srcDir("../shared/res"); assets.srcDir("../shared/assets")
+        res.srcDir("../shared/res")
+        assets.srcDir("../shared/assets")
     }
-    compileOptions { sourceCompatibility = JavaVersion.VERSION_11; targetCompatibility = JavaVersion.VERSION_11 }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
     kotlinOptions { jvmTarget = "11" }
     buildTypes {
         getByName("release") {
@@ -21,10 +32,16 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
-    lint { abortOnError = true; disable += "GradleDependency" }
+    lint {
+        abortOnError = true
+        disable += "GradleDependency"
+    }
 }
+
 dependencies {
-    implementation("co.featbit:featbit-client-android:${providers.gradleProperty("sdkVersion").getOrElse("0.1.0-SNAPSHOT")}")
+    implementation(
+        "co.featbit:featbit-client-android:${providers.gradleProperty("sdkVersion").getOrElse("0.1.0-SNAPSHOT")}"
+    )
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")

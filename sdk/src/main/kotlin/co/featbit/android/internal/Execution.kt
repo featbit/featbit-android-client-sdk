@@ -11,113 +11,233 @@ import java.util.concurrent.TimeUnit
 
 internal interface Clock {
     fun elapsed(): Long
+
     fun wall(): Long
 }
+
 /** Saturate unrepresentable deadlines instead of wrapping a long wait into the past. */
 internal fun Clock.deadlineAfter(durationMillis: Long): Long {
     require(durationMillis > 0)
     val now = elapsed()
     return if (now > Long.MAX_VALUE - durationMillis) Long.MAX_VALUE else now + durationMillis
 }
+
 internal object AndroidClock : Clock {
     override fun elapsed() = SystemClock.elapsedRealtime()
+
     override fun wall() = System.currentTimeMillis()
 }
-internal fun interface Dispatch { fun post(action: () -> Unit) }
+
+internal fun interface Dispatch {
+    fun post(action: () -> Unit)
+}
+
 internal interface Workers {
     fun execute(action: () -> Unit): Boolean
+
     fun close()
 }
+
 internal class BoundedWorkers(threads: Int = 2, capacity: Int = 64) : Workers {
-    private val executor = ThreadPoolExecutor(threads, threads, 0, TimeUnit.MILLISECONDS,
-        ArrayBlockingQueue<Runnable>(capacity), { r -> Thread(r, "FeatBit-worker").apply { isDaemon = true } })
-    override fun execute(action: () -> Unit): Boolean = try { executor.execute(action); true }
-        catch (_: java.util.concurrent.RejectedExecutionException) { false }
+    private val executor =
+        ThreadPoolExecutor(
+            threads,
+            threads,
+            0,
+            TimeUnit.MILLISECONDS,
+            ArrayBlockingQueue<Runnable>(capacity),
+            { r -> Thread(r, "FeatBit-worker").apply { isDaemon = true } },
+        )
+
+    override fun execute(action: () -> Unit): Boolean =
+        try {
+            executor.execute(action)
+            true
+        } catch (_: java.util.concurrent.RejectedExecutionException) {
+            false
+        }
+
     // Do not discard admitted cleanup; hung extensions retain their physical slots.
-    override fun close() { executor.shutdown() }
+    override fun close() {
+        executor.shutdown()
+    }
 }
-internal interface Ticker { fun start(action: () -> Unit); fun close() }
+
+internal interface Ticker {
+    fun start(action: () -> Unit)
+
+    fun close()
+}
+
 internal class DeadlineTicker : Ticker {
-    private val executor = ScheduledThreadPoolExecutor(1) { r -> Thread(r, "FeatBit-deadlines").apply { isDaemon = true } }
-    override fun start(action: () -> Unit) { executor.scheduleWithFixedDelay(action, 0, 50, TimeUnit.MILLISECONDS) }
-    override fun close() { executor.shutdown() }
+    private val executor =
+        ScheduledThreadPoolExecutor(1) { r ->
+            Thread(r, "FeatBit-deadlines").apply { isDaemon = true }
+        }
+
+    override fun start(action: () -> Unit) {
+        executor.scheduleWithFixedDelay(action, 0, 50, TimeUnit.MILLISECONDS)
+    }
+
+    override fun close() {
+        executor.shutdown()
+    }
 }
+
 internal class CallbackBudget(private val limit: Int = 256) {
     private var count = 0
-    @Synchronized fun acquire(): Boolean = if (count == limit) false else { count++; true }
-    @Synchronized fun release() { count-- }
+
+    @Synchronized
+    fun acquire(): Boolean =
+        if (count == limit) false
+        else {
+            count++
+            true
+        }
+
+    @Synchronized
+    fun release() {
+        count--
+    }
 }
 
 /** Handles own only bounded registrations; final results outlive the runtime. */
-internal class ResultOperation<T>(private val dispatch: Dispatch, private val budget: CallbackBudget,
-    val clock: Clock? = null) : Operation<T> {
+internal class ResultOperation<T>(
+    private val dispatch: Dispatch,
+    private val budget: CallbackBudget,
+    val clock: Clock? = null,
+) : Operation<T> {
     private val lock = Any()
     private var result: Outcome<T>? = null
     private val observers = LinkedHashSet<Observer>()
+
     override fun getResult(): Outcome<T>? = synchronized(lock) { result }
+
     override fun observe(callback: Completion<T>): Outcome<Registration> {
-        if (!budget.acquire()) return Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("callback_capacity"))
+        if (!budget.acquire())
+            return Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("callback_capacity"))
         val observer = Observer(callback)
-        val ready = synchronized(lock) { observers.add(observer); result }
+        val ready =
+            synchronized(lock) {
+                observers.add(observer)
+                result
+            }
         if (ready != null) observer.enqueue(ready)
         return Outcome.success(observer)
     }
+
     fun settle(value: Outcome<T>) {
-        val targets = synchronized(lock) {
-            if (result != null) return
-            result = value
-            observers.toList()
-        }
+        val targets =
+            synchronized(lock) {
+                if (result != null) return
+                result = value
+                observers.toList()
+            }
         targets.forEach { it.enqueue(value) }
     }
+
     private inner class Observer(private var callback: Completion<T>?) : Registration {
         private var queued = false
         private var released = false
-        private fun release() { if (!released) { released = true; budget.release() } }
-        fun enqueue(value: Outcome<T>) {
-            synchronized(lock) { if (queued || callback == null) return; queued = true }
-            dispatch.post {
-                val action = synchronized(lock) {
-                    val saved = callback
-                    callback = null; observers.remove(this); release()
-                    saved
-                }
-                try { action?.onComplete(value) } catch (_: Exception) { /* application isolation */ }
+
+        private fun release() {
+            if (!released) {
+                released = true
+                budget.release()
             }
         }
-        override fun close() = synchronized(lock) {
-            if (callback != null) { callback = null; observers.remove(this); if (!queued) release() }
+
+        fun enqueue(value: Outcome<T>) {
+            synchronized(lock) {
+                if (queued || callback == null) return
+                queued = true
+            }
+            dispatch.post {
+                val action =
+                    synchronized(lock) {
+                        val saved = callback
+                        callback = null
+                        observers.remove(this)
+                        release()
+                        saved
+                    }
+                try {
+                    action?.onComplete(value)
+                } catch (_: Exception) {
+                    /* application isolation */
+                }
+            }
         }
+
+        override fun close() =
+            synchronized(lock) {
+                if (callback != null) {
+                    callback = null
+                    observers.remove(this)
+                    if (!queued) release()
+                }
+            }
     }
 }
+
 internal fun mainDispatch(): Dispatch {
     val handler = Handler(Looper.getMainLooper())
     return Dispatch { handler.post(it) }
 }
-internal class Diagnostics(private val options: ClientOptions, private val clock: Clock,
-    private val worker: Workers = BoundedWorkers(1, 128)) {
+
+internal class Diagnostics(
+    private val options: ClientOptions,
+    private val clock: Clock,
+    private val worker: Workers = BoundedWorkers(1, 128),
+) {
     private val times = LinkedHashMap<String, Long>()
     private val losses = LinkedHashMap<String, Long>()
+
     fun loss(code: String) {
-        synchronized(times) { losses[code] = (losses[code] ?: 0L).let { if (it == Long.MAX_VALUE) it else it + 1 } }
+        synchronized(times) {
+            losses[code] = (losses[code] ?: 0L).let { if (it == Long.MAX_VALUE) it else it + 1 }
+        }
         report(code)
     }
+
     fun lossCounts(): Map<String, Long> = synchronized(times) { losses.toMap() }
+
     fun report(code: String) {
-        if (options.logger == null || options.logLevel == LogLevel.NONE || options.logLevel.ordinal < LogLevel.WARN.ordinal) return
+        if (
+            options.logger == null ||
+                options.logLevel == LogLevel.NONE ||
+                options.logLevel.ordinal < LogLevel.WARN.ordinal
+        )
+            return
         synchronized(times) {
             val now = clock.elapsed()
             if (times[code]?.let { now - it < 60_000 } == true) return
             if (times.size >= 128) times.remove(times.keys.first())
             times[code] = now
         }
-        worker.execute { try { options.logger.log(LogLevel.WARN, Diagnostic(code, synchronized(times) { losses[code]?.toString() })) } catch (_: Exception) { } }
+        worker.execute {
+            try {
+                options.logger.log(
+                    LogLevel.WARN,
+                    Diagnostic(code, synchronized(times) { losses[code]?.toString() }),
+                )
+            } catch (_: Exception) {}
+        }
     }
+
     fun close() {
-        if (options.logger != null && options.logLevel != LogLevel.NONE && options.logLevel.ordinal >= LogLevel.WARN.ordinal)
-            lossCounts().forEach { (code, count) -> worker.execute {
-                try { options.logger.log(LogLevel.WARN, Diagnostic(code, count.toString())) } catch (_: Exception) { }
-            } }
+        if (
+            options.logger != null &&
+                options.logLevel != LogLevel.NONE &&
+                options.logLevel.ordinal >= LogLevel.WARN.ordinal
+        )
+            lossCounts().forEach { (code, count) ->
+                worker.execute {
+                    try {
+                        options.logger.log(LogLevel.WARN, Diagnostic(code, count.toString()))
+                    } catch (_: Exception) {}
+                }
+            }
         worker.close()
     }
 }

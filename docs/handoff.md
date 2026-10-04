@@ -17,6 +17,15 @@ Debug/R8/JUnit/lint 通过，六次 Kotlin 平台检查通过。修正首帧启�
 阶段 7 重跑 Fake/None 目标服务协议及 Domain 消息校验；设备 HTTP fixture 与该联调均不替代数据库/MQ 验收。
 在线事件默认启用，需要配置 eventsUrl。
 
+## Code formatting (2026-10-04)
+
+- Root Spotless configuration covers SDK, tests, samples, consumer fixtures and Gradle Kotlin scripts.
+  Run `.\gradlew.bat spotlessApply` / `.\gradlew.bat spotlessCheck` from the repository root;
+  Linux/macOS use `bash gradlew`. Both CI workflows now check formatting.
+- Kotlin uses pinned ktfmt Kotlin style; Java uses pinned google-java-format AOSP style.
+  `.editorconfig` and `.gitattributes` specify basic editor settings and LF source line endings.
+- Formatting-only source changes; see [verification](./verification.md) for validation scope.
+
 ## HTTP/WS support (2026-10-04)
 
 - SDK already accepts ws/wss and http/https for any valid host. Kotlin sample now removes

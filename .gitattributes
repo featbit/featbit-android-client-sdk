@@ -1,1 +1,4 @@
 tools/run-live-acceptance.sh text eol=lf
+*.kt text eol=lf
+*.kts text eol=lf
+*.java text eol=lf

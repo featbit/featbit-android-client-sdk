@@ -1,12 +1,35 @@
 package co.featbit.android.api
 
-public enum class SyncMode { STREAMING, POLLING, CUSTOM }
-public enum class SyncStatus { WAITING, READY, STALE, TERMINAL, CLOSED }
-public enum class PauseReason { OFFLINE, BACKGROUND, NETWORK_UNAVAILABLE, CLOSING }
-public enum class RecoveryStatus { NONE, COOLING_DOWN, PROBING }
+public enum class SyncMode {
+    STREAMING,
+    POLLING,
+    CUSTOM,
+}
+
+public enum class SyncStatus {
+    WAITING,
+    READY,
+    STALE,
+    TERMINAL,
+    CLOSED,
+}
+
+public enum class PauseReason {
+    OFFLINE,
+    BACKGROUND,
+    NETWORK_UNAVAILABLE,
+    CLOSING,
+}
+
+public enum class RecoveryStatus {
+    NONE,
+    COOLING_DOWN,
+    PROBING,
+}
 
 /** Times are nullable Unix epoch milliseconds for the current context, never timeout clocks. */
-public class ConnectionInformation public constructor(
+public class ConnectionInformation
+public constructor(
     public val configuredMode: SyncMode,
     public val effectiveMode: SyncMode,
     public val status: SyncStatus,
@@ -19,7 +42,8 @@ public class ConnectionInformation public constructor(
     public val recovery: RecoveryStatus,
     public val candidateFailure: Diagnostic?,
 ) {
-    public val pauseReasons: Set<PauseReason> = java.util.Collections.unmodifiableSet(LinkedHashSet(pauseReasons))
+    public val pauseReasons: Set<PauseReason> =
+        java.util.Collections.unmodifiableSet(LinkedHashSet(pauseReasons))
 }
 
 /** Build identity only; does not create a runtime client. */

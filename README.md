@@ -28,6 +28,20 @@ Do not use this snapshot as a production feature-flag SDK.
 - [手动验证指南（Android Studio / 模拟器）](./docs/manual-verification.md)
 - [开发交接与当前进度](./docs/handoff.md)
 
+Code formatting is managed centrally by Spotless in the root build, including SDK,
+tests, samples, independent consumer fixtures, and Gradle Kotlin scripts. Kotlin uses
+ktfmt's Kotlin style; Java uses google-java-format's AOSP style. Formatter versions
+are pinned in `build.gradle.kts`; `.editorconfig` provides matching basic editor settings.
+Generated code, build outputs, and third-party files are outside the formatting targets.
+Run from the repository root (also for the independent sample and consumer builds):
+
+```sh
+bash gradlew spotlessApply  # Format source files
+bash gradlew spotlessCheck  # Verify without rewriting source files; also runs in CI
+```
+
+On Windows use `.\gradlew.bat spotlessApply` or `.\gradlew.bat spotlessCheck`.
+
 Build with JDK 17 and Android SDK 34:
 
 ```sh

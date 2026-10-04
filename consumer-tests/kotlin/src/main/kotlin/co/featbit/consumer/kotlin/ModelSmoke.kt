@@ -5,40 +5,71 @@ import co.featbit.android.datasource.*
 
 object ModelSmoke {
     fun verify() {
-        val user = User.builder("kotlin-user")
-            .name("Kotlin User")
-            .attribute("plan", AttributeValue.text("test").value!!)
-            .build().value!!
+        val user =
+            User.builder("kotlin-user")
+                .name("Kotlin User")
+                .attribute("plan", AttributeValue.text("test").value!!)
+                .build()
+                .value!!
         check(user.attributes["plan"]?.kind == AttributeValue.Kind.TEXT)
         check(user.attributes["plan"]?.text == "test")
-        val options = ClientOptions.builder().user(user).offline(true).bootstrap(emptyList()).build().value!!
+        val options =
+            ClientOptions.builder().user(user).offline(true).bootstrap(emptyList()).build().value!!
         check(options.bootstrap != null && options.bootstrap!!.isEmpty())
         val array = FbValue.ofArray(listOf(FbValue.jsonNull(), FbValue.ofBoolean(true))).value!!
         check(array.asArray()!![0].kind == FbValue.Kind.NULL)
         check(!FbValue.ofNumber(Double.NaN).isSuccess)
         check(SdkInfo.getVersion() == BuildConfig.EXPECTED_SDK_VERSION)
         check(FullUpdate.create(emptyList()).isSuccess)
-        val record = FlagRecord.builder(key = "enabled", variation = "true", variationType = "boolean", timestamp = 1769702003515L)
-            .variationOptions(listOf(VariationOption("on", "true")))
-            .build().value!!
+        val record =
+            FlagRecord.builder(
+                    key = "enabled",
+                    variation = "true",
+                    variationType = "boolean",
+                    timestamp = 1769702003515L,
+                )
+                .variationOptions(listOf(VariationOption("on", "true")))
+                .build()
+                .value!!
         check(record.timestamp == 1769702003515L)
         check(record.variation == "true" && record.variationType == "boolean")
         check(record.variationOptions?.single()?.id == "on")
         check(FullUpdate.create(listOf(record)).isSuccess)
         check(LocalFactory().capabilities().provenance == Provenance.LOCAL)
-        val data = co.featbit.android.testing.TestDataFactory.getDefault().create(emptyList()).value!!
-        check(data.update(BootstrapFlag.create("saved", "1", ValueType.NUMBER).value!!).getResult()!!.value == co.featbit.android.testing.TestDataResult.SAVED_FOR_NEXT_START)
-        check(data.clientOptions(user).value!!.disableEvents && !data.clientOptions(user).value!!.cacheEnabled)
+        val data =
+            co.featbit.android.testing.TestDataFactory.getDefault().create(emptyList()).value!!
+        check(
+            data
+                .update(BootstrapFlag.create("saved", "1", ValueType.NUMBER).value!!)
+                .getResult()!!
+                .value == co.featbit.android.testing.TestDataResult.SAVED_FOR_NEXT_START
+        )
+        check(
+            data.clientOptions(user).value!!.disableEvents &&
+                !data.clientOptions(user).value!!.cacheEnabled
+        )
     }
+
     class LocalFactory : DataSourceFactory {
         override fun capabilities() = SourceCapabilities(Provenance.LOCAL, false)
+
         override fun validate() = Outcome.success(SourceValidation.VALID)
-        override fun create(context: SourceSessionContext, sink: SourceUpdateSink): Outcome<DataSource> = Outcome.success(object : DataSource {
-            override fun start(completion: Completion<SourceStarted>) {
-                sink.submit(FullUpdate.create(emptyList()).value!!)
-                completion.onComplete(Outcome.success(SourceStarted.STARTED))
-            }
-            override fun stop(completion: Completion<SourceStopped>) { completion.onComplete(Outcome.success(SourceStopped.STOPPED)) }
-        })
+
+        override fun create(
+            context: SourceSessionContext,
+            sink: SourceUpdateSink,
+        ): Outcome<DataSource> =
+            Outcome.success(
+                object : DataSource {
+                    override fun start(completion: Completion<SourceStarted>) {
+                        sink.submit(FullUpdate.create(emptyList()).value!!)
+                        completion.onComplete(Outcome.success(SourceStarted.STARTED))
+                    }
+
+                    override fun stop(completion: Completion<SourceStopped>) {
+                        completion.onComplete(Outcome.success(SourceStopped.STOPPED))
+                    }
+                }
+            )
     }
 }

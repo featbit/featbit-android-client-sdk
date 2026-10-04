@@ -1,5 +1,28 @@
 # Verification record
 
+## Repository code formatting — 2026-10-04
+
+Added root Spotless 7.0.2 with ktfmt 0.54 Kotlin style and google-java-format 1.24.0
+AOSP style. Targets cover all 75 tracked Kotlin, Java and Gradle Kotlin script files
+across the SDK, tests, samples and consumer fixtures. Source formatting was applied;
+editor settings, LF attributes, README commands and both CI formatting checks were added.
+
+Validated locally on Windows with JDK 17 and Gradle 8.7:
+
+- `spotlessApply` followed by `spotlessCheck` passed.
+- SDK Release AAR, 139 Debug unit tests, Release lint and local Maven staging passed.
+- `python tools/check_api.py` passed: 78 public types match the existing baseline,
+  implementation dependencies remain hidden, and bytecode stays within Java 11.
+- Python tooling: 20 tests passed; three POSIX-only tests were skipped on Windows.
+- Kotlin sample: Debug APK, R8 Release APK, Debug instrumentation APK, three Debug
+  unit tests, and Debug/Release lint passed.
+- Independent Java and Kotlin 1.9.25 consumers: R8 Release builds, one Debug unit
+  test per consumer, and Release lint passed against the newly staged local SDK.
+- `git diff --check` passed.
+
+This is formatting validation, not a new release-acceptance run. No device execution,
+live-service integration, full Kotlin compiler matrix or hosted CI run is claimed.
+
 ## Bash and Python live-acceptance launcher — 2026-10-03
 
 Added `tools/run-live-acceptance.sh` and `tools/run_live_acceptance.py` for Linux/macOS.

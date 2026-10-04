@@ -5,7 +5,8 @@ import org.junit.Assert.*
 import org.junit.Test
 
 public class ModelTest {
-    @Test public fun jsonValuesCopyContainersAndPreserveNull() {
+    @Test
+    public fun jsonValuesCopyContainersAndPreserveNull() {
         val source = mutableListOf<FbValue?>(FbValue.jsonNull(), FbValue.ofBoolean(true))
         val value = FbValue.ofArray(source).value!!
         source.clear()
@@ -16,10 +17,18 @@ public class ModelTest {
         val obj = FbValue.ofObject(map).value!!
         map.clear()
         assertEquals(value, obj.asObject()!!["nested"])
-        try { (value.asArray() as MutableList).clear(); fail("mutable result") } catch (_: UnsupportedOperationException) { }
-        try { (obj.asObject() as MutableMap).clear(); fail("mutable result") } catch (_: UnsupportedOperationException) { }
+        try {
+            (value.asArray() as MutableList).clear()
+            fail("mutable result")
+        } catch (_: UnsupportedOperationException) {}
+        try {
+            (obj.asObject() as MutableMap).clear()
+            fail("mutable result")
+        } catch (_: UnsupportedOperationException) {}
     }
-    @Test public fun invalidValuesUseOrdinaryResults() {
+
+    @Test
+    public fun invalidValuesUseOrdinaryResults() {
         assertFalse(FbValue.ofNumber(Double.POSITIVE_INFINITY).isSuccess)
         assertFalse(FbValue.ofNumber(Double.NaN).isSuccess)
         assertFalse(FbValue.ofString(null).isSuccess)
@@ -27,8 +36,14 @@ public class ModelTest {
         assertFalse(FbValue.ofObject(mapOf(null to FbValue.jsonNull())).isSuccess)
         assertTrue(FbValue.ofNumber(Double.MAX_VALUE).isSuccess)
     }
-    @Test public fun usersFreezeBuilderAndPreserveAttributePresence() {
-        val builder = User.builder("user").name("User").attribute("n", AttributeValue.nullValue()).attribute("o", AttributeValue.omittedValue())
+
+    @Test
+    public fun usersFreezeBuilderAndPreserveAttributePresence() {
+        val builder =
+            User.builder("user")
+                .name("User")
+                .attribute("n", AttributeValue.nullValue())
+                .attribute("o", AttributeValue.omittedValue())
         val user = builder.build().value!!
         builder.attribute("later", AttributeValue.nullValue())
         assertFalse(user.attributes.containsKey("later"))
@@ -37,7 +52,9 @@ public class ModelTest {
         assertFalse(builder.attribute("n", AttributeValue.nullValue()).build().isSuccess)
         assertFalse(User.builder("").name("User").build().isSuccess)
     }
-    @Test public fun usersRejectMissingOrBlankIdentityFields() {
+
+    @Test
+    public fun usersRejectMissingOrBlankIdentityFields() {
         for (invalid in listOf(null, "", "   ", "\t\r\n", "\u2003")) {
             val keyResult = User.builder(invalid).name("User").build()
             assertEquals(OutcomeCode.INVALID, keyResult.code)
@@ -54,23 +71,40 @@ public class ModelTest {
         assertNull(missingName.value)
         assertEquals(Diagnostic("invalid_user_name", "name"), missingName.diagnostic)
     }
-    @Test public fun usersPreserveIdentityWithoutTrimming() {
+
+    @Test
+    public fun usersPreserveIdentityWithoutTrimming() {
         val result = User.builder(" User-001 \t").name(" Alice \n").build()
         assertTrue(result.isSuccess)
         assertEquals(" User-001 \t", result.value!!.key)
         assertEquals(" Alice \n", result.value!!.name)
     }
-    @Test public fun offlineExemptsEndpointsAndBootstrapDistinguishesEmptyFromAbsent() {
+
+    @Test
+    public fun offlineExemptsEndpointsAndBootstrapDistinguishesEmptyFromAbsent() {
         val user = User.builder("u").name("User").build().value!!
         val builder = ClientOptions.builder().user(user).offline(true)
         assertNull(builder.build().value!!.bootstrap)
-        assertEquals(emptyList<BootstrapFlag>(), builder.bootstrap(emptyList()).build().value!!.bootstrap)
+        assertEquals(
+            emptyList<BootstrapFlag>(),
+            builder.bootstrap(emptyList()).build().value!!.bootstrap,
+        )
         assertFalse(builder.offline(false).build().isSuccess)
     }
-    @Test public fun configurationCopiesCollectionsAndRejectsConflictsWithoutLeakingSecrets() {
+
+    @Test
+    public fun configurationCopiesCollectionsAndRejectsConflictsWithoutLeakingSecrets() {
         val user = User.builder("u").name("User").build().value!!
-        val flags = mutableListOf<BootstrapFlag?>(BootstrapFlag.create("f", "true", ValueType.BOOLEAN).value!!)
-        val builder = ClientOptions.builder().user(user).offline(true).bootstrap(flags).eventHeader("Gateway", "secret")
+        val flags =
+            mutableListOf<BootstrapFlag?>(
+                BootstrapFlag.create("f", "true", ValueType.BOOLEAN).value!!
+            )
+        val builder =
+            ClientOptions.builder()
+                .user(user)
+                .offline(true)
+                .bootstrap(flags)
+                .eventHeader("Gateway", "secret")
         val options = builder.build().value!!
         flags.clear()
         builder.eventHeader("Second", "secret")
@@ -79,9 +113,19 @@ public class ModelTest {
         val rejected = builder.eventHeader("Authorization", "credential").build()
         assertFalse(rejected.isSuccess)
         assertFalse(rejected.diagnostic.toString().contains("credential"))
-        assertFalse(ClientOptions.builder().user(user).offline(true).eventHeader("x-test", "a").eventHeader("X-Test", "b").build().isSuccess)
+        assertFalse(
+            ClientOptions.builder()
+                .user(user)
+                .offline(true)
+                .eventHeader("x-test", "a")
+                .eventHeader("X-Test", "b")
+                .build()
+                .isSuccess
+        )
     }
-    @Test public fun customUpdatesFreezeRecordsAndRejectAmbiguousKeys() {
+
+    @Test
+    public fun customUpdatesFreezeRecordsAndRejectAmbiguousKeys() {
         val record = FlagRecord.builder("f", "true", "boolean", 1).build().value!!
         val records = mutableListOf<FlagRecord?>(record)
         val update = FullUpdate.create(records).value!!
@@ -91,11 +135,19 @@ public class ModelTest {
         assertTrue(FullUpdate.create(emptyList()).isSuccess)
         assertFalse(FlagRecord.builder("f", "x", "future-type", -1).build().isSuccess)
     }
-    @Test public fun flagRecordsCopyVariationOptionsAndPreserveMetadata() {
+
+    @Test
+    public fun flagRecordsCopyVariationOptionsAndPreserveMetadata() {
         val option = VariationOption("on", "true")
         val options = mutableListOf(option)
-        val builder = FlagRecord.builder(key = "f", variation = "true", variationType = "boolean", timestamp = 1769702003515L)
-            .variationOptions(options)
+        val builder =
+            FlagRecord.builder(
+                    key = "f",
+                    variation = "true",
+                    variationType = "boolean",
+                    timestamp = 1769702003515L,
+                )
+                .variationOptions(options)
         options.clear()
         val record = builder.build().value!!
         builder.variationOptions(emptyList())
@@ -106,7 +158,10 @@ public class ModelTest {
         assertEquals(listOf(option), record.variationOptions)
         assertFalse(record.archived)
         assertNull(record.reason)
-        try { (record.variationOptions as MutableList).clear(); fail("mutable options") } catch (_: UnsupportedOperationException) { }
+        try {
+            (record.variationOptions as MutableList).clear()
+            fail("mutable options")
+        } catch (_: UnsupportedOperationException) {}
         val empty = builder.build().value!!
         assertEquals(emptyList<VariationOption>(), empty.variationOptions)
         val absent = builder.variationOptions(null).build().value!!
@@ -115,10 +170,16 @@ public class ModelTest {
         assertEquals("future-type", defaults.variationType)
         assertNull(defaults.variationOptions)
     }
-    @Test public fun onlineValidationRequiresOnlyEnabledPaths() {
+
+    @Test
+    public fun onlineValidationRequiresOnlyEnabledPaths() {
         val user = User.builder("u").name("User").build().value!!
-        val builder = ClientOptions.builder().user(user).sdkKey("test-key")
-            .streamingUrl("wss://example.test/prefix/streaming").disableEvents(true)
+        val builder =
+            ClientOptions.builder()
+                .user(user)
+                .sdkKey("test-key")
+                .streamingUrl("wss://example.test/prefix/streaming")
+                .disableEvents(true)
         assertTrue(builder.build().isSuccess)
         assertFalse(builder.backgroundPolling(true).build().isSuccess)
         assertTrue(builder.pollingUrl("https://example.test/prefix/latest-all").build().isSuccess)
@@ -126,8 +187,15 @@ public class ModelTest {
         assertTrue(builder.eventsUrl("https://example.test/prefix/track").build().isSuccess)
         assertFalse(builder.eventsUrl("https://user:secret@example.test/track").build().isSuccess)
     }
-    @Test public fun invalidLimitsAndReservedAttributesRemainInvalidOffline() {
-        val user = User.builder("u").name("User").attribute("featbit.sdk.version", AttributeValue.text("caller").value!!).build().value!!
+
+    @Test
+    public fun invalidLimitsAndReservedAttributesRemainInvalidOffline() {
+        val user =
+            User.builder("u")
+                .name("User")
+                .attribute("featbit.sdk.version", AttributeValue.text("caller").value!!)
+                .build()
+                .value!!
         val builder = ClientOptions.builder().user(user).offline(true)
         assertTrue(builder.build().isSuccess)
         assertFalse(builder.automaticAttributes(true).build().isSuccess)
@@ -137,18 +205,32 @@ public class ModelTest {
         assertFalse(builder.flagGraceMillis(-1).build().isSuccess)
         assertFalse(builder.flagGraceMillis(0).requestTimeoutMillis(0).build().isSuccess)
     }
-    @Test public fun durationOptionsAcceptLongValuesAndKeepMinimums() {
-        val builder = ClientOptions.builder().user(User.builder("u").name("User").build().value!!).offline(true)
-            .startupWaitMillis(Long.MAX_VALUE).requestTimeoutMillis(Long.MAX_VALUE)
-            .closeTimeoutMillis(Long.MAX_VALUE).flagGraceMillis(Long.MAX_VALUE)
-            .pollingIntervalMillis(Long.MAX_VALUE).backgroundPollingIntervalMillis(Long.MAX_VALUE)
-            .flushIntervalMillis(Long.MAX_VALUE)
+
+    @Test
+    public fun durationOptionsAcceptLongValuesAndKeepMinimums() {
+        val builder =
+            ClientOptions.builder()
+                .user(User.builder("u").name("User").build().value!!)
+                .offline(true)
+                .startupWaitMillis(Long.MAX_VALUE)
+                .requestTimeoutMillis(Long.MAX_VALUE)
+                .closeTimeoutMillis(Long.MAX_VALUE)
+                .flagGraceMillis(Long.MAX_VALUE)
+                .pollingIntervalMillis(Long.MAX_VALUE)
+                .backgroundPollingIntervalMillis(Long.MAX_VALUE)
+                .flushIntervalMillis(Long.MAX_VALUE)
         assertTrue(builder.build().isSuccess)
         assertFalse(builder.startupWaitMillis(0).build().isSuccess)
         assertFalse(builder.startupWaitMillis(1).closeTimeoutMillis(0).build().isSuccess)
         assertFalse(builder.closeTimeoutMillis(1).flushIntervalMillis(999).build().isSuccess)
         assertFalse(builder.flushIntervalMillis(1_000).pollingIntervalMillis(999).build().isSuccess)
-        assertFalse(builder.pollingIntervalMillis(1_000).backgroundPollingIntervalMillis(899_999).build().isSuccess)
+        assertFalse(
+            builder
+                .pollingIntervalMillis(1_000)
+                .backgroundPollingIntervalMillis(899_999)
+                .build()
+                .isSuccess
+        )
         assertTrue(builder.backgroundPollingIntervalMillis(900_000).build().isSuccess)
     }
 }
