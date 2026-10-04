@@ -17,6 +17,13 @@ Debug/R8/JUnit/lint 通过，六次 Kotlin 平台检查通过。修正首帧启�
 阶段 7 重跑 Fake/None 目标服务协议及 Domain 消息校验；设备 HTTP fixture 与该联调均不替代数据库/MQ 验收。
 在线事件默认启用，需要配置 eventsUrl。
 
+## HTTP/WS support (2026-10-04)
+
+- SDK already accepts ws/wss and http/https for any valid host. Kotlin sample now removes
+  the Debug-only 10.0.2.2 restriction and permits cleartext in both Debug and Release.
+- Host applications still control their own Android network security policy.
+- See docs/integration.md, samples/implementation-guide.md and samples/kotlin/VERIFICATION.md.
+
 ## Kotlin sample app（2026-10-03）
 
 - Connection 的 Streaming fallback 设计已同步到 README、interaction-design、implementation-guide、
@@ -154,7 +161,7 @@ Debug/R8/JUnit/lint 通过，六次 Kotlin 平台检查通过。修正首帧启�
   请求 cursor 0 完整快照。恢复 candidate 直接请求完整快照，保留冻结基线校验与单次 15 秒预算。
 - 持续恢复不受 awaitReady/Identify 等待超时影响。4003 和 HTTP 401/403 终止该实例同步；
   旧 attempt 的拒绝不能终止新会话。候选失败与权威 Polling 错误分开。
-- AAR 增加 INTERNET 权限；不放宽宿主 cleartext 策略。仅消费者测试 manifest 放行本机 HTTP fixture。
+- AAR 增加 INTERNET 权限；不放宽宿主 cleartext 策略。消费者测试 manifest 放行本机 HTTP fixture；Kotlin sample 主 manifest 允许 Debug/Release HTTP/WS。
 - 缓存及匿名身份已接入 noBackupFilesDir/AtomicFile。缓存为每 namespace 一个原子文件，
   含最多 5 个上下文；2026-10-02 按用户决定移除缓存大小上限和时间过期，时间回拨也不使缓存失效；匿名文件独立。读缓存不写回，LRU 访问时间随下次写入持久化。
 - Custom 禁止内置端点配置；REMOTE Custom 以包含部署/来源/格式的 cacheDiscriminator 加 sdkKey 确定缓存 namespace。

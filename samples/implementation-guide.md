@@ -108,7 +108,7 @@ not process death. Build options from the submitted snapshot, not mutable form s
 Do not submit a retained true fallback draft in direct Polling mode: the SDK rejects it
 with `fallback_requires_streaming`. Local TestData ignores all Live transport drafts.
 Validate both active endpoints before retiring the current client, preserving the existing
-scheme, Debug cleartext and deployment-path rules. An inactive URL must not block Apply.
+scheme and deployment-path rules. An inactive URL must not block Apply.
 Keep user, key and Events configuration unchanged by the choice of fallback policy.
 
 The SDK owns the continuous 30-second foreground transient-failure window, polling schedule,
@@ -174,13 +174,12 @@ It is not a production distribution signing configuration.
   is the emulator itself. Use the service's actual exposed port and deployment base path.
 - A physical device uses a reachable host LAN address/DNS name, with server binding and firewall
   configured appropriately. Do not use emulator-only addressing on a physical device.
-- Debug-only network security configuration permits cleartext solely for the documented
-  local emulator host. Any additional LAN host must be an explicit developer configuration in both
-  `network_security_config.xml` and the Debug-only validation in `SampleSession.validateDraft`.
-  Production/Release sample manifests retain platform cleartext restrictions. Never weaken TLS
-  certificate verification to make a development endpoint connect.
-- Release/R8 Live checks therefore need HTTPS/WSS or a separately documented test-only build
-  configuration; Debug cleartext success does not establish Release connectivity.
+- Streaming accepts `ws://` and `wss://`; Polling and Events accept `http://` and
+  `https://`, for any valid host in both Debug and Release. The sample application's
+  main manifest enables cleartext traffic for local, LAN and remote HTTP/WS endpoints.
+  HTTPS/WSS certificate verification remains enabled.
+- SDK host applications control their own Android cleartext policy; see the
+  [integration guide](../docs/integration.md#android-cleartext-connections).
 - Connection settings remain process-memory-only. Re-enter them after process death. Rotation
   retains them. Android's ordinary sandbox storage, including SDK cache, is independent per app.
 

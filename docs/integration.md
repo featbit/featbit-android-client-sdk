@@ -120,6 +120,20 @@ deployment path casing and escaping remain significant and are preserved. Endpoi
 a host and must not contain user-info, a query or a fragment. These requirements are checked
 for enabled online paths; offline creation still defers endpoint validation until going online.
 
+### Android cleartext connections
+
+The SDK accepts `ws://` and `http://` for any valid host, in Debug and Release.
+Android also applies the host application's network security policy. When the app has no
+Network Security Configuration, add `android:usesCleartextTraffic="true"` to its
+`<application>` manifest element to allow cleartext. If the app uses
+`android:networkSecurityConfig`, permit cleartext for the required hosts there instead.
+The SDK AAR does not override the application's policy. The Kotlin sample explicitly
+allows cleartext in both build variants; HTTPS/WSS certificate verification is unchanged.
+
+On an Android emulator, `localhost` refers to the emulator. Use `10.0.2.2` to reach
+a service on the development computer, or use `adb reverse tcp:5100 tcp:5100` for
+`localhost:5100`. Physical devices need a reachable host or port forwarding.
+
 Enable `anonymousEnabled(true)` explicitly. An explicit user wins; otherwise a random stored anonymous
 key is used. Login uses `identify(user, timeout)`; logout/return uses `identifyAnonymous(timeout)`;
 `resetAnonymousIdentity(timeout)` explicitly rotates it. These methods return Operations in Java

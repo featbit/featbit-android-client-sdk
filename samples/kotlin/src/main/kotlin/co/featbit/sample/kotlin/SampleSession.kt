@@ -74,16 +74,8 @@ class SampleSession(private val context: Context) {
         val endpoint = if (draft.mode == SyncMode.STREAMING) draft.streaming else draft.polling
         if (endpoint.isBlank()) errors[if (draft.mode == SyncMode.STREAMING) "streamingUrl" else "pollingUrl"] = "Synchronization URL is required"
         if (draft.events && draft.eventsUrl.isBlank()) errors["eventsUrl"] = "Events URL is required"
-        val endpoints = mutableMapOf((if (draft.mode == SyncMode.STREAMING) "streamingUrl" else "pollingUrl") to endpoint)
-        if (draft.mode == SyncMode.STREAMING && draft.pollingFallback) {
-            endpoints["pollingUrl"] = draft.polling
-            if (draft.polling.isBlank()) errors["pollingUrl"] = "Polling URL is required when fallback is enabled"
-        }
-        if (draft.events) endpoints["eventsUrl"] = draft.eventsUrl
-        endpoints.forEach { (field, value) ->
-            val uri = runCatching { java.net.URI(value) }.getOrNull()
-            if (uri?.scheme?.lowercase() in setOf("http", "ws") && (!BuildConfig.DEBUG || uri?.host != "10.0.2.2"))
-                errors[field] = "Use HTTPS/WSS. Only Debug permits the local emulator host 10.0.2.2."
+        if (draft.mode == SyncMode.STREAMING && draft.pollingFallback && draft.polling.isBlank()) {
+            errors["pollingUrl"] = "Polling URL is required when fallback is enabled"
         }
         if (errors.isEmpty()) {
             val outcome = liveOptions().build()

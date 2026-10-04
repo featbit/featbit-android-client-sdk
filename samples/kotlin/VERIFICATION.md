@@ -4,6 +4,19 @@ Baseline: 2026-10-03, Windows / JDK 17 / Gradle 8.7 / Android API 34 emulator.
 SDK: locally published `co.featbit:featbit-client-android:0.1.0-SNAPSHOT`.
 This is sample evidence, not the SDK release-acceptance matrix.
 
+## HTTP/WS endpoints - 2026-10-04
+
+- Removed the sample-only Debug/emulator-host validator; SDK endpoint validation still
+  checks schemes and URL structure. Both sample variants permit cleartext in the main manifest.
+- SDK `EndpointTest`: 4 tests passed.
+- Sample Debug, R8 Release and Debug instrumentation APK builds passed; Debug/Release lint passed.
+- API 34 emulator: `cleartextEndpointsAcceptAnyHost` and
+  `connectionFallbackDraftAndValidation` passed. The former checks Streaming/Polling/events
+  validation and Android cleartext policy for localhost, emulator gateway, LAN IP and DNS hosts.
+- Inspected `../build/connection-cleartext-localhost.png`: all three localhost endpoints
+  display without the former HTTPS/WSS error.
+- Release device connectivity, physical devices and live service requests were not rerun.
+
 ## Automated checks
 
 - Discount shortcut placement follow-up: moved the Compact checkout shortcut to

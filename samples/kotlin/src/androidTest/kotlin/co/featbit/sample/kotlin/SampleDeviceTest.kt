@@ -41,6 +41,36 @@ class SampleDeviceTest {
         android.os.ParcelFileDescriptor.AutoCloseInputStream(descriptor).use { it.readBytes() }
         assertTrue("Screenshot missing: $name", file.length() > 1000)
     }
+    @Test fun cleartextEndpointsAcceptAnyHost() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity {
+                val session = it.session
+                session.draft.local = false
+                session.draft.key = "test-key"
+                session.draft.pollingFallback = true
+                session.draft.events = true
+                for (host in listOf("localhost", "10.0.2.2", "192.168.1.20", "evaluation.example.com")) {
+                    assertTrue(android.security.NetworkSecurityPolicy.getInstance().isCleartextTrafficPermitted(host))
+                    session.draft.streaming = "ws://$host:5100"
+                    session.draft.polling = "http://$host:5100"
+                    session.draft.eventsUrl = "http://$host:5100"
+                    for (mode in listOf(co.featbit.android.api.SyncMode.STREAMING, co.featbit.android.api.SyncMode.POLLING)) {
+                        session.draft.mode = mode
+                        assertTrue(session.validateDraft().toString(), session.validateDraft().isEmpty())
+                    }
+                }
+                session.draft.mode = co.featbit.android.api.SyncMode.STREAMING
+                session.draft.streaming = "ws://localhost:5100"
+                session.draft.polling = "http://localhost:5100"
+                session.draft.eventsUrl = "http://localhost:5100"
+                session.formOpen = true
+                it.navigate()
+            }
+            onView(withText("ws://localhost:5100")).check(matches(isDisplayed()))
+            capture("connection-cleartext-localhost")
+        }
+    }
+
     @Test fun connectionFallbackDraftAndValidation() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             lateinit var session: SampleSession
