@@ -1,75 +1,434 @@
-# FeatBit Android Client SDK
+# FeatBit Client SDK for Android
 
-Kotlin implementation with Java-compatible public APIs, targeting Android API 21+.
+## Introduction
 
-**Current state: Phase 7 release preparation; full release acceptance remains open.** The project builds debug/release AARs with
-local evaluation, Bootstrap, TestData/Custom sources, Identify, online/offline intent,
-subscriptions, coroutine adapters, bounded Close, persistent cache and anonymous identity.
-Built-in Streaming/Polling, reconnect, Identify isolation, optional fallback/recovery and
-platform-aware background polling are implemented. Evaluation/Track events, privacy filtering,
-bounded queues/retries, Flush and final Close delivery are implemented. Configure `eventsUrl`
-for enabled analytics. Process lifecycle, connectivity and device-idle observers are connected;
-physical-device/deployed-storage acceptance and formal publication remain outstanding.
-Do not use this snapshot as a production feature-flag SDK.
+This is the client-side SDK for the open-source feature flag management platform
+[FeatBit](https://github.com/featbit/featbit).
 
-- [Implementation plan](./plan.md)
-- [Java/Kotlin integration and configuration](./docs/integration.md)
-- [Phase 7 acceptance evidence and limitations](./docs/phase-7.md)
-- [Release preparation and toolchain matrix](./docs/release.md)
-- [Conformance mapping and remaining gates](./docs/conformance.md)
-- [Architecture](./architecture.md)
-- [Phase 1 decisions and build commands](./docs/phase-1.md)
-- [Phase 2 runtime, usage and boundaries](./docs/phase-2.md)
-- [Phase 3 persistence, clearing and identity](./docs/phase-3.md)
-- [Phase 4 online synchronization and integration checks](./docs/phase-4.md)
-- [Phase 5 events, privacy, Flush and Close](./docs/phase-5.md)
-- [Phase 6 lifecycle installation, background policy and device checks](./docs/phase-6.md)
-- [Verification results](./docs/verification.md)
-- [手动验证指南（Android Studio / 模拟器）](./docs/manual-verification.md)
-- [开发交接与当前进度](./docs/handoff.md)
+The SDK is implemented in Kotlin with Java-compatible public APIs and supports Android
+API 21 and later. It is intended for a single-user context: FeatBit evaluates targeting
+rules on the server, and your app reads the synchronized flag values locally.
 
-Code formatting is managed centrally by Spotless in the root build, including SDK,
-tests, samples, independent consumer fixtures, and Gradle Kotlin scripts. Kotlin uses
-ktfmt's Kotlin style; Java uses google-java-format's AOSP style. Formatter versions
-are pinned in `build.gradle.kts`; `.editorconfig` provides matching basic editor settings.
-Generated code, build outputs, and third-party files are outside the formatting targets.
-Run from the repository root (also for the independent sample and consumer builds):
+> **Development preview:** The current artifact is `0.1.0-SNAPSHOT`, available through
+> a local build. Formal publication and full release acceptance are still pending;
+> this snapshot is not ready for production use.
+
+## Get Started
+
+### Installation
+
+Build and publish the SDK to a local Maven repository using JDK 17 and Android SDK 34:
 
 ```sh
-bash gradlew spotlessApply  # Format source files
-bash gradlew spotlessCheck  # Verify without rewriting source files; also runs in CI
+# Run from the SDK repository root.
+bash gradlew :sdk:publishReleasePublicationToLocalTestRepository
 ```
 
-On Windows use `.\gradlew.bat spotlessApply` or `.\gradlew.bat spotlessCheck`.
+On Windows, use `.\gradlew.bat` instead of `bash gradlew`. This creates the repository
+under `build/test-repository/`; it does not publish to Maven Central.
 
-Build with JDK 17 and Android SDK 34:
+Add that repository to your app's `settings.gradle.kts`:
 
-```sh
-bash gradlew :sdk:assembleDebug :sdk:assembleRelease :sdk:testDebugUnitTest :sdk:lintRelease :sdk:publishReleasePublicationToLocalTestRepository
-python3 tools/check_api.py
-bash gradlew -p consumer-tests :java:assembleRelease :java:testDebugUnitTest :kotlin:assembleRelease :kotlin:testDebugUnitTest
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        maven { url = uri("/absolute/path/to/featbit-android-client-sdk/build/test-repository") }
+        google()
+        mavenCentral()
+    }
+}
 ```
 
-On Windows use `.\gradlew.bat`. Outputs are under `sdk/build/outputs/aar/` and
-the local test Maven repository `build/test-repository/`. The Maven coordinates are
-`co.featbit:featbit-client-android`; the local development version is `0.1.0-SNAPSHOT`.
-Nothing is published remotely by these commands.
+Then add the dependency to your app module's `build.gradle.kts`:
 
-For the isolated Java/Kotlin compiler matrix, use `python tools/acceptance.py`.
-Add `--serial emulator-5554` to install and execute Debug/R8 test APKs. This additionally
-requires build-tools 35.0.0 for the Kotlin 2.2.10 consumer; the core SDK compiler stays 1.9.25.
-See the release guide for per-run evidence, signing preparation and unexecuted release gates.
+```kotlin
+dependencies {
+    implementation("co.featbit:featbit-client-android:0.1.0-SNAPSHOT")
+}
+```
 
-On Windows, start an emulator and run `.\tools\run-live-acceptance.ps1`
-to build/start the Fake/None service and run the full live/emulator matrix with
-automatic service cleanup. Use `-CheckOnly` to check prerequisites first; see the
-[release guide](docs/release.md#windows-full-live-and-emulator-acceptance).
+The SDK uses Java 11 bytecode. See the [integration guide](./docs/integration.md)
+for Android manifest, lifecycle, and consumer setup details.
 
-On Linux/macOS, use `bash tools/run-live-acceptance.sh` after starting an emulator.
-Add `--check-only` to validate prerequisites. The Bash entry point delegates service
-management and acceptance to Python; see the
-[Linux/macOS guide](docs/release.md#linuxmacos-full-live-and-emulator-acceptance)
-for dependencies and validation scope.
+### Prerequisite
 
-`consumer-tests/` contains independent Java/Kotlin compilation and R8 fixtures, not samples.
-Samples are deferred. OpenFeature is a separate product and is not a dependency.
+Before using the SDK, obtain your environment's **client-side secret** (`sdkKey`)
+and SDK URLs. Do not embed a server-side secret in an Android app.
+
+- [How to get the environment secret](https://docs.featbit.co/sdk/faq#how-to-get-the-environment-secret)
+- [How to get SDK URLs](https://docs.featbit.co/sdk/faq#how-to-get-the-sdk-urls)
+
+Streaming uses a `ws://` or `wss://` URL; polling and events use `http://` or `https://`.
+The event URL is required for online clients unless event collection is disabled.
+For local development, see [Android cleartext connections](./docs/integration.md#android-cleartext-connections),
+including emulator host addressing and the app's network security policy.
+
+### Quick Start
+
+The following Kotlin example creates a streaming client, waits for initial remote
+flag data, and evaluates a flag. Call it from an application-owned coroutine and
+retain the returned client for reuse throughout the app.
+
+```kotlin
+import android.content.Context
+import co.featbit.android.api.ClientFactory
+import co.featbit.android.api.ClientOptions
+import co.featbit.android.api.FeatBitClient
+import co.featbit.android.api.User
+import co.featbit.android.kotlin.ClientAdapters
+
+suspend fun createClient(context: Context): FeatBitClient {
+    val user = User.builder("a-unique-key-of-user").name("Bob").build()
+    check(user.isSuccess) { "Invalid user: ${user.code}" }
+
+    val options = ClientOptions.builder()
+        .sdkKey("your_client_sdk_key")
+        .streamingUrl("wss://evaluation.example.com")
+        .eventsUrl("https://events.example.com")
+        .user(user.value!!)
+        .build()
+    check(options.isSuccess) { "Invalid configuration: ${options.code}" }
+
+    val adapters = ClientAdapters.getDefault()
+    val created = adapters.await(
+        ClientFactory.getDefault().create(context.applicationContext, options.value!!),
+        6_000,
+    )
+    check(created.isSuccess) { "Client creation failed: ${created.code}" }
+    val client = created.value!!
+
+    val ready = adapters.await(client.awaitReady(5_000), 6_000)
+    if (!ready.isSuccess) {
+        // This wait failed or timed out. Inspect ready.code for the reason.
+        // A timeout does not stop background synchronization.
+    }
+
+    val enabled = client.boolVariation("new-checkout", false)
+    // Use enabled to select your checkout experience.
+    return client
+}
+```
+
+Client creation and remote readiness are separate operations. Builders and asynchronous
+operations return `Outcome<T>`; check `isSuccess` before accessing `value`. Flag reads
+return the supplied fallback when a usable value is unavailable.
+
+Java applications use the same builders and callback-based `Operation.observe(...)`.
+See the [Java integration example](./docs/integration.md#installation-and-ownership).
+The remaining Kotlin snippets assume a retained `client`, a validated `user`, and
+imports from `co.featbit.android.api` unless noted otherwise.
+
+## Examples
+
+- [Kotlin sample app](./samples/kotlin): local demo and live connections, user switching,
+  flag evaluation, and custom events. Follow the [build and run guide](./samples/implementation-guide.md).
+- [Java integration examples](./docs/integration.md): callback-based usage of the public API.
+
+## SDK
+
+### FeatBitClient
+
+`FeatBitClient` provides flag reads, synchronization state, subscriptions, identity
+changes, and event delivery. Retain one application-scoped client for your active
+user context; do not create a new client for each read or Activity rotation.
+
+Use `ClientOptions.builder()` to configure the client and `ClientFactory.getDefault()`
+to create it, as shown in Quick Start.
+
+#### FeatBitClient Using Streaming
+
+Streaming is the default synchronization mode:
+
+```kotlin
+val options = ClientOptions.builder()
+    .sdkKey("your_client_sdk_key")
+    .streamingUrl("wss://evaluation.example.com")
+    .eventsUrl("https://events.example.com")
+    .user(user)
+    .build()
+```
+
+#### FeatBitClient Using Polling
+
+```kotlin
+val options = ClientOptions.builder()
+    .sdkKey("your_client_sdk_key")
+    .mode(SyncMode.POLLING)
+    .pollingUrl("https://evaluation.example.com")
+    .pollingIntervalMillis(30_000)
+    .eventsUrl("https://events.example.com")
+    .user(user)
+    .build()
+```
+
+The default foreground polling interval is 30 seconds; the minimum is one second.
+
+#### Streaming with Polling Fallback
+
+Polling fallback is disabled by default. To enable it, supply a polling URL:
+
+```kotlin
+val options = ClientOptions.builder()
+    .sdkKey("your_client_sdk_key")
+    .streamingUrl("wss://evaluation.example.com")
+    .pollingUrl("https://evaluation.example.com")
+    .pollingFallback(true)
+    .eventsUrl("https://events.example.com")
+    .user(user)
+    .build()
+```
+
+The SDK can fall back to polling when streaming fails and recover to streaming.
+Use `client.getConnectionInformation()` to inspect the configured and effective modes.
+
+#### User
+
+`User` identifies the person whose flag values the SDK requests. Both `key` and `name`
+must be nonblank. Add custom attributes with `attribute(...)`:
+
+```kotlin
+val country = AttributeValue.text("FR")
+check(country.isSuccess)
+val result = User.builder("unique-key-for-bob")
+    .name("Bob")
+    .attribute("country", country.value!!)
+    .build()
+check(result.isSuccess)
+val user = result.value!!
+```
+
+Attributes can be used in targeting and are included in analytics unless filtered.
+Use `privateAttribute("country")` or `allAttributesPrivate(true)` on the options builder
+to filter custom attributes from events. These settings do not remove attributes from
+synchronization requests or the local cache.
+
+Anonymous identity is opt-in through `anonymousEnabled(true)`. See the
+[identity guide](./docs/integration.md#identity-local-storage-and-mode-changes)
+for login, logout, and anonymous identity reset behavior.
+
+### Bootstrap
+
+Provide initial flag values through `bootstrap(...)` when they are already available:
+
+```kotlin
+val flag = BootstrapFlag.create("new-checkout", "true", ValueType.BOOLEAN)
+check(flag.isSuccess)
+val options = ClientOptions.builder()
+    .sdkKey("your_client_sdk_key")
+    .streamingUrl("wss://evaluation.example.com")
+    .eventsUrl("https://events.example.com")
+    .user(user)
+    .bootstrap(listOf(flag.value!!))
+    .build()
+```
+
+Bootstrap values are available locally before remote synchronization. Remote data
+replaces them when received. Bootstrap does not confirm online readiness.
+
+### Logger
+
+The default log level is `WARN`, but no logger is installed by default. Provide a
+logger to receive SDK diagnostic codes:
+
+```kotlin
+val builder = ClientOptions.builder()
+    .logLevel(LogLevel.WARN)
+    .logger { level, diagnostic ->
+        android.util.Log.d("FeatBit", "$level: ${diagnostic.code}")
+    }
+// Add user, SDK key, and endpoints before calling build().
+```
+
+Available levels are `NONE`, `ERROR`, `WARN`, `INFO`, and `DEBUG`. Set `NONE` to silence
+logging. Diagnostics contain SDK-owned codes and safe fields; keep the logger
+nonblocking. Operation outcomes remain available even when logging is disabled.
+
+### Evaluation
+
+Flag values are read locally and synchronously without network or disk I/O.
+Each typed read has a detailed counterpart:
+
+- `boolVariation` / `boolVariationDetail`
+- `stringVariation` / `stringVariationDetail`
+- `numberVariation` / `numberVariationDetail`
+- `jsonVariation` / `jsonVariationDetail`
+- `jsonTextVariation` / `jsonTextVariationDetail`
+
+Use `variation` / `variationDetail` for generic `FbValue` values. All reads take a
+flag key and a fallback value. Detailed reads include the reason, such as `MATCH`,
+`CLIENT_NOT_READY`, `FLAG_NOT_FOUND`, or `WRONG_TYPE`.
+
+```kotlin
+val enabled = client.boolVariation("new-checkout", false)
+val detail = client.boolVariationDetail("new-checkout", false)
+val message = client.stringVariation("welcome-message", "Welcome")
+val discount = client.numberVariation("discount", 0.0)
+```
+
+`allVariations()` returns a snapshot without collecting evaluation events.
+
+### Offline Mode
+
+Set `.offline(true)` on the options builder to start offline, or change an existing client:
+
+```kotlin
+client.setOffline(5_000).observe { result ->
+    if (!result.isSuccess) {
+        // Handle result.code.
+    }
+}
+```
+
+Offline clients use available in-memory, Bootstrap, or matching cached values;
+otherwise reads return their fallbacks. Offline mode suppresses new analytics and
+retains already accepted events within the queue limits.
+
+Call `client.setOnline(5_000)` to resume online intent. This requires valid online
+configuration; completion does not mean remote flag data is ready. Use `awaitReady`
+when you need that confirmation.
+
+### Events
+
+#### Wait for ready
+
+```kotlin
+client.awaitReady(5_000).observe { ready ->
+    if (ready.isSuccess) {
+        val enabled = client.boolVariation("new-checkout", false)
+        // Update application state.
+    } else {
+        // Handle ready.code, for example TIMED_OUT or TERMINAL_FAILURE.
+    }
+}
+```
+
+For a built-in online client, readiness requires remote confirmation. Offline and
+local custom sources have distinct local readiness results. A timeout settles the
+wait without stopping synchronization. Kotlin callers can use `ClientAdapters.await`,
+as shown in Quick Start.
+
+#### Subscribe to flag(s) changes
+
+Subscribe to all flag changes or a particular flag:
+
+```kotlin
+val allChanges = client.subscribeChanges { change ->
+    // Inspect change.keys and change.allFlagsChanged.
+}
+val checkoutChanges = client.subscribeFlag("new-checkout") {
+    val enabled = client.boolVariation("new-checkout", false)
+    // Update the checkout UI.
+}
+check(allChanges.isSuccess)
+check(checkoutChanges.isSuccess)
+
+val checkoutSubscription = checkoutChanges.value!!
+val initialValues = checkoutSubscription.initialValues
+// Render initialValues; it is captured when the subscription is registered.
+
+// When the UI stops observing:
+checkoutSubscription.registration.close()
+allChanges.value!!.registration.close()
+```
+
+Callbacks and listeners run on Android's main thread; keep them short and never
+block that thread waiting for completion. Registration can fail, so check the
+returned outcome. `ClientAdapters` also provides `changes`, `flagChanges`, and
+`status` flows. Closing a subscription does not close the client.
+
+### Switch user after initialization
+
+Use `identify` when the active user changes, for example after login:
+
+```kotlin
+val nextUser = User.builder("another-unique-key-of-user").name("Alice").build()
+check(nextUser.isSuccess)
+client.identify(nextUser.value!!, 5_000).observe { result ->
+    if (!result.isSuccess) {
+        // Handle result.code.
+    }
+}
+```
+
+Old synchronization responses cannot replace the new user's data. Identify changes
+the complete user context; supply the attributes needed for the new user.
+
+### Data synchronization
+
+The SDK uses WebSocket streaming or polling to keep local flag values synchronized.
+Persistent caching is enabled by default and is scoped to the environment and full
+user context. Disable it with `.cacheEnabled(false)`.
+
+Synchronization follows Android lifecycle, connectivity, and device-idle state.
+Background polling is opt-in through `.backgroundPolling(true)` and requires a
+polling URL. Its default and minimum interval is 15 minutes, subject to Android
+execution and network availability. Normal event delivery pauses in the background.
+
+### Network failure handling
+
+When connectivity is temporarily lost, available local flag values remain readable.
+The SDK retries recoverable connection failures and resumes synchronization when
+permitted. A matching persistent cache can also supply values on a later start.
+Cache and Bootstrap availability do not establish remote readiness.
+
+Inspect `getConnectionInformation()` or `subscribeStatus(...)` to distinguish
+local data availability, connection failures, and lifecycle pauses. See the
+[integration guide](./docs/integration.md#reads-status-and-subscriptions) for details.
+
+### Disable Events Collection
+
+Evaluation and custom metric events are enabled by default for online clients.
+To disable them, set `.disableEvents(true)` on the options builder before creation.
+This removes the requirement for an event URL; flag synchronization and reads continue
+to work. `track` is suppressed and `flush` reports `DISABLED`.
+
+### Experiments (A/B/n Testing)
+
+Evaluate the relevant flag before recording the associated experiment metric:
+
+```kotlin
+val enabled = client.boolVariation("new-checkout", false)
+// Use enabled to show the assigned checkout experience.
+
+// Call when the user completes the corresponding business action.
+val tracked = client.track("purchase", 12.5)
+if (!tracked.isSuccess) {
+    // Handle tracked.code.
+}
+```
+
+`track("purchase")` uses a default numeric value of `1.0`. Instrument your app's
+business actions explicitly; the Android SDK does not automatically capture pageviews
+or clicks. Events are queued in memory and can be lost if the process exits.
+
+Use `client.flush().observe { result -> ... }` to request delivery of outstanding
+accepted events. Inspect the outcome and flush result rather than assuming every
+accepted event has been delivered.
+
+### Close
+
+When the application owner no longer needs the client, release its resources:
+
+```kotlin
+client.close().observe { result ->
+    if (result.isSuccess) {
+        val summary = result.value!!
+        // Inspect summary.undeliveredEvents and summary.cleanupComplete.
+    }
+}
+```
+
+Close attempts bounded final event delivery. Do not close an application-scoped client
+on Activity rotation, and do not rely on Android process termination to invoke Close.
+
+## Getting support
+
+- For SDK questions, bugs, or feature requests, [open an issue](https://github.com/featbit/featbit-android-client-sdk/issues/new).
+- For FeatBit configuration questions, see the [SDK FAQ](https://docs.featbit.co/sdk/faq).
+
+## See Also
+
+- [Android integration and configuration](./docs/integration.md)
+- [Kotlin sample setup](./samples/implementation-guide.md)
+- [Development notes and build commands (previous README)](./DEVELOPMENT.md)
+- [Release preparation and remaining acceptance gates](./docs/release.md)

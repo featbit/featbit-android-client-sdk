@@ -22,5 +22,5 @@
   formatting failures rather than silently rewriting other work.
 - Keep formatting changes separate from behavioral changes where practical.
   Do not format generated code, build outputs, or third-party files.
-- See [README.md](./README.md) for contributor commands. Both CI workflows enforce
+- See [DEVELOPMENT.md](./DEVELOPMENT.md) for contributor commands. Both CI workflows enforce
   `spotlessCheck`.
