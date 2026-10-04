@@ -1,7 +1,7 @@
 # FeatBit Café — Shared Sample App Design
 
-Status: Kotlin sample implemented in `kotlin/`; Java implementation remains planned.
-Build and run: [implementation guide](./implementation-guide.md). Verification scope: [Kotlin validation](./kotlin/VERIFICATION.md).
+Status: Kotlin and Java samples are implemented in `kotlin/` and `java/`.
+Build and run: [implementation guide](./implementation-guide.md). Verification scope: [Kotlin validation](./kotlin/VERIFICATION.md) and [Java validation](./java/VERIFICATION.md).
 Native visual tokens and implementation adaptations: [visual system](./DESIGN.md).
 
 Design revision: 2026-10-03. The expanded interactions, state rules, business contract,
@@ -22,7 +22,7 @@ and the shortcut remains next to the total price.
 The Flags list shows current snapshots. Open a flag's detail page to use
 **Evaluate flag** and inspect its last explicit result. The list has no evaluation panel.
 
-The Kotlin sample is available now; the Java sample is not implemented yet.
+Both samples are available and use the same shared resources and design boards.
 Use JDK 17 and install Android SDK Platform 34. An API 34 emulator is recommended
 for the first run; the app supports Android API 21 and later.
 
@@ -53,10 +53,10 @@ The sample resolves the default SDK version, `0.1.0-SNAPSHOT`, from
 2. Set **Gradle JDK** to **JDK 17** in Android Studio's Gradle settings.
 3. Wait for Gradle sync to finish. If `co.featbit:featbit-client-android` cannot
    be resolved, complete the local publication step above and sync again.
-4. Select the **kotlin** app run configuration and a running emulator or connected
+4. Select the **kotlin** or **java** app run configuration and a running emulator or connected
    Android device, then click **Run**. Use the **debug** build variant for development.
 
-The launcher app is named **FeatBit Café Kotlin**. It starts with a local TestData
+The launcher apps are named **FeatBit Café Kotlin** and **FeatBit Café Java**. Each starts with a local TestData
 demo, so no SDK key or running FeatBit service is needed for the first launch.
 For Live mode, follow the [environment setup](./setup-and-acceptance.md) and
 [endpoint instructions](./implementation-guide.md#endpoints-and-local-development).
@@ -75,7 +75,8 @@ With an emulator or device connected, run from the repository root:
 bash samples/gradlew -p samples :kotlin:installDebug
 ```
 
-Then open **FeatBit Café Kotlin** on the device. See the
+For Java, replace `:kotlin:installDebug` with `:java:installDebug`.
+Then open **FeatBit Café Kotlin** or **FeatBit Café Java** on the device. See the
 [implementation guide](./implementation-guide.md#build-and-launch-contract)
 for custom SDK versions and repository locations.
 
@@ -100,7 +101,7 @@ acceptance. The implementation guide explains the separate engineering verificat
 ## 2. Design boundary and document map
 
 This is one Android product design, independent of implementation language. Kotlin and Java
-are planned implementations of this contract; neither gets a separate UI or business specification.
+are implementations of this contract; neither gets a separate UI or business specification.
 Android navigation, accessibility, lifecycle-visible behavior, and SDK outcome semantics are
 product/platform requirements. Async APIs, widgets, file structure, and build tools are engineering choices.
 

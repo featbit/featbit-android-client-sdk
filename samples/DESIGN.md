@@ -76,7 +76,7 @@ components:
 
 Warm neutral surfaces, espresso actions, restrained status colors, native Android controls, and the approved coffee photograph define the implemented visual system. Roboto on the reviewed Android environment keeps the interface familiar and readable. The photograph and purchase preview provide the café character; diagnostic content remains compact and clear.
 
-This is an extraction of the Kotlin implementation, with shared resources intended for the future Java sample. It does not supersede [README.md](./README.md), [interaction-design.md](./interaction-design.md), or [setup-and-acceptance.md](./setup-and-acceptance.md). Those documents and the approved `ui-overview-v2.png`, `ui-checkout.png`, `ui-connection-users.png`, and `ui-flag-editing.png` remain the product and composition authority. [PRODUCT.md](./PRODUCT.md) records that direction.
+This system is implemented by the Kotlin and Java samples, both using the same shared resources and assets. It does not supersede [README.md](./README.md), [interaction-design.md](./interaction-design.md), or [setup-and-acceptance.md](./setup-and-acceptance.md). Those documents and the approved `ui-overview-v2.png`, `ui-checkout.png`, `ui-connection-users.png`, `ui-flag-editing.png`, and `ui-connection-fallback-proposal.png` remain the product and composition authority. [PRODUCT.md](./PRODUCT.md) records that direction.
 
 **Key Characteristics:**
 - Warm surfaces and espresso action emphasis.
@@ -84,7 +84,7 @@ This is an extraction of the Kotlin implementation, with shared resources intend
 - Native Views, Material controls, and visible state labels.
 - Scrollable content and platform adaptations for larger text and tablets.
 
-Tokens above preserve native dp/sp units; they are not browser CSS dimensions. Light resources are normative in frontmatter; exact night replacements and native component metadata are in [.impeccable/design.json](./.impeccable/design.json). Sources are `shared/res/values/`, `shared/res/values-night/`, `shared/res/layout/`, and Kotlin `CafeViews.kt`, `CafeForms.kt`, and `MainActivity.kt`. Future code changes must update this extraction.
+Tokens above preserve native dp/sp units; they are not browser CSS dimensions. Light resources are normative in frontmatter; exact night replacements and native component metadata are in [.impeccable/design.json](./.impeccable/design.json). Sources are `shared/res/values/`, `shared/res/values-night/`, `shared/res/layout/`, and the `CafeViews`, `CafeForms`, and `MainActivity` classes under [Kotlin sources](./kotlin/src/main/kotlin/co/featbit/sample/kotlin/) and [Java sources](./java/src/main/java/co/featbit/sample/java/). Both app builds include `shared/res` and `shared/assets`; neither owns a separate design-token set. Future code changes must update this extraction.
 
 ## Colors
 
@@ -116,7 +116,7 @@ Classic keeps the order action and simulation helper above navigation while the 
 
 ## Connection fallback control
 
-Implemented in Kotlin; Java remains planned: [three-state board](./ui-connection-fallback-proposal.png).
+Implemented in Kotlin and Java: [three-state board](./ui-connection-fallback-proposal.png).
 Use a native switch below Streaming URL, off by default. Expand the required Polling URL
 when enabled; hide the switch for direct Polling. Preserve the established field, switch,
 helper and button styles. Long helper text wraps and the form scrolls without hiding actions.
@@ -149,11 +149,11 @@ Shared `shape()` containers use the surface radius and optional 1dp outline. The
 
 ## Do's and Don'ts
 
-- **Do** preserve the approved café palette, photo, and product contract across Kotlin and the future Java sample.
+- **Do** preserve the approved café palette, photo, and product contract across the Kotlin and Java samples.
 - **Do** keep dimensions in dp, text in sp, and primary controls at least 48dp tall.
 - **Do** use native screenshots to assess native rendering, including night and larger text.
 - **Don't** turn conceptual artwork into an all-device pixel-exact claim.
 - **Don't** invent web tokens, bespoke shadows, or animation timings for inherited Material behavior.
-- **Don't** report Java implementation, live-service verification, or screenshot coverage beyond the evidence actually obtained.
+- **Don't** infer live-service verification or screenshot coverage from implementation parity; report only evidence actually obtained for each sample.
 
-The recorded native review set is `.impeccable/review/{release-phone,phone-classic,phone-detail-stale,phone-editor-json,tablet,phone-dark,phone-font130}.png`. These captures document reviewed states, not every possible state/device. HTML detectors are inapplicable and were not run for this native implementation.
+The recorded Kotlin native review set is `.impeccable/review/{release-phone,phone-classic,phone-detail-stale,phone-editor-json,tablet,phone-dark,phone-font130}.png`. These captures document reviewed Kotlin states, not Java screenshot coverage or every possible state/device. Java verification is recorded separately in the [Java sample documentation](./java/README.md). HTML detectors are inapplicable and were not run for this native implementation.

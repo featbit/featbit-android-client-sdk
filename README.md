@@ -122,6 +122,7 @@ imports from `co.featbit.android.api` unless noted otherwise.
 
 - [Kotlin sample app](./samples/kotlin): local demo and live connections, user switching,
   flag evaluation, and custom events. Follow the [build and run guide](./samples/implementation-guide.md).
+- [Java sample app](./samples/java): the same café design and shared resources, with Java callbacks.
 - [Java integration examples](./docs/integration.md): callback-based usage of the public API.
 
 ## SDK
@@ -429,6 +430,6 @@ on Activity rotation, and do not rely on Android process termination to invoke C
 ## See Also
 
 - [Android integration and configuration](./docs/integration.md)
-- [Kotlin sample setup](./samples/implementation-guide.md)
+- [Kotlin and Java sample setup](./samples/implementation-guide.md)
 - [Development notes and build commands (previous README)](./DEVELOPMENT.md)
 - [Release preparation and remaining acceptance gates](./docs/release.md)

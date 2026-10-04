@@ -2,7 +2,8 @@
 
 This language-independent specification defines the demonstration environment and expected
 observable behavior for every implementation. Existing Kotlin evidence is recorded in
-[kotlin/VERIFICATION.md](./kotlin/VERIFICATION.md); Java remains planned.
+[kotlin/VERIFICATION.md](./kotlin/VERIFICATION.md); Java evidence is recorded in
+[java/VERIFICATION.md](./java/VERIFICATION.md).
 Build/run commands, device networking, and engineering checks live in the
 [implementation guide](./implementation-guide.md).
 
@@ -71,7 +72,7 @@ status notifications. SDK events may deduplicate; do not require one server even
 Record the implementation identifier, SDK version, device/OS, scenario result, and actual scope.
 Kotlin implements the fallback settings below and has focused emulator form checks; see
 [verification scope](./kotlin/VERIFICATION.md). Controlled failure/recovery checks remain
-pending, and Java is not implemented. Existing SDK fallback tests do not prove that the
+pending; Java verification scope is recorded separately. Existing SDK fallback tests do not prove that the
 sample configuration UI works.
 Attach implementation evidence links; this specification alone is not a PASS claim.
 

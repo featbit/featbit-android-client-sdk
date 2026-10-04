@@ -6,8 +6,8 @@ feature-flag changes visible; Flags and Inspect explain the SDK results.
 The approved product contract is [README.md](./README.md),
 [interaction-design.md](./interaction-design.md), and [setup-and-acceptance.md](./setup-and-acceptance.md).
 The approved compositions are `ui-overview-v2.png`, `ui-checkout.png`,
-`ui-connection-users.png`, and `ui-flag-editing.png`. This file does not replace those contracts.
-Kotlin and the future Java app share this authority.
+`ui-connection-users.png`, `ui-flag-editing.png`, and `ui-connection-fallback-proposal.png`.
+This file does not replace those contracts. The implemented Kotlin and Java apps share this authority.
 
 ## Implementation direction
 
@@ -22,7 +22,9 @@ Kotlin and the future Java app share this authority.
 
 The app displays the approved overview's photo region directly from the unchanged reference
 asset using Android BitmapRegionDecoder; it does not substitute a new latte photograph.
-Review captures are native emulator captures under `.impeccable/review/`.
+The Kotlin review captures are native emulator captures under `.impeccable/review/`;
+they are not evidence of Java device coverage. See the [Java sample documentation](./java/README.md)
+for its own verification record.
 Generated concepts are not measurement-grade Android screenshots: native accessibility targets,
 font scaling, system bars, sheet topology from the written contract, and tablet rail remain
 explicit platform adaptations. No unsupported claim of pixel-exact rendering on every device.
@@ -30,3 +32,12 @@ explicit platform adaptations. No unsupported claim of pixel-exact rendering on 
 Classic keeps its order action and simulation helper above navigation while its longer price/size
 content scrolls. This preserves the written 48dp touch-target requirement: conceptual compact
 radio spacing cannot accommodate those targets and the full-width photo in one phone viewport.
+
+## Implementation ownership
+
+Both app builds consume `shared/res` and `shared/assets` for layouts, palette, themes, strings,
+icons, the approved photo, flag fixtures, and users. The native view construction and interaction
+wiring live in `MainActivity`, `CafeForms`, and `CafeViews` under
+[Kotlin sources](./kotlin/src/main/kotlin/co/featbit/sample/kotlin/) and
+[Java sources](./java/src/main/java/co/featbit/sample/java/). Each language implements its own
+`SampleSession` and `CafeModel`; the product behavior and design contract remain shared.

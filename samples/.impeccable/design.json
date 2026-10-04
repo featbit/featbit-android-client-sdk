@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-03T16:39:55.2952816Z",
+  "generatedAt": "2026-10-04T09:29:49.4315656Z",
   "title": "Design System: FeatBit Café",
   "extensions": {
     "platform": "Android native Views / Material3",
@@ -8,7 +8,10 @@
       "layout": "dp",
       "text": "sp"
     },
-    "sourceRoot": "kotlin/src/main/kotlin/co/featbit/sample/kotlin",
+    "sourceRoots": [
+      "kotlin/src/main/kotlin/co/featbit/sample/kotlin",
+      "java/src/main/java/co/featbit/sample/java"
+    ],
     "nightColors": {
       "cafe-surface": "#1C1917",
       "cafe-text": "#F4EFEA",
@@ -79,6 +82,7 @@
       "htmlCssPreviews": false,
       "reason": "Native extraction: no invented CSS dimensions, web interaction states, or synthesized tonal ramps. Native source metadata replaces browser previews."
     },
+    "reviewCaptureImplementation": "Kotlin; Java verification is recorded separately in java/README.md",
     "reviewCaptures": [
       ".impeccable/review/release-phone.png",
       ".impeccable/review/phone-classic.png",
@@ -93,7 +97,7 @@
     {
       "kind": "button",
       "refersTo": "button-primary",
-      "source": "CafeViews.kt: button",
+      "source": "CafeViews.kt / CafeViews.java: button",
       "nativeClass": "MaterialButton",
       "name": "Primary Button",
       "description": "Sentence case, at least 48dp tall; native themed enabled and disabled states."
@@ -102,34 +106,34 @@
       "name": "Outlined Button",
       "nativeClass": "MaterialButton",
       "description": "Material outlined style with the same helper dimensions.",
-      "source": "CafeViews.kt: button(outline = true)",
+      "source": "CafeViews.kt / CafeViews.java: outlined button helper",
       "kind": "button"
     },
     {
       "name": "Outlined Input",
       "nativeClass": "TextInputLayout / TextInputEditText",
       "description": "Inline error, password toggle, multiline and monospace JSON variants.",
-      "source": "CafeForms.kt: field",
+      "source": "CafeForms.kt / CafeForms.java: field",
       "kind": "input"
     },
     {
       "name": "Navigation",
       "nativeClass": "BottomNavigationView / NavigationRailView",
       "description": "Checked primary ink, tonal indicator, rail from 600dp.",
-      "source": "MainActivity.kt: onCreate / render; shared/res/layout/activity_main.xml",
+      "source": "MainActivity.kt / MainActivity.java: onCreate / render; shared/res/layout/activity_main.xml",
       "kind": "nav"
     },
     {
       "name": "Checkout Badge",
       "nativeClass": "TextView",
       "description": "Tonal background, primary text, 20dp radius and 11sp medium label.",
-      "source": "MainActivity.kt: demo",
+      "source": "MainActivity.kt / MainActivity.java: demo",
       "kind": "chip"
     },
     {
       "kind": "card",
       "refersTo": "checkout",
-      "source": "MainActivity.kt: demo",
+      "source": "MainActivity.kt / MainActivity.java: demo",
       "nativeClass": "LinearLayout",
       "name": "Checkout",
       "description": "Outlined purchase summary; vertical layout above font scale 1.15."
@@ -137,7 +141,7 @@
     {
       "kind": "custom",
       "refersTo": "warning",
-      "source": "CafeViews.kt: note",
+      "source": "CafeViews.kt / CafeViews.java: note",
       "nativeClass": "LinearLayout / ImageView / TextView",
       "name": "Warning Note",
       "description": "Amber warning with icon, text, and polite live announcement."
@@ -146,7 +150,7 @@
       "name": "Local Editor Sheet",
       "nativeClass": "BottomSheetDialog / NestedScrollView",
       "description": "Expanded sheet with drag handle, native fields, inline validation, Save and secondary actions.",
-      "source": "CafeForms.kt: showEditor / openSheet",
+      "source": "CafeForms.kt / CafeForms.java: showEditor / openSheet",
       "kind": "custom"
     }
   ],
@@ -161,10 +165,10 @@
     "donts": [
       "Don't turn conceptual artwork into an all-device pixel-exact claim.",
       "Don't invent web tokens, bespoke shadows, or animation timings for inherited Material behavior.",
-      "Don't report Java implementation, live-service verification, or screenshot coverage beyond the evidence actually obtained."
+      "Don't infer live-service verification or screenshot coverage from implementation parity; report only evidence actually obtained for each sample."
     ],
     "dos": [
-      "Do preserve the approved café palette, photo, and product contract across Kotlin and the future Java sample.",
+      "Do preserve the approved café palette, photo, and product contract across the Kotlin and Java samples.",
       "Do keep dimensions in dp, text in sp, and primary controls at least 48dp tall.",
       "Do use native screenshots to assess native rendering, including night and larger text."
     ],
@@ -175,6 +179,6 @@
       "Native Views, Material controls, and visible state labels.",
       "Scrollable content and platform adaptations for larger text and tablets."
     ],
-    "overview": "Warm neutral surfaces, espresso actions, restrained status colors, native Android controls, and the approved coffee photograph define the implemented visual system. Roboto on the reviewed Android environment keeps the interface familiar and readable. The photograph and purchase preview provide the café character; diagnostic content remains compact and clear.\n\nThis is an extraction of the Kotlin implementation, with shared resources intended for the future Java sample. It does not supersede [README.md](./README.md), [interaction-design.md](./interaction-design.md), or [setup-and-acceptance.md](./setup-and-acceptance.md). Those documents and the approved `ui-overview-v2.png`, `ui-checkout.png`, `ui-connection-users.png`, and `ui-flag-editing.png` remain the product and composition authority. [PRODUCT.md](./PRODUCT.md) records that direction."
+    "overview": "Warm neutral surfaces, espresso actions, restrained status colors, native Android controls, and the approved coffee photograph define the implemented visual system. Roboto on the reviewed Android environment keeps the interface familiar and readable. The photograph and purchase preview provide the café character; diagnostic content remains compact and clear.\n\nThis system is implemented by the Kotlin and Java samples, both using the same shared resources and assets. It does not supersede [README.md](./README.md), [interaction-design.md](./interaction-design.md), or [setup-and-acceptance.md](./setup-and-acceptance.md). Those documents and the approved `ui-overview-v2.png`, `ui-checkout.png`, `ui-connection-users.png`, `ui-flag-editing.png`, and `ui-connection-fallback-proposal.png` remain the product and composition authority. [PRODUCT.md](./PRODUCT.md) records that direction."
   }
 }

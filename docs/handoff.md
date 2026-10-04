@@ -33,13 +33,22 @@ Debug/R8/JUnit/lint 通过，六次 Kotlin 平台检查通过。修正首帧启�
 - Host applications still control their own Android network security policy.
 - See docs/integration.md, samples/implementation-guide.md and samples/kotlin/VERIFICATION.md.
 
+## Java sample app（2026-10-04）
+
+- `samples/java/` 使用纯 Java 应用源码、公开 `Operation.observe` 与订阅 API，复用
+  `samples/shared/` 资源和现有设计图，不依赖 Kotlin sample。
+- 同步实现 Demo/Flags/Inspect、Connection fallback 表单、用户切换、四类编辑器、
+  Local/Live、Track/Flush、诊断与进程内状态保留。应用 ID 为 `co.featbit.sample.java`。
+- 构建、安装、测试入口见 [Java README](../samples/java/README.md)；实际执行证据和未验收项
+  见 [Java verification](../samples/java/VERIFICATION.md)，不继承 Kotlin 历史 PASS。
+
 ## Kotlin sample app（2026-10-03）
 
 - Connection 的 Streaming fallback 设计已同步到 README、interaction-design、implementation-guide、
   setup-and-acceptance、DESIGN 和 image-prompts；图为 `samples/ui-connection-fallback-proposal.png`。
   Streaming 显示默认关闭的 Fallback to polling，开启后要求 Polling URL；直接 Polling 隐藏该开关，
   保留草稿但不提交 fallback=true。Apply 前验证，实际降级/恢复由 SDK 管理。
-  **Kotlin sample 已实现；Java 仍待实现。** Inspect 根据运行中 SDK 状态显示 Polling fallback active，
+  **Kotlin 与 Java sample 均已实现；各自验证范围见对应 VERIFICATION.md。** Inspect 根据运行中 SDK 状态显示 Polling fallback active，
   不使用未提交的草稿推断状态。API 34 模拟器已验证开关、URL 校验、无效 Apply 保留当前连接、
   模式切换与旋转草稿保留。S26–S28/S32 仅完成上述表单范围，S29–S31 的受控故障/恢复尚未重跑；
   完整范围见 `samples/kotlin/VERIFICATION.md`，不得将 SDK 测试当作 sample 联调证据。
@@ -60,7 +69,7 @@ Debug/R8/JUnit/lint 通过，六次 Kotlin 平台检查通过。修正首帧启�
   Live/Release/R8/平板/大字体矩阵重跑。具体范围和证据见
   [Kotlin verification](../samples/kotlin/VERIFICATION.md)。
 
-- `samples/` 已增加独立 Gradle 构建，当前仅实现 `:kotlin`；Java sample 仍待实现。
+- `samples/` 已增加独立 Gradle 构建，已包含 `:kotlin` 和 `:java`；两者共享资源，独立实现 SDK 调用。
 - 两种语言继续共用 [设计文档](../samples/README.md) 与 `samples/shared/` 资源，未修改 SDK 实现或相邻仓库。
 - Kotlin app 包含 Local TestData 演示、Live Streaming/Polling、用户切换、Flag 编辑与评估、Track/Flush 和诊断。
 - 构建/安装/受控协议测试步骤见 [implementation-guide.md](../samples/implementation-guide.md)；实际证据及限制见 [Kotlin verification](../samples/kotlin/VERIFICATION.md)。

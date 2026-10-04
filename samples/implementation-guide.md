@@ -1,6 +1,6 @@
 # Android sample implementation guide
 
-Status: Kotlin app and independent sample build implemented. Java app remains planned.
+Status: Kotlin and Java apps share the independent sample build.
 
 This guide explains how the Kotlin and Java Android implementations realize the
 [language-independent product design](./README.md) and [interaction contract](./interaction-design.md).
@@ -23,7 +23,7 @@ toolchain solely to build a sample. Consume the published local Maven/AAR artifa
 do not access SDK internal packages. Formal remote artifact publication is not a prerequisite.
 
 The Kotlin app lives in `samples/kotlin/`, under an independent sample Gradle build.
-`samples/java/` is reserved for the future Java app and is not included in Gradle settings.
+The Java app lives in `samples/java/`; both `:kotlin` and `:java` are included in Gradle settings.
 Keep one shared README/design and common flag/user examples; do not maintain separate,
 potentially conflicting product specifications for the two languages.
 
@@ -91,9 +91,9 @@ Do not infer identity from flag values or create a new client merely to change u
 ## Streaming fallback integration
 
 The [Connection design](./interaction-design.md)
-and [three-state board](./ui-connection-fallback-proposal.png) are implemented in Kotlin.
+and [three-state board](./ui-connection-fallback-proposal.png) are implemented in both languages.
 `ConnectionDraft`, `CafeForms`, and `SampleSession.liveOptions()` own the draft, form and
-SDK configuration respectively. Java must follow the same contract when implemented.
+SDK configuration respectively in each language module.
 
 Use an in-process Boolean fallback draft, initially false, alongside the existing transport
 URL drafts. Preserve it across form navigation, mode changes and Activity recreation, but
@@ -148,12 +148,12 @@ Kotlin sample commands from repository root (JDK 17 and Android SDK required):
 .\gradlew.bat -p samples :kotlin:installDebug
 ```
 
-Open `samples/` as the independent Gradle project in Android Studio, select the Kotlin
+Open `samples/` as the independent Gradle project in Android Studio, select the Kotlin or Java
 run configuration, and launch on an emulator or connected device. On Linux/macOS the equivalent
 commands use `bash ./gradlew`. A missing local SDK artifact must produce an actionable setup
 instruction, not an undocumented fallback to an unrelated remote version.
 
-Structure (Java is planned):
+Structure:
 
 - `samples/kotlin/`: Kotlin application and SDK integration.
 - `samples/java/`: Java application and SDK integration.
@@ -162,9 +162,40 @@ Structure (Java is planned):
 - Root sample Gradle settings/build configuration and these shared design documents.
 
 The Kotlin integration is readable in `SampleSession.kt`; the shared directory contains no runtime
-SDK wrapper. App-specific code can compile independently of the future Java module.
+SDK wrapper. Each app compiles independently without depending on the other language module.
 The Release APK enables R8 and uses the debug signing key for local demonstration only.
 It is not a production distribution signing configuration.
+
+## Java sample
+
+The Java module has no Kotlin source or Kotlin Android plugin. It consumes the same SDK AAR
+and includes `../shared/res` and `../shared/assets` directly. Gson parses sample JSON;
+SDK builders still validate submitted values. `CafeModel.java` owns business values,
+`SampleSession.java` owns the application client, and `MainActivity.java`, `CafeViews.java`,
+and `CafeForms.java` implement the same native screens as Kotlin.
+
+`Operation.observe` callbacks are marshalled to the main thread. A rejected observation retries
+observation of the same operation after checking `getResult()`; it never repeats the SDK action.
+Completed registrations close. Client subscriptions close before replacement; a generation check
+rejects callbacks already queued for the retired client. Activity state listeners attach in
+`onStart` and detach in `onStop`, while SDK work remains application-owned. Initial readiness
+wait results also carry a wait revision so they cannot overwrite a later Identify result.
+
+From the repository root:
+
+```powershell
+.\samples\gradlew.bat -p samples :java:assembleDebug :java:assembleRelease
+.\samples\gradlew.bat -p samples :java:testDebugUnitTest :java:lintDebug :java:lintRelease
+.\samples\gradlew.bat -p samples :java:installDebug :java:assembleDebugAndroidTest
+adb install -r samples/java/build/outputs/apk/androidTest/debug/java-debug-androidTest.apk
+adb shell am instrument -w co.featbit.sample.java.test/androidx.test.runner.AndroidJUnitRunner
+# Start the shared protocol fixture in another terminal for the Live test:
+python samples/tools/protocol_fixture.py
+adb shell am instrument -w -e live true co.featbit.sample.java.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+On Linux/macOS replace `.\samples\gradlew.bat` with `bash samples/gradlew`.
+See [Java setup and source map](./java/README.md) and [Java evidence](./java/VERIFICATION.md).
 
 ## Endpoints and local development
 

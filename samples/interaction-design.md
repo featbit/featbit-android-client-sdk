@@ -1,7 +1,7 @@
 # Shared interaction and state specification
 
 Applies to every implementation, independently of language. This supplements [the shared design](./README.md).
-All behavior is specified for future implementation, not claimed as working software.
+This is the acceptance contract; actual verification scope is recorded separately for each app.
 
 ## Checkout
 
@@ -54,8 +54,8 @@ operation does not cancel SDK work; progress remains visible in the shared statu
 
 ![Streaming fallback settings](./ui-connection-fallback-proposal.png)
 
-The Kotlin Connection form implements this design, including the SDK polling fallback
-option. Java remains planned and must follow the same contract.
+Both Connection forms implement this design, including the SDK polling fallback
+option. Both languages follow the same contract.
 The new board governs transport settings; the connection/identity board still documents
 validation and user switching.
 
@@ -192,4 +192,5 @@ At compact widths use bottom navigation and scrolling content; at widths of 600d
 a navigation rail and bounded content width. Detail/forms retain a clear Back path. With large
 fonts, allow buttons/rows to grow and checkout segments to wrap. Keep touch targets at least 48dp,
 respect system insets, and announce validation/status text accessibly. Dark mode uses themed roles,
-not inverted bitmap colors. No implementation screenshots or device verification exist yet.
+not inverted bitmap colors. Actual device evidence and limitations are recorded in [Kotlin verification](./kotlin/VERIFICATION.md)
+and [Java verification](./java/VERIFICATION.md).

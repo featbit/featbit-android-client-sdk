@@ -33,4 +33,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "featbit-samples"
 
-include(":kotlin")
+include(":kotlin", ":java")
