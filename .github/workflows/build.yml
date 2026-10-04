@@ -35,8 +35,8 @@ jobs:
           name: reports-${{ matrix.consumer }}
           path: |
             sdk/build/reports/
-            build/phase7/**/report.json
-            build/phase7/**/*.log
-            build/phase7/**/TEST-*.xml
-            build/phase7/**/build/reports/
+            build/acceptance/**/report.json
+            build/acceptance/**/*.log
+            build/acceptance/**/TEST-*.xml
+            build/acceptance/**/build/reports/
             sdk/build/outputs/aar/

@@ -78,7 +78,7 @@ Debug/R8/JUnit/lint 通过，六次 Kotlin 平台检查通过。修正首帧启�
 ## 最新交接：验收入口与验证范围（2026-10-03）
 
 - 统一验收入口为 `tools/acceptance.py`；设备辅助脚本为 `platform_device_checks.py` 和
-  `live_device_checks.py`。旧 phase 文件名已替换，历史证据目录仍为 `build/phase7/`。
+  `live_device_checks.py`。旧 phase 文件名已替换；新验收输出到 `build/acceptance/`，已有历史证据保留在 `build/phase7/`。
 - Windows 一键入口：`.\tools\run-live-acceptance.ps1`；支持 Windows
   PowerShell 5.1/7。负责环境检查、构建/启动 Fake/None 服务、完整联调与模拟器矩阵、日志和服务清理。
 - Linux/macOS 入口：`bash tools/run-live-acceptance.sh`；Bash 只转发参数，
@@ -220,7 +220,7 @@ SDK Kotlin 1.9.25，Java 11 字节码，minSdk 21 / compileSdk 34。
 按 verification 中未执行项补齐真机深度休眠、设备/OS 兼容性及多窗口等平台验收。
 运行 `python tools/acceptance.py` 汇总真实 AAR、Java/Kotlin 独立工具链矩阵及规范追踪表；
 `--serial emulator-5554` 执行 Debug/R8 设备检查，`--live` 要求目标 Fake/None 服务已启动。
-每次输出独立 `build/phase7/<run>/report.json`，不能把较早失败目录或部分矩阵当作完整通过。
+每次输出独立 `build/acceptance/<run>/report.json`，不能把较早失败目录或部分矩阵当作完整通过。
 Core 编译器仍为 Kotlin 1.9.25；2.2.10 消费者使用独立 AGP 8.10.1/Gradle 8.11.1。
 正式 Central 发布、托管 CI 与凭证签名需要单独执行，当前工作没有远程上传。
 新平台恢复路径不得绕过 disableEvents、offline、隐私过滤和独立终止状态。

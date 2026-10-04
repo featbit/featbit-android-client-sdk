@@ -39,7 +39,7 @@ Android transition timeout remains a failed run; rebuild the probe APK when upda
 the platform script. Each platform subprocess has a 480-second overall budget.
 
 Launcher/server logs are in `build/live-acceptance/<run>/`. The nested runner prints
-its separate `build/phase7/<run>/` evidence directory and writes `report.json` there.
+its separate `build/acceptance/<run>/` evidence directory and writes `report.json` there.
 Existing evidence is retained. The script prints the Git revision and working-tree
 status; commit intended changes first when evidence must identify a clean commit.
 It does not create/start an emulator, publish remotely, or cover physical devices
@@ -84,7 +84,7 @@ fi
 The Python launcher builds and starts the Fake/None service on port 5189, waits for
 its own startup log and a TCP connection, then calls the same
 `acceptance.py --live --serial` matrix. It captures console/server logs in
-`build/live-acceptance/<run>/`; matrix evidence remains in `build/phase7/<run>/`.
+`build/live-acceptance/<run>/`; matrix evidence is saved in `build/acceptance/<run>/`.
 It rejects an occupied port and stops only its own service process group after
 success, failure or a handled interruption. Child environments and working
 directories do not modify the calling shell. SIGKILL or host termination cannot
@@ -115,7 +115,7 @@ python tools/acceptance.py --live
 python tools/acceptance.py --live --serial emulator-5554
 ```
 
-Each invocation creates `build/phase7/<timestamp>-<unique-id>/`, its Maven repository,
+Each invocation creates `build/acceptance/<timestamp>-<unique-id>/`, its Maven repository,
 independent consumer roots/Wrappers, logs, JUnit evidence and `report.json`. No directory
 is deleted. Java does not apply Kotlin's compiler plugin. Shared fixture sources are
 copied, but consumers never substitute SDK sources or depend on an SDK Gradle project.

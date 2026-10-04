@@ -1,5 +1,25 @@
 # Verification record
 
+## Emulator rendering ANR and focused platform retry — 2026-10-04
+
+Run `build/phase7/20261004-120601-d869f7a7/` failed at the Kotlin 1.9.25
+Release platform check while awaiting a foreground snapshot in the final TestData
+connectivity scenario. Device Logcat shows the SDK had already reported
+`background=false`, `status=READY`, `value=local`. The subsequent probe broadcast
+timed out with an ANR for PID 17989. Its main-thread trace waits in Android
+`HardwareRenderer.setStopped` / `RenderProxy::setStopped`; emulator graphics,
+System UI and launcher rendering also show heavy kernel CPU usage. This evidence
+points to an emulator rendering stall rather than an SDK foreground-state failure.
+
+Saved original Logcat and DropBox ANR traces under
+`build/acceptance/platform-retry-20261004-121757/`. Reran the unchanged
+`tools/platform_device_checks.py` against the installed consumer on `emulator-5554`,
+without rebuilding or extending assertion deadlines. All platform scenarios passed,
+ending with `PHASE6_DEVICE_PASS`; see `platform.log` in that directory. Cleanup
+succeeded and `adb reverse --list` was empty afterward. This focused retry does not
+convert the original failed report into a full-matrix pass; the full release-candidate
+matrix still needs a successful run.
+
 ## Repository code formatting — 2026-10-04
 
 Added root Spotless 7.0.2 with ktfmt 0.54 Kotlin style and google-java-format 1.24.0

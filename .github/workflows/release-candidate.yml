@@ -58,6 +58,6 @@ jobs:
         with:
           name: release-acceptance-evidence
           path: |
-            build/phase7/**/report.json
-            build/phase7/**/*.log
-            build/phase7/**/TEST-*.xml
+            build/acceptance/**/report.json
+            build/acceptance/**/*.log
+            build/acceptance/**/TEST-*.xml

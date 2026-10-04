@@ -62,7 +62,7 @@ def main():
         parser.error("Invalid artifact version")
     if args.serial and not args.serial.startswith("emulator-"):
         parser.error("Physical-device acceptance is a separate controlled procedure")
-    run = ROOT / "build" / "phase7" / (time.strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:8])
+    run = ROOT / "build" / "acceptance" / (time.strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:8])
     run.mkdir(parents=True)
     report = {"version": args.version, "checks": [], "rows": {}, "scope": "local acceptance; see docs/conformance.md for release gates"}
     repo = run / "repository"
