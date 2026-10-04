@@ -1,12 +1,15 @@
 # Android SDK 开发交接
 
-更新时间：2026-10-03（Europe/Berlin）。
+更新时间：2026-10-04（Europe/Berlin）。
 
 ## 当前进度
 
-阶段 1–6 代码已实现，阶段 7 的验收工具、消费者矩阵、文档和发布准备已实现；完整发布验收仍未完成。
+阶段 1–6 代码及阶段 7 验收工具已实现。0.1.0 完整本地验收和四组 hosted CI 已通过；
+用户已确认真机行为、真实部署事件落库、EndUser 更新和实验归因验证通过。
+当前进入签名与 Central 发布准备；尚未发布。最新证据及手动验证范围见
+[verification.md](./verification.md#release-readiness--2026-10-04)。
 本次补齐独立 Maven/AAR 消费者构建、版本一致性、StrictMode 读取、自动属性与诊断测试，
-以及 Dokka 文档产物和仅本地 staging 的签名工作流。阶段 6 真机验收仍待执行。
+以及 Dokka 文档产物和仅本地 staging 的签名工作流。真机结果由用户确认，未提供逐设备、逐场景报告，不能扩展为完整设备矩阵证据。
 阶段 7 已提交为 `f5932e8`，后续审核修复已提交为 `416110e`；这不代表已完成远程发布。
 相邻规范和服务端源码未修改。提交与工作区状态应以当前 Git 记录为准。
 阶段 7 见 [phase-7.md](./phase-7.md)、[release.md](./release.md)、[conformance.md](./conformance.md)，
@@ -104,10 +107,11 @@ Debug/R8/JUnit/lint 通过，六次 Kotlin 平台检查通过。修正首帧启�
   Windows 下 20 个通过、3 个 POSIX 测试跳过。Linux/macOS 完整设备矩阵和原生 macOS
   启动器尚未验证。尚未新增完整 live/emulator GitHub workflow；现有 CI 不代表此项已验收。
 
-下一步：若需要当前提交的完整发布候选证据，先提交预期变更，再用对应系统的一键入口重跑完整矩阵，
-保留本次报告及基线。若迁移到 Linux/macOS 或 GitHub runner，先准备该环境自身的工具链与模拟器，
-再执行预检及完整验收。物理设备自然休眠、真实 VPN、数据库/MQ 持久化、详尽诊断穷举和
-受信任签名发布等关卡仍以 [conformance.md](./conformance.md) 为准，不得用模拟器/受控测试代替。
+2026-10-04 更新：完整本地矩阵已通过，见 `build/acceptance/20261004-122019-37bff871/`；
+对应文件内容已提交为 `8b739c2`，四组 hosted CI 通过。上述较早记录保留为历史。
+下一步为准备发布文档、签名凭据、版本 tag、Central 上传及远程下载验证。用户的真机和
+真实部署确认与自动化结果分开记录；未细化的设备/故障注入覆盖范围见
+[conformance.md](./conformance.md)，不得自动标为逐项通过。
 
 ## 先读
 

@@ -11,9 +11,12 @@ The SDK is implemented in Kotlin with Java-compatible public APIs and supports A
 API 21 and later. It is intended for a single-user context: FeatBit evaluates targeting
 rules on the server, and your app reads the synchronized flag values locally.
 
-> **Development preview:** The current artifact is `0.1.0-SNAPSHOT`, available through
-> a local build. Formal publication and full release acceptance are still pending;
-> this snapshot is not ready for production use.
+> **Publication pending:** Version `0.1.0` has passed the recorded local and hosted
+> checks, with physical-device and deployed-service validation confirmed by the maintainer.
+> Maven Central publication and fresh-download verification remain pending. The local
+> development build defaults to `0.1.0-SNAPSHOT`; use the local installation below for now.
+> See the [0.1.0 release notes](./docs/release-notes-0.1.0.md) and
+> [prepared Central installation instructions](./docs/release.md#maven-central-installation-after-publication).
 
 ## Get Started
 

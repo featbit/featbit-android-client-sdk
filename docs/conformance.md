@@ -29,29 +29,39 @@ device properties. The phase report identifies which evidence directory was actu
 | Callback/Flow disposal | Execution, CoroutineAdapters | LocalRuntimeTest and consumer RuntimeSmoke |
 | Diagnostics | Execution.Diagnostics | loggerIsBoundedRateLimitedAndExceptionIsolated; status sanitization and transport tests |
 
-## Outstanding release gates
+## Current release readiness
 
-Hosted library/consumer CI passed for commit `14fb4fd` across all four consumer rows;
-see the [run and evidence record](./verification.md#hosted-library-and-consumer-ci--2026-10-03).
-This closes the ordinary hosted CI check for that commit, not the release-signing workflow.
+The complete local 0.1.0 matrix passed in `build/acceptance/20261004-122019-37bff871/`.
+Hosted CI passed for `8b739c2` across Java and all three Kotlin consumer rows.
+On 2026-10-04 the maintainer confirmed successful physical-device validation and
+real FeatBit deployment checks for event persistence, EndUser updates and experiment
+attribution. These manual checks are maintainer-confirmed, not agent-executed.
+See the [current evidence record](./verification.md#release-readiness--2026-10-04).
 
-These cannot be converted to PASS by JVM mocks, historical results, or API-34 emulator logs:
+The agreed automated acceptance and manual real-environment validation steps are closed.
+Credential-backed release-candidate execution, signing, Central validation/publication and
+fresh remote downloads remain pending.
 
-- Physical-device natural sleep/App Standby, vendor restrictions, VPN, missing-permission
-  device path, interactive multi-window and API 21/newer-OS execution matrix.
+## Detailed coverage limitations
+
+The manual confirmation did not include device/OS inventories, per-scenario logs or
+fault-injection results. It must not be expanded into an exhaustive PASS for the following:
+
+- Every natural sleep/App Standby, vendor restriction, VPN, missing-permission,
+  multi-window and API 21/newer-OS combination.
 - Backup/restore and process termination at each AtomicFile replacement boundary.
-- Deployed database/MQ attribution and EndUser profile behavior. Fake/None protocol and
-  Domain conversion tests are valuable but do not cover persistence through a deployment.
-- Physical-platform automatic-attribute variations beyond the current emulator schema.
-  ReleaseAcceptanceTest verifies unavailable values, lazy disabled collection, changed-value
-  Identify resampling, no foreground resampling and preservation of older context snapshots.
-- Exhaustive diagnostics injection at every path and log level, slow/reentrant logger and
-  full resource-leak measurement. All-level loss-count/reentrant/throwing-logger and existing
-  bounded-worker/rate-limit tests provide partial evidence, not exhaustive path coverage.
-- Credential-backed release-candidate workflow, release signing/Central validation and fresh download.
+- All physical-platform automatic-attribute variations. ReleaseAcceptanceTest covers
+  unavailable values, disabled collection, Identify resampling and context snapshots.
+- Exhaustive diagnostics injection and full resource-leak measurement. Existing
+  logger, bounded-worker and rate-limit tests provide partial evidence.
 
-P06/P08/P09 durable events and iOS are N/A because unsupported, not passed. No persistent
-event queue, OpenFeature Provider, Compose/KMP integration or samples are added here.
+These are coverage limitations, not newly inferred failures of the maintainer's checks.
+Retain them when describing release support; manual confirmation does not constitute
+full certification of the draft specification.
 
-Full release acceptance remains open until applicable mandatory scenarios have evidence.
-Phase 7 tooling/documentation completion is distinct from a production release declaration.
+P06/P08/P09 durable events and iOS are N/A because unsupported, not passed. Persistent
+events, OpenFeature Provider and Compose/KMP integration are outside this core SDK.
+Java and Kotlin samples are implemented separately under `samples/`.
+
+A production publication claim additionally requires the remaining signing, Central and
+fresh-download steps to complete.

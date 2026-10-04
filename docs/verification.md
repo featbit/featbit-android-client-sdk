@@ -1,5 +1,43 @@
 # Verification record
 
+## Release readiness — 2026-10-04
+
+### Automated evidence
+
+- Version: `0.1.0`; full local run: `build/acceptance/20261004-122019-37bff871/`.
+  `report.json` ends with `requested checks passed`; every recorded command exited 0.
+- Java, Kotlin 1.9.24, 1.9.25 and 2.2.10 independent consumers passed build and installed
+  Debug/R8 runtime checks. All six Kotlin platform checks passed, including the previously
+  failing Release scenario. Live target-device checks, SDK live tests and exported-payload
+  Domain validation passed in this run.
+- Launcher evidence: `build/live-acceptance/20261004-122008-bba4b2de/`.
+- The run recorded HEAD `60191f8` plus six pending acceptance-path/documentation changes
+  subsequently committed as `8b739c2`. Recorded source SHA-256 values matched that committed
+  workspace. This was not a clean-HEAD run; the content comparison connects the evidence
+  to the committed files.
+- [Hosted CI for 8b739c2](https://github.com/featbit/featbit-android-client-sdk/actions/runs/37197217151)
+  passed all four consumer rows, including Spotless and acceptance-tool tests.
+- Earlier failed run `build/phase7/20261004-120601-d869f7a7/` remains a failure;
+  it is superseded by the complete successful run above, not rewritten as PASS.
+
+### Maintainer-confirmed manual validation
+
+On 2026-10-04 the maintainer explicitly confirmed physical-device validation passed,
+then separately confirmed real FeatBit deployment event persistence, EndUser updates
+and experiment attribution. This closes the agreed real-environment validation step.
+These are user-reported results, not tests independently observed or executed by the agent.
+Device/OS inventory, exact tested artifact hashes and per-scenario logs were not supplied;
+do not infer exhaustive device or fault-injection coverage.
+
+### Publication status
+
+Remaining work: credential-backed signing, Central upload/validation/publication and
+independent Java/Kotlin fresh-download verification. No Central publication or signed
+workflow success is claimed. Release notes and future Central installation instructions
+are prepared separately; the README retains local installation until publication succeeds.
+This documentation-only update changes no SDK or test fixtures and does not require a
+new device-matrix run. Hosted CI for its final commit must still pass before tagging.
+
 ## Emulator rendering ANR and focused platform retry — 2026-10-04
 
 Run `build/phase7/20261004-120601-d869f7a7/` failed at the Kotlin 1.9.25

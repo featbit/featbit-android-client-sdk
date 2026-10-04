@@ -176,11 +176,51 @@ ordinary builds do not need credentials. No remote publishing endpoint is config
 The hosted release-candidate workflow and credential-backed signing require a real authorized run before
 being claimed verified. Do not print, commit or archive signing credentials.
 The ordinary library/consumer CI has passed separately; see the
-[hosted CI record](./verification.md#hosted-library-and-consumer-ci--2026-10-03).
+[current acceptance and CI record](./verification.md#release-readiness--2026-10-04).
 
 Before formal publication, resolve every applicable acceptance gate in [conformance](./conformance.md),
 review license/dependency notices, decide the release version, verify Central namespace/account
 access, and align tag, release notes, source baseline and artifact hashes. Then separately
 perform Central validation/upload and verify fresh Maven-coordinate downloads in independent
 consumers. Publish the core SDK first. The OpenFeature Provider remains a separate repository
-and toolchain. Persistent events, iOS/KMP, Compose bindings and sample apps remain deferred.
+and toolchain. Persistent events, iOS/KMP and Compose bindings remain deferred.
+Java and Kotlin sample apps are implemented under `samples/`.
+
+
+## Maven Central installation after publication
+
+**Prepared instructions; not yet active.** Replace the Installation section in both
+README.md and README.java.md only after Central publication and independent remote
+consumer verification succeed. Java apps may use the same Kotlin DSL configuration:
+
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+```
+
+```kotlin
+// App module build.gradle.kts
+dependencies {
+    implementation("co.featbit:featbit-client-android:0.1.0")
+}
+```
+
+Retain the Java 11 bytecode and integration-guide guidance. Replace the publication-pending
+banner with a release link only after download verification. No local Maven repository or
+SDK project substitution should appear in the published installation instructions.
+
+## 0.1.0 release handoff
+
+- Prepared [release notes](./release-notes-0.1.0.md); intended tag: `v0.1.0`.
+- [Current evidence](./verification.md#release-readiness--2026-10-04) separates automated
+  checks from maintainer-confirmed device/deployment validation.
+- Complete this documentation commit and its hosted CI before creating the release tag.
+- Configure the `release` environment signing secrets, run the signed candidate workflow
+  on the matching tag, and retain signed artifact hashes and the workflow URL.
+- Validate/upload the Central bundle and verify fresh downloads before activating the
+  README instructions above and publishing the GitHub Release notes.

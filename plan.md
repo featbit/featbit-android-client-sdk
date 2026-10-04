@@ -1,6 +1,6 @@
 # FeatBit Android Client SDK Development Plan
 
-Updated: 2026-10-02. Phases 1–6 are implemented. Phase 7 acceptance tooling, independent artifact matrix, documentation and publication preparation are implemented; full release acceptance remains open. See [current evidence and limitations](./docs/phase-7.md).
+Updated: 2026-10-04. Phases 1–6 and Phase 7 tooling are implemented. The 0.1.0 local matrix and hosted consumer CI passed; the maintainer confirmed physical-device and deployed-service validation. Signing, Central publication and fresh-download verification remain pending. See [current evidence and limitations](./docs/verification.md#release-readiness--2026-10-04). The phased scope below records the original implementation plan; Java/Kotlin samples have since been implemented.
 
 The repository contains the Library build, local and online runtime, events, persistence, real Android lifecycle integration, independent AAR consumers and CI configuration. See [verification evidence](./docs/verification.md) for the boundary between implemented behavior, executed checks and remaining acceptance. Samples and remote publication remain separate work.
 
@@ -96,7 +96,7 @@ Record the SDK compiler, consumer App compiler, and runtime standard library ver
 
 ## 5. Project structure and internal architecture
 
-Use one Android Library publishing module and minimal independent Java/Kotlin consumer test projects. Samples/demo Apps are deferred and are not deliverables or acceptance prerequisites for this implementation. Consumer projects are test fixtures for public API compilation, actual AAR consumption and R8, not demonstration products. The first release publishes one core AAR. Java/Kotlin adapters share state and business logic rather than maintaining two implementations.
+Use one Android Library publishing module and minimal independent Java/Kotlin consumer test projects. Samples/demo Apps were deferred from the original core implementation; Java/Kotlin samples are now available under `samples/` and do not replace independent consumer acceptance. Consumer projects are test fixtures for public API compilation, actual AAR consumption and R8, not demonstration products. The first release publishes one core AAR. Java/Kotlin adapters share state and business logic rather than maintaining two implementations.
 
 Divide internal responsibilities as follows; each area need not be a separate Gradle module:
 
@@ -481,7 +481,7 @@ Sequence: Phase 1 → 2 → 3 → 4 → 5 → 6 → 7. Tests accompany implement
 
 Dependencies are explicit: Phase 1 provides build/API validation and basic CI; Phase 2 local APIs, close skeleton and lifecycle inputs; Phase 3 persistence using controlled data commits; Phase 4 synchronization and controlled-signal tests; Phase 5 event closure; Phase 6 real platform signals. Real platform tests and final artifact acceptance occur in their later phases and cannot be prerequisites for earlier features that do not yet exist.
 
-The first milestone completes Phases 1–3: a buildable local SDK with evaluation, state/identity isolation, bootstrap, persistence, basic Close and Java/Kotlin consumer tests. Phase 4 adds verified online synchronization; Phases 5–6 add events and real Android lifecycle integration. Phase 7 completes actual AAR consumption, applicable conformance and release preparation. Tests accompany every stage; samples remain deferred. Estimate timelines after Phase 1 validates the toolchain and API foundation.
+The first milestone completes Phases 1–3: a buildable local SDK with evaluation, state/identity isolation, bootstrap, persistence, basic Close and Java/Kotlin consumer tests. Phase 4 adds verified online synchronization; Phases 5–6 add events and real Android lifecycle integration. Phase 7 completes actual AAR consumption, applicable conformance and release preparation. Tests accompany every stage; Java/Kotlin samples are now implemented separately. Estimate timelines after Phase 1 validates the toolchain and API foundation.
 
 Before release:
 

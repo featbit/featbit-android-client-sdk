@@ -1,5 +1,8 @@
 # Phase 7: release preparation and combined acceptance
 
+Historical implementation record, 2026-10-02. For current release readiness, see
+[verification](./verification.md#release-readiness--2026-10-04).
+
 Implemented 2026-10-02. SDK source baseline `6eff0ddf7e04eccba3863a2404a2d34edebf2e04`
 plus the current Phase 7 changes. This is local release preparation; no commit, push,
 Central upload or GitHub Release was performed. Full release acceptance remains open.

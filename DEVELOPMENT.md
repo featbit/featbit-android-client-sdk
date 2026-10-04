@@ -2,15 +2,17 @@
 
 Kotlin implementation with Java-compatible public APIs, targeting Android API 21+.
 
-**Current state: Phase 7 release preparation; full release acceptance remains open.** The project builds debug/release AARs with
+**Current state: 0.1.0 publication preparation.** The project builds debug/release AARs with
 local evaluation, Bootstrap, TestData/Custom sources, Identify, online/offline intent,
 subscriptions, coroutine adapters, bounded Close, persistent cache and anonymous identity.
 Built-in Streaming/Polling, reconnect, Identify isolation, optional fallback/recovery and
 platform-aware background polling are implemented. Evaluation/Track events, privacy filtering,
 bounded queues/retries, Flush and final Close delivery are implemented. Configure `eventsUrl`
 for enabled analytics. Process lifecycle, connectivity and device-idle observers are connected;
-physical-device/deployed-storage acceptance and formal publication remain outstanding.
-Do not use this snapshot as a production feature-flag SDK.
+physical-device behavior and deployed event persistence, EndUser updates and experiment attribution
+were confirmed by the maintainer. Signing, Central publication and fresh-download verification
+remain outstanding. See the [current evidence](./docs/verification.md#release-readiness--2026-10-04)
+for automated results and the scope of manual confirmation. The local snapshot is not a published release.
 
 - [Implementation plan](./plan.md)
 - [Java/Kotlin integration and configuration](./docs/integration.md)
@@ -72,4 +74,4 @@ management and acceptance to Python; see the
 for dependencies and validation scope.
 
 `consumer-tests/` contains independent Java/Kotlin compilation and R8 fixtures, not samples.
-Samples are deferred. OpenFeature is a separate product and is not a dependency.
+Java and Kotlin sample apps are available under `samples/`. OpenFeature is a separate product and is not a dependency.
