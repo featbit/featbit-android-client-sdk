@@ -79,7 +79,7 @@
 <string name="flush_events">Flush events</string>
 <string name="events_local">Events disabled in Local Demo</string>
 <string name="events_disabled">Events disabled for this connection</string>
-<string name="last_track">Last track</string>
+<string name="last_track">Last custom event track</string>
 <string name="no_operation">Not called yet</string>
 <string name="accepted_hint">Accepted locally; delivery not confirmed.</string>
 <string name="last_flush">Last flush</string>
