@@ -1,5 +1,7 @@
 # FeatBit Client SDK for Android
 
+[Kotlin](./README.md) | [Java](./README.java.md)
+
 ## Introduction
 
 This is the client-side SDK for the open-source feature flag management platform
@@ -114,7 +116,7 @@ operations return `Outcome<T>`; check `isSuccess` before accessing `value`. Flag
 return the supplied fallback when a usable value is unavailable.
 
 Java applications use the same builders and callback-based `Operation.observe(...)`.
-See the [Java integration example](./docs/integration.md#installation-and-ownership).
+See the [Java README](./README.java.md) for a complete callback-based guide.
 The remaining Kotlin snippets assume a retained `client`, a validated `user`, and
 imports from `co.featbit.android.api` unless noted otherwise.
 
