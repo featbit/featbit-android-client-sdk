@@ -36,6 +36,33 @@ class LauncherTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "exited before readiness"):
             launcher.wait_for_server(server, self.root / "out", self.root / "err")
 
+    @unittest.skipIf(os.name == "nt", "POSIX address reuse semantics")
+    def test_closed_server_time_wait_does_not_block_preflight(self):
+        with socket.socket() as listener:
+            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            listener.bind(("127.0.0.1", 0))
+            listener.listen()
+            address = listener.getsockname()
+            with socket.create_connection(address, timeout=2) as client:
+                connection, _ = listener.accept()
+                # The server closes first, leaving its accepted socket in TIME_WAIT.
+                connection.close()
+                self.assertEqual(client.recv(1), b"")
+        with patch.object(launcher, "PORT", address[1]):
+            launcher.assert_free_port()
+
+    @unittest.skipIf(os.name == "nt", "POSIX address reuse semantics")
+    def test_reusable_live_listener_is_still_rejected(self):
+        with socket.socket() as listener:
+            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            listener.bind(("127.0.0.1", 0))
+            listener.listen()
+            with patch.object(launcher, "PORT", listener.getsockname()[1]):
+                with self.assertRaisesRegex(RuntimeError, "unavailable"):
+                    launcher.assert_free_port()
+                with socket.create_connection(listener.getsockname(), timeout=2):
+                    pass
+
     def test_foreign_listener_alone_cannot_admit_readiness(self):
         output = self.root / "stdout.log"
         output.write_text("Starting...", encoding="utf-8")

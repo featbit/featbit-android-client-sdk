@@ -37,7 +37,12 @@ def executable(value):
 def assert_free_port():
     with socket.socket() as probe:
         try:
+            if os.name != "nt":
+                # Match the POSIX server: closed connections in TIME_WAIT are reusable.
+                # Do not use SO_REUSEPORT or Windows SO_REUSEADDR (port sharing).
+                probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             probe.bind(("127.0.0.1", PORT))
+            probe.listen()
         except OSError as error:
             raise RuntimeError(f"Port {PORT} is unavailable; stop the existing service yourself.") from error
 

@@ -1,5 +1,21 @@
 # Verification record
 
+## POSIX launcher port preflight — 2026-10-05
+
+Hosted Kotlin 1.9.25 verification failed in the shared Python launcher test after
+the controlled server had stopped: port 5189 was reported in use. A new Linux
+regression reproduced the same error on an ephemeral port by closing the server
+side of an accepted connection first, leaving TCP TIME_WAIT state without a listener.
+
+The POSIX preflight now uses SO_REUSEADDR and verifies both bind and listen, matching
+server restart semantics while still rejecting a live listener. It does not enable
+SO_REUSEPORT; Windows retains its existing non-reuse behavior. No SDK code changed.
+
+Validation: all 25 tooling tests passed under WSL Ubuntu 22.04, including real occupied
+port rejection and the TIME_WAIT regression. The Bash success/failure/cleanup test
+also passed three consecutive reruns. Windows passed 20 tests and skipped five
+POSIX-only tests. This is tooling validation, not a new SDK device acceptance run.
+
 ## Release readiness — 2026-10-04
 
 ### Automated evidence
