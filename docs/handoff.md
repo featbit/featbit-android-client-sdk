@@ -9,7 +9,9 @@
 当前进入签名与 Central 发布准备；尚未发布。最新证据及手动验证范围见
 [verification.md](./verification.md#release-readiness--2026-10-04)。
 本次补齐独立 Maven/AAR 消费者构建、版本一致性、StrictMode 读取、自动属性与诊断测试，
-以及 Dokka 文档产物和仅本地 staging 的签名工作流。真机结果由用户确认，未提供逐设备、逐场景报告，不能扩展为完整设备矩阵证据。
+以及 Dokka 文档产物。2026-10-05 发布工作流已扩展为签名、Central 上传、验证后自动发布，
+仅收到 `PUBLISHED` 才成功；四个 release 环境 Secret 和失败重跑说明见 [release.md](./release.md)。
+新增自动发布路径尚未实际执行。真机结果由用户确认，未提供逐设备、逐场景报告，不能扩展为完整设备矩阵证据。
 阶段 7 已提交为 `f5932e8`，后续审核修复已提交为 `416110e`；这不代表已完成远程发布。
 相邻规范和服务端源码未修改。提交与工作区状态应以当前 Git 记录为准。
 阶段 7 见 [phase-7.md](./phase-7.md)、[release.md](./release.md)、[conformance.md](./conformance.md)，

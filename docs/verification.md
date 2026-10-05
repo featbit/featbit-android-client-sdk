@@ -1,5 +1,19 @@
 # Verification record
 
+## Automatic Central publication tooling — 2026-10-05
+
+The release workflow now uploads the signed version bundle with AUTOMATIC publishing,
+waits for PUBLISHED, and retains a deployment report on failure or success. Tests use
+controlled responses rather than real Central credentials. They cover multipart/auth
+construction, no upload retry after an ambiguous error, state transitions, validation
+failure, transient status retries, authorization rejection, timeout, deployment-ID
+matching, credential redaction, report retention and redirect rejection.
+
+Windows: 30 tooling tests passed, five POSIX checks skipped. WSL Ubuntu 22.04: all
+35 tooling tests passed. Workflow YAML parsing and `git diff --check` passed.
+No real Central upload or publication was triggered by these checks. The new credential-
+backed automatic path remains unverified until a tagged workflow is dispatched.
+
 ## POSIX launcher port preflight — 2026-10-05
 
 Hosted Kotlin 1.9.25 verification failed in the shared Python launcher test after

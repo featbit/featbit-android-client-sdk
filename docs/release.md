@@ -1,8 +1,9 @@
 # Release preparation
 
-Phase 7 prepares a local publication and repeatable acceptance. Formal Maven Central
-publication is a separate task. Neither a successful GitHub Release nor a signed local
-repository proves that a downloadable Central artifact works.
+Local commands prepare a publication and repeatable acceptance. The manually dispatched
+release workflow now signs, uploads and automatically publishes to Maven Central.
+Neither a successful GitHub Release nor a signed local repository proves that a
+downloadable Central artifact works; independent remote-consumer verification remains required.
 
 ## Local commands
 
@@ -169,21 +170,41 @@ POM, and Gradle module metadata with transitive dependencies. Group/artifact are
 MIT license, project/SCM and contributor metadata are included. `getVersion()` uses the
 same Gradle version as the publication. Public API/Java 11 checks inspect the actual AAR.
 
-The separate `release-candidate.yml` workflow accepts a version only on its matching
-`v<version>` tag, reruns the artifact matrix and stages a signed repository. It requires
-the `release` environment and SIGNING_KEY/SIGNING_PASSWORD secrets. Signing is opt-in;
-ordinary builds do not need credentials. No remote publishing endpoint is configured.
+The `release-candidate.yml` workflow is displayed as **Publish Android SDK to Maven Central**.
+It accepts a version only on its matching `v<version>` tag, reruns the artifact matrix,
+stages a signed repository, then uploads and automatically publishes it. The `release`
+environment requires four **Secrets** (not plain environment Variables): `SIGNING_KEY`,
+`SIGNING_PASSWORD`, `CENTRAL_TOKEN_USERNAME` and `CENTRAL_TOKEN_PASSWORD`. The latter pair
+comes from a Central Portal user token. Ordinary builds do not need credentials.
 After signing, the workflow also creates `featbit-client-android-<version>-central-bundle.zip`
 and uploads it as the `maven-central-bundle` artifact. It checks that the AAR, POM, module,
 sources and documentation each have signatures and required checksums, and verifies that
 the archived bytes match the staged files. Only the selected version directory is included,
 with the full `co/featbit/featbit-client-android/<version>/` path; repository-level
 `maven-metadata.xml` is excluded. Existing signatures and checksums are preserved.
-The GitHub artifact download is an outer ZIP: extract it once and upload the contained
-`featbit-client-android-<version>-central-bundle.zip` to Central, not the outer download.
+The GitHub artifact download is an outer ZIP: extract it once to obtain
+`featbit-client-android-<version>-central-bundle.zip`. The workflow uploads this inner ZIP
+directly; manual download/upload is no longer necessary.
 The original `signed-release-candidate` repository artifact remains available for inspection.
-The hosted release-candidate workflow and credential-backed signing require a real authorized run before
-being claimed verified. Do not print, commit or archive signing credentials.
+`tools/publish_central.py` calls the [Central Publisher API](https://central.sonatype.org/publish/publish-portal-api/)
+with `publishingType=AUTOMATIC`. Validation success automatically proceeds to publication,
+without a second Publish click. The workflow succeeds only after Central reports `PUBLISHED`.
+It polls for up to 30 minutes, with bounded HTTP requests; validation errors, unrecoverable
+HTTP errors and timeouts fail the step. Status requests retry transient network/429/5xx errors.
+The deployment ID is written immediately to logs, the job summary and
+`central-publication-result/report.json` (inside the downloaded artifact). This report also
+contains the bundle SHA-256, latest state and sanitized validation errors. Credentials are
+never intentionally logged or included in artifacts; redirects are not followed.
+
+Uploads are not automatically retried. If an upload response is lost or status polling times
+out, Central may still complete publication. Inspect the Portal and deployment ID before any
+rerun; do not blindly re-upload or overwrite an already published version. Same-version runs
+are serialized without cancelling an active publication. Cancelling a workflow does not cancel
+Central publication. Existing environment protection rules still apply before the job starts.
+
+The API behavior is covered by controlled tests. A real credential-backed run of this new
+automatic publication path is still required before claiming it verified end to end.
+Do not print, commit or archive signing credentials.
 The ordinary library/consumer CI has passed separately; see the
 [current acceptance and CI record](./verification.md#release-readiness--2026-10-04).
 
@@ -229,7 +250,8 @@ SDK project substitution should appear in the published installation instruction
 - [Current evidence](./verification.md#release-readiness--2026-10-04) separates automated
   checks from maintainer-confirmed device/deployment validation.
 - Complete this documentation commit and its hosted CI before creating the release tag.
-- Configure the `release` environment signing secrets, run the signed candidate workflow
-  on the matching tag, and retain signed artifact hashes and the workflow URL.
-- Validate/upload the Central bundle and verify fresh downloads before activating the
-  README instructions above and publishing the GitHub Release notes.
+- Configure all four `release` environment secrets and run **Publish Android SDK to Maven Central**
+  on the matching tag. This dispatch authorizes automatic publication after validation.
+- Retain the signed artifact hashes, Central deployment report and workflow URL. After
+  `PUBLISHED`, verify fresh downloads before activating the README instructions above
+  and publishing the GitHub Release notes.

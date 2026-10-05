@@ -1,19 +1,36 @@
-name: Prepare signed release candidate
+name: Publish Android SDK to Maven Central
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: Candidate version (must match a v-prefixed tag)
+        description: Version to publish automatically (must match a v-prefixed tag)
         required: true
         type: string
 permissions:
   contents: read
+concurrency:
+  group: central-release-${{ inputs.version }}
+  cancel-in-progress: false
 jobs:
   stage:
     runs-on: ubuntu-latest
     environment: release
     steps:
       - uses: actions/checkout@v4
+      - name: Check release credentials
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          CENTRAL_TOKEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          CENTRAL_TOKEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          import os
+          names = ('SIGNING_KEY', 'SIGNING_PASSWORD', 'CENTRAL_TOKEN_USERNAME', 'CENTRAL_TOKEN_PASSWORD')
+          missing = [name for name in names if not os.environ.get(name)]
+          if missing:
+              raise SystemExit('Missing release environment secrets: ' + ', '.join(missing))
+          PY
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -89,6 +106,20 @@ jobs:
         with:
           name: signed-release-candidate
           path: ${{ runner.temp }}/signed-repository/
+      - name: Upload and automatically publish to Maven Central
+        timeout-minutes: 35
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          CENTRAL_TOKEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          CENTRAL_TOKEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
+        run: python3 -u tools/publish_central.py --bundle "$RUNNER_TEMP/featbit-client-android-$RELEASE_VERSION-central-bundle.zip" --version "$RELEASE_VERSION" --report "$RUNNER_TEMP/central-publication/report.json"
+      - name: Upload Central publication result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: central-publication-result
+          path: ${{ runner.temp }}/central-publication/report.json
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
         if: always()
         with:
