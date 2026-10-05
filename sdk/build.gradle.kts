@@ -128,8 +128,12 @@ afterEvaluate {
                     }
                     scm {
                         url.set("https://github.com/featbit/featbit-android-client-sdk")
-                        connection.set("scm:git:https://github.com/featbit/featbit-android-client-sdk.git")
-                        developerConnection.set("scm:git:ssh://git@github.com/featbit/featbit-android-client-sdk.git")
+                        connection.set(
+                            "scm:git:https://github.com/featbit/featbit-android-client-sdk.git"
+                        )
+                        developerConnection.set(
+                            "scm:git:ssh://git@github.com/featbit/featbit-android-client-sdk.git"
+                        )
                     }
                     developers {
                         developer {
