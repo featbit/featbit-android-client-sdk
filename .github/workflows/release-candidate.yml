@@ -49,6 +49,42 @@ jobs:
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
         run: bash gradlew :sdk:publishReleasePublicationToLocalTestRepository -PsdkVersion="$RELEASE_VERSION" -PtestRepository="$RUNNER_TEMP/signed-repository" -PsignPublication=true --console=plain
+      - name: Package Maven Central bundle
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          from zipfile import ZIP_DEFLATED, ZipFile
+
+          version = os.environ['RELEASE_VERSION']
+          repository = Path(os.environ['RUNNER_TEMP']) / 'signed-repository'
+          directory = repository / 'co/featbit/featbit-client-android' / version
+          stem = 'featbit-client-android-' + version
+          for extension in ('.aar', '.pom', '.module', '-sources.jar', '-javadoc.jar'):
+              for suffix in ('', '.asc', '.md5', '.sha1'):
+                  path = directory / (stem + extension + suffix)
+                  if not path.is_file() or not path.stat().st_size:
+                      raise RuntimeError('Missing publication file: ' + str(path))
+          files = sorted(path for path in directory.iterdir() if path.is_file())
+          bundle = Path(os.environ['RUNNER_TEMP']) / (stem + '-central-bundle.zip')
+          with ZipFile(bundle, 'x', compression=ZIP_DEFLATED) as archive:
+              for path in files:
+                  archive.write(path, path.relative_to(repository).as_posix())
+          with ZipFile(bundle) as archive:
+              assert archive.testzip() is None
+              for path in files:
+                  assert archive.read(path.relative_to(repository).as_posix()) == path.read_bytes()
+          print('Central bundle: ' + bundle.name)
+          PY
+      - name: Upload Maven Central bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-central-bundle
+          path: ${{ runner.temp }}/featbit-client-android-${{ inputs.version }}-central-bundle.zip
+          if-no-files-found: error
+          compression-level: 0
       - uses: actions/upload-artifact@v4
         with:
           name: signed-release-candidate

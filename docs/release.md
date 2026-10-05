@@ -173,6 +173,15 @@ The separate `release-candidate.yml` workflow accepts a version only on its matc
 `v<version>` tag, reruns the artifact matrix and stages a signed repository. It requires
 the `release` environment and SIGNING_KEY/SIGNING_PASSWORD secrets. Signing is opt-in;
 ordinary builds do not need credentials. No remote publishing endpoint is configured.
+After signing, the workflow also creates `featbit-client-android-<version>-central-bundle.zip`
+and uploads it as the `maven-central-bundle` artifact. It checks that the AAR, POM, module,
+sources and documentation each have signatures and required checksums, and verifies that
+the archived bytes match the staged files. Only the selected version directory is included,
+with the full `co/featbit/featbit-client-android/<version>/` path; repository-level
+`maven-metadata.xml` is excluded. Existing signatures and checksums are preserved.
+The GitHub artifact download is an outer ZIP: extract it once and upload the contained
+`featbit-client-android-<version>-central-bundle.zip` to Central, not the outer download.
+The original `signed-release-candidate` repository artifact remains available for inspection.
 The hosted release-candidate workflow and credential-backed signing require a real authorized run before
 being claimed verified. Do not print, commit or archive signing credentials.
 The ordinary library/consumer CI has passed separately; see the
