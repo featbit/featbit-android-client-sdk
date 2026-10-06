@@ -22,7 +22,7 @@ MOBILE = {
     "M14": ("SyncProtocol", "SyncProtocolTest", "invalidRecordsSkipIndependentlyButDuplicateKeysRejectEnvelope"),
     "M15": ("OnlineSync", "OnlineSyncTest", "readinessTimeoutDoesNotStopRecoveryAndTerminalRejectionCannotBeReset"),
     "M16": ("Events", "EventsTest", "eventGroupAndPayloadBoundsRejectNewWorkWithoutUnboundedTasks"),
-    "M17": ("Events", "EventsTest", "evaluationRequiresRemoteConfirmationValidMetadataAndSuccessfulConversion"),
+    "M17": ("Events", "EventsTest", "evaluationIncludesTypeErrorsButRequiresRemoteConfirmationAndValidMetadata"),
     "M18": ("Events", "EventsTest", "distinctGroupsAndUsersAreNeverDeduplicatedAcrossFlush"),
     "M19": ("Events", "EventsTest", "transitionBudgetExcludesNewBackgroundEventsAndLateAcknowledgement"),
     "M20": ("Execution", "LocalRuntimeTest", "callbackReentryFailureAndIndependentDetach"),

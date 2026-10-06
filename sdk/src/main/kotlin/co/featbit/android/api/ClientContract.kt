@@ -16,6 +16,12 @@ public interface ClientFactory {
     }
 }
 
+/**
+ * Typed reads require matching flag declarations; ordinary and detailed forms share validation.
+ * Type/parse failures return the supplied fallback (WRONG_TYPE in details). Eligible confirmed
+ * remote reads may record the selected remote variation even on these failures; events do not carry
+ * the caller fallback or local error reason. Numbers use finite Double precision.
+ */
 public interface FeatBitClient {
     public fun getVersion(): String
 
@@ -87,14 +93,17 @@ public interface FeatBitClient {
 
     public fun stringVariationDetail(key: String, fallback: String): EvaluationDetail<String>
 
+    /** Resolves using the flag's declared type, independently of the fallback's kind. */
     public fun variation(key: String, fallback: FbValue): FbValue
 
     public fun variationDetail(key: String, fallback: FbValue): EvaluationDetail<FbValue>
 
+    /** Requires a json declaration and valid JSON; explicit JSON null is a successful value. */
     public fun jsonVariation(key: String, fallback: FbValue): FbValue
 
     public fun jsonVariationDetail(key: String, fallback: FbValue): EvaluationDetail<FbValue>
 
+    /** Requires a json declaration; returns its raw text without validating JSON syntax. */
     public fun jsonTextVariation(key: String, fallback: String): String
 
     public fun jsonTextVariationDetail(key: String, fallback: String): EvaluationDetail<String>

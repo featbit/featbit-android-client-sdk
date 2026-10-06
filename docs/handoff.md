@@ -4,6 +4,11 @@
 
 ## 当前进度
 
+2026-10-06：普通/Detail 类型读取统一要求声明类型匹配；通用 variation 按声明类型解析，
+JSON 专用入口要求 json。数值继续使用 Double，不承诺 Long 全精度。
+类型/解析失败仍可收集满足来源与元数据条件的选中远端 variation 事件；现有事件协议不携带本地错误原因。
+此决定取代旧版“宽松类型转换、仅转换成功才记录事件”的约定，见 integration.md 和 verification.md。
+
 2026-10-06：新增 `FeatBitClient.identifyContext` / `identifyAnonymousContext`，
 返回 `IdentityReceipt`，仅确认身份采用，不等待 flag readiness。
 两个方法直接属于 `FeatBitClient`；已移除额外能力接口，调用方无需类型转换。

@@ -1,5 +1,39 @@
 # Verification record
 
+## Full live acceptance after typed-read migration — 2026-10-06
+
+The reported run `20261006-164447-76c6b30b` failed in
+`LiveSyncIntegrationTest.targetServerStreamingOutagePollingAndStreamingRecovery`: its final
+assertion still read the boolean `returns-true` flag through stringVariation. Updated it to
+boolVariationDetail and assert both MATCH and true. No production-code or launcher workaround.
+
+Reran `tools/run-live-acceptance.ps1 -Serial emulator-5554` with JDK 17. Full run passed:
+`build/acceptance/20261006-164655-da1da4b2/report.json`; launcher logs in
+`build/live-acceptance/20261006-164649-771b3eb6/`. All 159 SDK tests passed, including four live
+tests; target Domain validation reported three valid payloads and three messages. All four
+Java/Kotlin compiler rows passed builds/tests/lint plus Debug and Release/R8 emulator smoke;
+all six Kotlin platform checks and target-device synchronization/event checks passed.
+Spotless and diff whitespace checks passed. The launcher stopped its own Fake/None test server.
+This is emulator/test-service evidence, not physical-device, production DB/MQ or remote publication.
+
+## Unified declared-type evaluation and event policy — 2026-10-06
+
+Boolean/number/string reads and their Detail counterparts now require matching declarations;
+JSON helpers require json. Generic variation still selects by declaration independently of
+fallback kind, and bulk reads retain raw values. Numeric values remain finite Double values.
+Type/parse failures are revalidated against the current view before returning WRONG_TYPE and
+may admit eligible selected-remote-variation events. The wire format is unchanged: no error
+reason or caller fallback is added. This supersedes earlier permissive/success-only descriptions.
+
+All 155 SDK unit tests passed, including declared-type mismatches, generic fallback-kind
+independence, Double rounding and type/parse failure event delivery. Spotless apply/check passed.
+The first acceptance run (`20261006-163232-fbdfa803`) stopped because the report referenced the
+renamed event test. After updating that evidence mapping, full acceptance passed in
+`build/acceptance/20261006-163455-d0e9983d/report.json`: SDK Debug/Release, lint, Dokka, local
+publication, unchanged API/Java 11 check, and Java plus Kotlin 1.9.24/1.9.25/2.2.10 consumers
+(Debug, Release/R8, unit tests and lint). No device/live-server runs or remote publication.
+Provider documentation is updated, but Provider runtime and Int/Long adapters remain unimplemented.
+
 ## Identity methods moved onto FeatBitClient — 2026-10-06
 
 Removed `StrictClientCapabilities`; `identifyContext` and `identifyAnonymousContext` are now

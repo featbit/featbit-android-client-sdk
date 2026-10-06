@@ -360,14 +360,21 @@ public class EventsTest {
     }
 
     @Test
-    public fun evaluationRequiresRemoteConfirmationValidMetadataAndSuccessfulConversion() {
+    public fun evaluationIncludesTypeErrorsButRequiresRemoteConfirmationAndValidMetadata() {
         val h = EventHarness(configure = { it.bootstrap(listOf(flag("bootstrap", "true"))) })
         h.client.stringVariation("bootstrap", "")
         assertEquals(FlushResult.EMPTY, h.flush().getResult()!!.value)
         h.source.sinks.last().full(h.remoteRecord())
-        h.client.numberVariation("flag", 0.0)
         h.client.allVariations()
         assertEquals(FlushResult.EMPTY, h.flush().getResult()!!.value)
+        assertEquals(
+            EvaluationReason.WRONG_TYPE,
+            h.client.numberVariationDetail("flag", 0.0).reason,
+        )
+        val wrongType = h.flush()
+        assertTrue(h.last.request.payload().contains("11111111-1111-1111-1111-111111111111"))
+        h.reply()
+        assertEquals(FlushResult.ALL_DELIVERED, wrongType.getResult()!!.value)
         assertTrue(h.client.boolVariation("flag", false))
         h.client.stringVariation("flag", "")
         val wait = h.flush()
@@ -382,6 +389,26 @@ public class EventsTest {
         assertEquals(1L, h.diagnostics.lossCounts()["event_invalid_metadata"])
         assertEquals(FlushResult.EMPTY, h.flush().getResult()!!.value)
         h.close()
+    }
+
+    @Test
+    public fun parseFailureRecordsSelectedRemoteValueWithoutInventingFallbackVariation() {
+        val h = EventHarness()
+        try {
+            h.source.sinks.last().full(h.remoteRecord("invalid-boolean"))
+            assertEquals(
+                EvaluationReason.WRONG_TYPE,
+                h.client.boolVariationDetail("flag", false).reason,
+            )
+            val wait = h.flush()
+            val body = h.last.request.payload()
+            assertTrue(body.contains("invalid-boolean"))
+            assertTrue(body.contains("11111111-1111-1111-1111-111111111111"))
+            h.reply()
+            assertEquals(FlushResult.ALL_DELIVERED, wait.getResult()!!.value)
+        } finally {
+            h.close()
+        }
     }
 
     @Test

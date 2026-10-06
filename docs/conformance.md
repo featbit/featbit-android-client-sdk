@@ -6,6 +6,12 @@ to mobile README/conformance and common conformance/identity/public-api. Accepte
 decisions are recorded in handoff: no Flag byte/count caps, no cache byte/age cap,
 and no client-side event field-format limits. Do not silently restore older draft limits.
 
+2026-10-06 Android decisions also require matching declarations for typed reads, retain the
+Double numeric model, and permit type/parse failures to collect eligible selected remote
+variation events. These supersede the older permissive-conversion/success-only event policy.
+M17 evidence uses the updated event eligibility test; it does not assert unchanged semantics
+for older shared-spec wording. The adjacent shared specification was not modified in this change.
+
 `tools/conformance_report.py <evidence-directory>` produces a requirement → implementation
 → test → execution result table from the **copied JUnit XML of that run**, not source names
 alone. It covers every common checklist area and M01–M30/P01–P10/A01–A02/platform entries.

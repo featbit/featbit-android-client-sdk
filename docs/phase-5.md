@@ -6,10 +6,11 @@ subsequently connected in [Phase 6](./phase-6.md); the results below describe Ph
 
 ## Collection and privacy
 
-- Successful individual remote evaluations collect only after current-context online confirmation.
+- Updated 2026-10-06: individual remote evaluations, including type/parse failures, collect only after current-context online confirmation.
   Conversion runs outside the state gate; the immutable view is checked again before admission,
   so Identify cannot mix an old result with a new user. Bootstrap, local Custom/TestData,
-  fallback, failed conversion and bulk reads do not produce evaluation events. Remote Custom
+  missing/archived flags and bulk reads do not produce evaluation events. Type/parse failures may
+  collect the selected remote variation; the protocol carries no error reason or caller fallback. Remote Custom
   metadata follows the same validation as built-in remote data. Synchronization terminal failure
   does not independently disable events.
 - Track works before readiness, defaults to numeric value 1.0 and requires a non-empty name

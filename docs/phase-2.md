@@ -47,7 +47,7 @@ Unchanged flags preserve their timestamps. Removal and re-addition are supported
   unavailable in this phase; no production cache reads or writes occur.
 - Boolean, decimal Double, string, generic declared-type, parsed JSON and raw JSON-text
   reads; raw-string read-all; reasons, fallback and server explanation preservation.
-  Typed conversion does not reject solely by declared type. Raw JSON text is returned
+  Updated 2026-10-06: typed reads require matching declarations. JSON helpers require json. Raw JSON text is returned
   unchanged, including malformed text; the parsed helper validates JSON. JSON null succeeds.
 - Identify invalidates old sessions for same-key changes and A→B→A; no previous-user
   data remains visible. New sources receive immutable user/context snapshots.

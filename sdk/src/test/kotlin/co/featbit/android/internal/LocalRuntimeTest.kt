@@ -626,6 +626,55 @@ public class LocalRuntimeTest {
     }
 
     @Test
+    public fun typedReadsRequireDeclarationsWhileGenericReadsIgnoreFallbackType() {
+        val source = ControlledSource()
+        val h = Harness(source)
+        try {
+            source.sinks
+                .single()
+                .full(
+                    record("b", "true", type = "boolean"),
+                    record("n", "1.9", type = "number"),
+                    record("s", "true", type = "string"),
+                    record("ns", "1.9", type = "string"),
+                    record("js", "{}", type = "string"),
+                    record("j", "{}", type = "json"),
+                    record("large", "9007199254740993", type = "number"),
+                )
+            val c: FeatBitClient = h.client
+            assertTrue(c.boolVariation("b", false))
+            assertTrue(c.boolVariationDetail("b", false).value)
+            assertFalse(c.boolVariation("s", false))
+            assertEquals(EvaluationReason.WRONG_TYPE, c.boolVariationDetail("s", false).reason)
+            assertEquals(9.0, c.numberVariation("ns", 9.0), 0.0)
+            assertEquals(EvaluationReason.WRONG_TYPE, c.numberVariationDetail("ns", 9.0).reason)
+            assertEquals("fallback", c.stringVariation("b", "fallback"))
+            assertEquals(
+                EvaluationReason.WRONG_TYPE,
+                c.stringVariationDetail("n", "fallback").reason,
+            )
+            assertEquals("true", c.stringVariation("s", "fallback"))
+            val fallback = FbValue.jsonNull()
+            assertSame(fallback, c.jsonVariation("js", fallback))
+            assertEquals(EvaluationReason.WRONG_TYPE, c.jsonVariationDetail("js", fallback).reason)
+            assertEquals("fallback", c.jsonTextVariation("js", "fallback"))
+            assertEquals(
+                EvaluationReason.WRONG_TYPE,
+                c.jsonTextVariationDetail("js", "fallback").reason,
+            )
+            assertEquals("{}", c.jsonTextVariation("j", "fallback"))
+            assertEquals(FbValue.Kind.BOOLEAN, c.variation("b", fallback).kind)
+            assertEquals(FbValue.Kind.NUMBER, c.variation("n", fallback).kind)
+            assertEquals(FbValue.Kind.STRING, c.variation("s", fallback).kind)
+            assertEquals(FbValue.Kind.OBJECT, c.variation("j", fallback).kind)
+            assertEquals(1.9, c.numberVariation("n", 0.0), 0.0)
+            assertEquals(9007199254740992.0, c.numberVariation("large", 0.0), 0.0)
+        } finally {
+            h.close()
+        }
+    }
+
+    @Test
     public fun typedGenericAndJsonConversionsHaveIndependentSemantics() {
         val source = ControlledSource()
         val h = Harness(source)
@@ -641,7 +690,8 @@ public class LocalRuntimeTest {
             )
         val c = h.client
         val fallback = FbValue.jsonNull()
-        assertTrue(c.boolVariation("text", false))
+        assertFalse(c.boolVariation("text", false))
+        assertEquals(EvaluationReason.WRONG_TYPE, c.boolVariationDetail("text", false).reason)
         assertEquals(FbValue.Kind.STRING, c.variation("text", fallback).kind)
         assertEquals(-125.0, c.numberVariation("number", 0.0), 0.0)
         assertEquals("server reason", c.variationDetail("number", fallback).explanation)
@@ -651,7 +701,7 @@ public class LocalRuntimeTest {
         )
         assertEquals(EvaluationReason.MATCH, c.jsonVariationDetail("null", fallback).reason)
         assertEquals(EvaluationReason.WRONG_TYPE, c.variationDetail("future", fallback).reason)
-        assertFalse(c.boolVariation("future", true))
+        assertTrue(c.boolVariation("future", true))
         assertEquals(EvaluationReason.WRONG_TYPE, c.jsonVariationDetail("bad", fallback).reason)
         assertEquals("[1,]", c.jsonTextVariation("bad", "fallback"))
         assertEquals(EvaluationReason.ERROR, c.variationDetail("", fallback).reason)
@@ -926,7 +976,11 @@ public class LocalRuntimeTest {
                 .build()
                 .value!!
         assertEquals(SourceUpdateCode.COMMITTED, source.sinks.single().full(item).code)
-        assertEquals(text, custom.client.stringVariation(key, "fallback"))
+        assertEquals(
+            EvaluationReason.WRONG_TYPE,
+            custom.client.stringVariationDetail(key, "fallback").reason,
+        )
+        assertEquals(text, custom.client.allVariations()[key]!!.value)
         assertEquals(text, Conversion.json("\"$text\"")!!.asString())
         h.close()
         custom.close()

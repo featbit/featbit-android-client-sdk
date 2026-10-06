@@ -140,7 +140,9 @@ public class LiveSyncIntegrationTest {
             val start = System.nanoTime()
             ticker.action()
             assertTrue(recovered.await(5, TimeUnit.SECONDS))
-            assertEquals("true", client.stringVariation("returns-true", ""))
+            val value = client.boolVariationDetail("returns-true", false)
+            assertEquals(EvaluationReason.MATCH, value.reason)
+            assertTrue(value.value)
             println(
                 "Target server candidate update gap millis=" +
                     (System.nanoTime() - start) / 1_000_000

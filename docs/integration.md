@@ -66,7 +66,12 @@ results locally. Reads and state/version queries perform no network/disk I/O.
 
 Typed reads have detailed counterparts with MATCH, CLIENT_NOT_READY, FLAG_NOT_FOUND,
 WRONG_TYPE or ERROR. Generic `variation` returns immutable `FbValue` according to the
-declared type. JSON helpers preserve JSON null; `jsonTextVariation` returns raw text.
+declared type, independently of the fallback kind. Boolean/number/string reads require matching
+declarations, including their Detail counterparts. JSON helpers require json; parsed JSON preserves
+JSON null, while `jsonTextVariation` returns raw text without syntax validation. Numbers remain
+finite Double values and do not guarantee full Long precision. Type/parse failures return the
+unchanged fallback and WRONG_TYPE, but eligible confirmed remote reads can still record the
+selected remote variation event. The event protocol does not carry a local error reason.
 `allVariations` returns an immutable snapshot and does not collect evaluation events.
 
 ```java

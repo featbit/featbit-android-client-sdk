@@ -756,9 +756,7 @@ internal class LocalClient(
             if (record.archived)
                 return EvaluationDetail(key, fallback, EvaluationReason.FLAG_NOT_FOUND)
             // JSON conversion can be large. Never hold the state gate while parsing it.
-            val converted =
-                convert(record)
-                    ?: return EvaluationDetail(key, fallback, EvaluationReason.WRONG_TYPE)
+            val converted = convert(record)
             val accepted =
                 synchronized(gate) {
                     if (view !== snapshot) false
@@ -769,7 +767,9 @@ internal class LocalClient(
                     }
                 }
             if (accepted)
-                return EvaluationDetail(key, converted, EvaluationReason.MATCH, record.reason)
+                return if (converted == null)
+                    EvaluationDetail(key, fallback, EvaluationReason.WRONG_TYPE)
+                else EvaluationDetail(key, converted, EvaluationReason.MATCH, record.reason)
         }
     }
 
@@ -777,19 +777,23 @@ internal class LocalClient(
         boolVariationDetail(key, fallback).value
 
     override fun boolVariationDetail(key: String, fallback: Boolean): EvaluationDetail<Boolean> =
-        evaluate(key, fallback) { Conversion.boolean(it.variation) }
+        evaluate(key, fallback) {
+            if (it.variationType == "boolean") Conversion.boolean(it.variation) else null
+        }
 
     override fun numberVariation(key: String, fallback: Double): Double =
         numberVariationDetail(key, fallback).value
 
     override fun numberVariationDetail(key: String, fallback: Double): EvaluationDetail<Double> =
-        evaluate(key, fallback) { Conversion.number(it.variation) }
+        evaluate(key, fallback) {
+            if (it.variationType == "number") Conversion.number(it.variation) else null
+        }
 
     override fun stringVariation(key: String, fallback: String): String =
         stringVariationDetail(key, fallback).value
 
     override fun stringVariationDetail(key: String, fallback: String): EvaluationDetail<String> =
-        evaluate(key, fallback) { it.variation }
+        evaluate(key, fallback) { if (it.variationType == "string") it.variation else null }
 
     override fun variation(key: String, fallback: FbValue): FbValue =
         variationDetail(key, fallback).value
@@ -801,13 +805,15 @@ internal class LocalClient(
         jsonVariationDetail(key, fallback).value
 
     override fun jsonVariationDetail(key: String, fallback: FbValue): EvaluationDetail<FbValue> =
-        evaluate(key, fallback) { Conversion.json(it.variation) }
+        evaluate(key, fallback) {
+            if (it.variationType == "json") Conversion.json(it.variation) else null
+        }
 
     override fun jsonTextVariation(key: String, fallback: String): String =
         jsonTextVariationDetail(key, fallback).value
 
     override fun jsonTextVariationDetail(key: String, fallback: String): EvaluationDetail<String> =
-        evaluate(key, fallback) { it.variation }
+        evaluate(key, fallback) { if (it.variationType == "json") it.variation else null }
 
     private fun all(snapshot: View): Map<String, EvaluationDetail<String>> =
         frozen(
