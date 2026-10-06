@@ -202,8 +202,10 @@ rerun; do not blindly re-upload or overwrite an already published version. Same-
 are serialized without cancelling an active publication. Cancelling a workflow does not cancel
 Central publication. Existing environment protection rules still apply before the job starts.
 
-The API behavior is covered by controlled tests. A real credential-backed run of this new
-automatic publication path is still required before claiming it verified end to end.
+The API behavior is covered by controlled tests. The automatic publication path completed
+for 0.1.0 in [workflow run 37332049292](https://github.com/featbit/featbit-android-client-sdk/actions/runs/37332049292).
+Its public Maven Central artifact was independently confirmed. Every subsequent version
+still requires its own successful publication and fresh-download verification.
 Do not print, commit or archive signing credentials.
 The ordinary library/consumer CI has passed separately; see the
 [current acceptance and CI record](./verification.md#release-readiness--2026-10-04).
@@ -244,7 +246,26 @@ Retain the Java 11 bytecode and integration-guide guidance. Replace the publicat
 banner with a release link only after download verification. No local Maven repository or
 SDK project substitution should appear in the published installation instructions.
 
-## 0.1.0 release handoff
+## 0.2.0 release handoff
+
+- Prepared [release notes and migration guidance](./release-notes-0.2.0.md).
+  Intended coordinate: `co.featbit:featbit-client-android:0.2.0`; tag: `v0.2.0`.
+- Runtime and sample source baseline: `c0d7323b9e9959e4b52d4b20379d83d5fc9e51fb`.
+  [Hosted CI](https://github.com/featbit/featbit-android-client-sdk/actions/runs/37487716423)
+  passed for this commit. Subsequent release preparation changes are documentation only.
+- Local `python -B tools/acceptance.py --version 0.2.0` passed all 22 checks;
+  evidence: `build/acceptance/20261006-173158-a072baab/report.json`. This covers 155 SDK
+  tests, the 79-public-type API/Java 11 check, and Java plus Kotlin 1.9.24, 1.9.25 and
+  2.2.10 consumers (Debug, Release/R8, unit tests and Release lint). This run did not
+  repeat live-service or device checks. Tooling tests passed (35 total, five POSIX-only
+  skips on Windows), and `spotlessCheck` passed.
+- Before tagging, commit the release documentation and obtain successful hosted CI for
+  that final commit. Dispatch **Publish Android SDK to Maven Central** with version
+  `0.2.0` on `v0.2.0`, then verify public downloads after `PUBLISHED`.
+- This preparation does not itself publish artifacts. Do not activate 0.2.0 installation
+  instructions or mark its notes published until remote verification passes.
+
+## 0.1.0 release handoff (historical)
 
 - Prepared [release notes](./release-notes-0.1.0.md); intended tag: `v0.1.0`.
 - [Current evidence](./verification.md#release-readiness--2026-10-04) separates automated
