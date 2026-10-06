@@ -56,7 +56,7 @@ status notifications. SDK events may deduplicate; do not require one server even
 | S11 | Submit invalid Live form while Local runs | Field error; Local still usable | Running connection is unaffected |
 | S12 | Apply valid but unreachable Live endpoints | Waiting/timeout; fallback/current-context data available | Create differs from remote readiness; no recreate loop |
 | S13 | Connect prepared environment; switch Alex to Sam | Classic to compact, both USD 4.50 | Remote rule evaluated; session remains connected through user change |
-| S14 | Identify with unavailable service | Target user shown with pending then unconfirmed timeout state | Timeout is not identity rollback; no prior-user value leakage |
+| S14 | Switch user with unavailable service | Old user retained until adoption receipt; then target user with readiness timeout | Adoption failure retains old user; readiness timeout retains new user; no mismatched user/value display |
 | S15 | Change remote flag while viewing Demo | Affected UI updates | SDK subscription drives refresh, not periodic UI polling |
 | S16 | Browse Flags, explicitly evaluate, then change that flag | Timestamped result becomes Out of date; current snapshot refreshes | Browsing uses bulk snapshot; no automatic re-evaluation of detail |
 | S17 | Explicit offline, order, then online | Order simulated; SUPPRESSED; online may still wait | Offline, event, and online outcomes accurately reflected |
@@ -92,3 +92,11 @@ SDK timing; do not confuse the sample's five-second readiness wait with the fall
 | S30 | Restore Streaming after fallback | SDK probes after cooldown; valid synchronized recovery restores effective Streaming and clears fallback-active indication without user action; failed probes retain Polling |
 | S31 | Disable fallback, use direct Polling, or receive terminal authentication failure | Disabled fallback keeps transient Streaming retries; direct Polling does not probe Streaming; terminal errors remain visible and are not bypassed |
 | S32 | Edit without Apply; leave/reopen form; switch Local/Live; inspect large text/keyboard | Running settings unchanged before Apply; Local ignores Live drafts; form remains usable; Events configuration independent; process restart resets draft defaults |
+
+### Identity adoption regression (2026-10-06)
+
+Both language test APKs include IdentitySwitchDeviceTest with test-only delayed operations:
+while adoption is pending the selected user stays unchanged; adoption timeout retains that user
+and keeps the sheet open; adoption success updates the user before readiness; subsequent readiness
+timeout retains the new user and dismisses the sheet. Duplicate requests are blocked and readiness
+receives only the remaining 5-second budget. No injection hook is added to the application API.

@@ -31,6 +31,7 @@ final class SampleSession {
     private Registration changes, statusRegistration;
     private long generation, readyVersion;
     private boolean started;
+    private boolean identityAdopting;
 
     SampleSession(Context context) {
         this.context = context.getApplicationContext();
@@ -236,6 +237,7 @@ final class SampleSession {
             return;
         }
         long revision = ++generation;
+        identityAdopting = false;
         readyVersion++;
         if (changes != null) changes.close();
         if (statusRegistration != null) statusRegistration.close();
@@ -362,6 +364,9 @@ final class SampleSession {
     }
 
     private void refresh(FeatBitClient c) {
+        // Changes can reach main before the adoption receipt. Publish the new user's data
+        // only after the selected preset has been updated from that receipt.
+        if (identityAdopting) return;
         state.snapshot = c.allVariations();
         EvaluationDetail<Boolean> compact = c.boolVariationDetail(specs.get(0).key, false);
         EvaluationDetail<String> promo =
@@ -402,33 +407,43 @@ final class SampleSession {
         FeatBitClient c = client;
         if (c == null || !state.available() || state.flushPending || index == state.user) return;
         readyVersion++;
-        Operation<ReadyResult> op = c.identify(people.get(index).user(), 5000);
-        Outcome<ReadyResult> immediate = op.getResult();
-        if (immediate != null
-                && (immediate.getCode() == OutcomeCode.INVALID
-                        || immediate.getCode() == OutcomeCode.CLOSED
-                        || immediate.getCode() == OutcomeCode.CAPACITY_EXCEEDED)) {
-            state.message = "User change rejected: " + immediate.getCode();
-            changed();
-            return;
-        }
         long revision = generation;
+        long deadline = android.os.SystemClock.elapsedRealtime() + 5000;
+        identityAdopting = true;
         invalidateReads();
-        state.user = index;
         state.busy = "Switching to " + people.get(index).name + "…";
         state.waitTimedOut = false;
-        refresh(c);
+        changed();
+        Operation<IdentityReceipt> op = c.identifyContext(people.get(index).user(), 5000);
         settled(
                 op,
-                o -> {
-                    if (revision == generation) {
-                        userSheet = false;
+                adopted -> {
+                    if (revision != generation) return;
+                    identityAdopting = false;
+                    if (!adopted.isSuccess()) {
+                        // A failed adoption leaves the existing selected user in place.
                         state.busy = null;
-                        state.waitTimedOut = o.getCode() == OutcomeCode.TIMED_OUT;
-                        state.message = "Identify: " + result(o);
+                        state.message = "User change failed: " + adopted.getCode();
                         refresh(c);
-                        log("Identify " + people.get(index).name + ": " + result(o));
+                        log("Identify " + people.get(index).name + ": " + adopted.getCode());
+                        return;
                     }
+                    state.user = index;
+                    refresh(c);
+                    Consumer<Outcome<ReadyResult>> completed =
+                            o -> {
+                                if (revision == generation) {
+                                    userSheet = false;
+                                    state.busy = null;
+                                    state.waitTimedOut = o.getCode() == OutcomeCode.TIMED_OUT;
+                                    state.message = "Identify: " + result(o);
+                                    refresh(c);
+                                    log("Identify " + people.get(index).name + ": " + result(o));
+                                }
+                            };
+                    long remaining = deadline - android.os.SystemClock.elapsedRealtime();
+                    if (remaining > 0) settled(c.awaitReady(remaining), completed);
+                    else completed.accept(Outcome.failure(OutcomeCode.TIMED_OUT, null));
                 });
     }
 

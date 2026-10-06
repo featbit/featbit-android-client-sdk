@@ -178,6 +178,9 @@ class SampleDeviceTest {
             scenario.onActivity {
                 session.destination = "Flags"
                 session.detailKey = null
+                // Earlier configuration tests retain the application-owned form state.
+                session.formOpen = false
+                session.filter = ""
                 it.navigate()
             }
             onView(withText(R.string.last_evaluation)).check(doesNotExist())

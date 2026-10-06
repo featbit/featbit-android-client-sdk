@@ -97,13 +97,12 @@ The user bottom sheet lists Alex/free and Sam/pro, marks the selected sample use
 **Switch user**. Selecting the already selected preset is a no-op. While Identify is pending,
 show **Switching to Sam…**, disable repeated switching, mode/client changes, and ordering;
 allow navigation and passive inspection. Stop showing the old user's business values as current.
-When an admitted Identify operation settles, automatically dismiss the user sheet,
-including on a readiness timeout; keep the outcome visible on the main screen.
-An immediately rejected request keeps the sheet open so the user can retry.
-
-A valid admitted user change adopts the target context before remote confirmation. A rejected
-request retains the previous selection. A readiness timeout retains the target preset with an
-unconfirmed status, not a rollback; terminal readiness likewise does not prove identity rejection.
+Keep the currently adopted user selected while identifyContext is pending; the busy message names
+the requested user. Pause business/snapshot refresh until the receipt confirms adoption. On adoption
+failure or timeout, retain the old user and keep the sheet open with a failure message.
+After successful adoption, select the new user, refresh and awaitReady using the remaining shared
+5-second budget. Close the sheet when readiness finishes, including timeout. A readiness timeout
+retains the new user with an unconfirmed status; it never rolls the selection back.
 The latest accepted user action owns the UI. Do not infer the selected user from flag values.
 The implementation guide maps these outcomes to the public SDK contract.
 
@@ -121,7 +120,7 @@ local availability, remote confirmation, explicit offline intent, and events int
 | Local ready | Local Demo · Ready; no remote claim | Local editing, simulated orders, user switching, offline control; Flush disabled with explanation |
 | Live waiting, including wait timeout | Waiting for remote data; local availability shown separately | Use current-context values/fallbacks, order/Track, switch user, offline, or reconnect |
 | Live confirmed | Live + effective mode + remote confirmation | Normal actions |
-| Identify pending | Target user + Switching | Disable conflicting operations and ordering; passive navigation remains available |
+| Identify pending | Adopted user retained until receipt; requested user named in Switching | Disable conflicting operations and ordering; passive navigation remains available |
 | Mode operation pending | Going offline / Going online | Disable conflicting operations until settled; no speculative switch position |
 | Explicit offline | Offline · Local values; confirmation shown separately in Inspect | Simulated orders call Track and show suppression; user switch allowed; Flush may report DEFERRED |
 | Network/background pause | Paused + actual reasons | Never display this as explicit Offline; use available data; resume through SDK behavior |

@@ -74,19 +74,24 @@ wake lock, lifecycle probe receiver, or custom synchronization implementation is
   arithmetic and HALF_UP rounding to implement the language-independent pricing examples.
 - After shutdown, report actual Close cleanup/delivery results rather than assuming completion.
 
-Use SDK startup readiness and Identify waits of 5 seconds for the sample. Kotlin adapter waits
+Use 5 seconds for startup readiness and a shared 5-second adoption/readiness budget for user switching. Kotlin adapter waits
 must leave room for the SDK result (for example 6 seconds around a 5-second operation); do not
 mistake an adapter wait timeout for cancellation. Reconcile pending operation results instead
 of allowing concurrent conflicting actions. Retain the SDK's default 10-second request and
 5-second Close timeout; no UI timeout editor is included.
 
 Keep an application-owned selected preset; the SDK does not expose a public current-user getter.
-Use the supported explicit Identify contract: a valid admitted request changes context before
-its remote-readiness wait settles. Pre-admission failures (`INVALID`, `CLOSED`, capacity rejection)
-retain the previous selection. A readiness timeout retains the target preset with an unconfirmed
-status, not a rollback. A terminal readiness outcome likewise does not prove rejection of the
-identity change. If an unexpected superseded result occurs, the latest app revision owns the UI.
+Call identifyContext first and keep the old selected preset until its retained result is SUCCESS.
+While adoption is pending, suppress business/snapshot refresh from change notifications, mark prior
+explicit reads stale, and block conflicting actions. Adoption failure (including timeout) retains
+the old preset and keeps the sheet open with a retryable error; it is not a readiness timeout.
+After success, update the selected preset, refresh its values and call awaitReady with the remaining
+elapsed-time budget. If no budget remains, report readiness timeout without submitting another wait.
+Readiness timeout/failure retains the adopted user and dismisses the sheet, without rollback.
+Kotlin uses the existing retained-result coroutine adapter; Java uses callbacks on main. Neither
+cancels the SDK operation on observer timeout. Client generation rejects obsolete completions.
 Do not infer identity from flag values or create a new client merely to change users.
+
 
 ## Streaming fallback integration
 

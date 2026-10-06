@@ -20,6 +20,7 @@ class SampleSession(private val context: Context) {
     private var client: FeatBitClient? = null
     private var data: TestData? = null
     private var generation = 0L
+    private var identityAdopting = false
     private var changes: Registration? = null
     private var statusJob: Job? = null
     private var readyJob: Job? = null
@@ -188,6 +189,7 @@ class SampleSession(private val context: Context) {
             return
         }
         val revision = ++generation
+        identityAdopting = false
         readyJob?.cancel()
         statusJob?.cancel()
         changes?.close()
@@ -288,6 +290,9 @@ class SampleSession(private val context: Context) {
     }
 
     private fun refresh(c: FeatBitClient) {
+        // Adoption can publish changes before its completion reaches main. Keep the old view
+        // until the receipt lets us update the selected user and its data together.
+        if (identityAdopting) return
         val snapshot = c.allVariations()
         val compact = c.boolVariationDetail(specs[0].key, false)
         val promo = c.stringVariationDetail(specs[1].key, specs[1].fallback)
@@ -329,27 +334,29 @@ class SampleSession(private val context: Context) {
         val c = client ?: return
         if (!state.value.available || state.value.flushPending || index == state.value.user) return
         readyJob?.cancel()
-        val op = c.identify(people[index].user(), 5000)
-        val immediate = op.getResult()
-        if (
-            immediate?.code in
-                setOf(OutcomeCode.INVALID, OutcomeCode.CLOSED, OutcomeCode.CAPACITY_EXCEEDED)
-        ) {
-            update { it.copy(message = "User change rejected: ${immediate?.code}") }
-            return
-        }
         val revision = generation
+        val deadline = android.os.SystemClock.elapsedRealtime() + 5000
+        identityAdopting = true
         stale()
-        update {
-            it.copy(
-                user = index,
-                busy = "Switching to ${people[index].name}…",
-                waitTimedOut = false,
-            )
-        }
-        refresh(c)
+        update { it.copy(busy = "Switching to ${people[index].name}…", waitTimedOut = false) }
+        val op = c.identifyContext(people[index].user(), 5000)
         scope.launch {
-            val result = settled(op, 6000)
+            val adopted = settled(op, 6000)
+            if (revision != generation) return@launch
+            identityAdopting = false
+            if (!adopted.isSuccess) {
+                // No receipt means this request did not adopt; do not relabel the old user.
+                update { it.copy(busy = null, message = "User change failed: ${adopted.code}") }
+                refresh(c)
+                log("Identify ${people[index].name}: ${adopted.code}")
+                return@launch
+            }
+            update { it.copy(user = index) }
+            refresh(c)
+            val remaining = deadline - android.os.SystemClock.elapsedRealtime()
+            val result =
+                if (remaining > 0) settled(c.awaitReady(remaining), remaining + 1000)
+                else Outcome.failure<ReadyResult>(OutcomeCode.TIMED_OUT, null)
             if (revision == generation) {
                 userSheet = false
                 refresh(c)

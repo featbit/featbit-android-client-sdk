@@ -1,5 +1,26 @@
 # Kotlin sample verification
 
+## Identity adoption update — 2026-10-06
+
+User switching now calls identifyContext, updates the selected preset only after SUCCESS,
+then awaits readiness using the remaining shared 5-second budget. Adoption failure keeps the
+old user and sheet; readiness failure retains the adopted user. Change-driven data refresh is
+paused until the adoption receipt is handled on main. No SDK behavior or public API was changed.
+
+Validation against the freshly staged local SDK AAR:
+- 3 unit tests passed; Debug and Release/R8 builds and Debug/Release lint passed.
+- Delayed-adoption regression passed on emulator-5554: pending selection, adoption timeout,
+  successful adoption followed by readiness timeout, and conflicting-request blocking.
+- Full Debug instrumentation with the loopback sample fixture and `-e live true`: OK (8 tests).
+  Log: `build/sample-adoption-20261006/kotlin-device-rerun.log`. Java's optional visual configuration pass was not enabled.
+- Spotless apply/check and diff whitespace checks passed.
+
+Kotlin's initial full run exposed retained form state in the flag-list test; the test now clears
+form/filter state before navigation, and the full rerun passed. Release/R8 was built but not
+rerun on device. No physical-device or deployed FeatBit service acceptance was performed; the
+loopback fixture uses fictional data. These sample results are separate from SDK consumer tests.
+
+
 Baseline: 2026-10-03, Windows / JDK 17 / Gradle 8.7 / Android API 34 emulator.
 SDK: locally published `co.featbit:featbit-client-android:0.1.0-SNAPSHOT`.
 This is sample evidence, not the SDK release-acceptance matrix.

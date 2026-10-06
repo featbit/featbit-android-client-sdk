@@ -296,8 +296,9 @@ Start with Alex. The Live setup guide should explain how to create a targeting r
 `sample-new-checkout` for `plan=pro`, with a false default. Do not implement this targeting
 rule inside the app. Local mode explicitly explains that switching users does not simulate targeting.
 
-Use Identify for user changes, with visible pending and outcome states. Separate the requested
-user and synchronization outcome. A synchronization timeout does not imply that the identity
+Use identifyContext followed by awaitReady for user changes, with visible pending and outcome
+states. Keep the old selection until adoption succeeds; adoption failure keeps the sheet open.
+After adoption, select the new user and wait for readiness within the remaining 5-second budget. A synchronization timeout does not imply that the identity
 change was rolled back; do not restore the old user label solely because a wait timed out.
 Allow only one user change at a time; an older change must not overwrite a newer selection.
 
