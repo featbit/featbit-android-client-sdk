@@ -1,6 +1,6 @@
 # FeatBit Android Client SDK 0.2.0
 
-Status: prepared for release; not yet published. Intended tag: `v0.2.0`.
+Status: published to Maven Central on 2026-10-06. Tag: `v0.2.0`.
 Coordinates: `co.featbit:featbit-client-android:0.2.0`.
 
 This release separates identity adoption from flag readiness and makes typed flag
@@ -46,8 +46,13 @@ provider is a separate project and is not included in this SDK artifact.
 
 ## Validation and publication
 
-Local evidence and hosted CI must be checked against the release source before tagging.
-The release workflow repeats the independent Java and Kotlin 1.9.24, 1.9.25 and 2.2.10
-artifact matrix, signs the artifacts, and waits for Central's `PUBLISHED` state.
-Fresh public Maven downloads must then be verified before reporting release completion.
-See [release procedure](./release.md) and [verification history](./verification.md).
+Source: `7210251fbe5e3f9f452ef15e370da265f1009702`.
+[Publication workflow](https://github.com/featbit/featbit-android-client-sdk/actions/runs/37489895116)
+succeeded with Central state `PUBLISHED`. Public AAR, POM, Gradle metadata, sources
+and documentation match the signed workflow bundle; checksums and PGP signatures passed.
+
+The Java and Kotlin 1.9.24, 1.9.25 and 2.2.10 artifact matrix passed. A separate
+Java/Kotlin project downloaded 0.2.0 from Maven Central using a fresh dependency cache;
+Debug and R8 Release builds, unit tests, Release lint and formatting passed.
+This final download verification did not repeat device or live-service checks.
+See the [verification record](./verification.md#maven-central-020-publication--2026-10-06).

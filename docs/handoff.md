@@ -1,8 +1,14 @@
 # Android SDK 开发交接
 
-更新时间：2026-10-04（Europe/Berlin）。
+更新时间：2026-10-06（Europe/Berlin）。
 
 ## 当前进度
+
+2026-10-06：`0.2.0` 已发布到 Maven Central，标签 `v0.2.0` 对应 `7210251`。
+发布工作流成功并收到 `PUBLISHED`；公开产物与签名归档逐字节一致，PGP 校验通过。
+全新依赖缓存下 Java/Kotlin 独立消费的 Debug、R8 Release、单元测试与 lint 均通过。
+README 已启用正式依赖坐标；迁移说明见 [0.2.0 release notes](./release-notes-0.2.0.md)，
+发布证据见 [verification](./verification.md#maven-central-020-publication--2026-10-06)。
 
 2026-10-06：普通/Detail 类型读取统一要求声明类型匹配；通用 variation 按声明类型解析，
 JSON 专用入口要求 json。数值继续使用 Double，不承诺 Long 全精度。
@@ -19,12 +25,12 @@ JSON 专用入口要求 json。数值继续使用 Double，不承诺 Long 全精
 
 阶段 1–6 代码及阶段 7 验收工具已实现。0.1.0 完整本地验收和四组 hosted CI 已通过；
 用户已确认真机行为、真实部署事件落库、EndUser 更新和实验归因验证通过。
-当前进入签名与 Central 发布准备；尚未发布。最新证据及手动验证范围见
+0.1.0 已于 2026-10-05 完成 Central 发布；当时的证据及手动验证范围见
 [verification.md](./verification.md#release-readiness--2026-10-04)。
 本次补齐独立 Maven/AAR 消费者构建、版本一致性、StrictMode 读取、自动属性与诊断测试，
 以及 Dokka 文档产物。2026-10-05 发布工作流已扩展为签名、Central 上传、验证后自动发布，
 仅收到 `PUBLISHED` 才成功；四个 release 环境 Secret 和失败重跑说明见 [release.md](./release.md)。
-新增自动发布路径尚未实际执行。真机结果由用户确认，未提供逐设备、逐场景报告，不能扩展为完整设备矩阵证据。
+自动发布路径已在 0.1.0 和 0.2.0 实际执行成功。真机结果由用户确认，未提供逐设备、逐场景报告，不能扩展为完整设备矩阵证据。
 阶段 7 已提交为 `f5932e8`，后续审核修复已提交为 `416110e`；这不代表已完成远程发布。
 相邻规范和服务端源码未修改。提交与工作区状态应以当前 Git 记录为准。
 阶段 7 见 [phase-7.md](./phase-7.md)、[release.md](./release.md)、[conformance.md](./conformance.md)，

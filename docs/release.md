@@ -221,9 +221,8 @@ Java and Kotlin sample apps are implemented under `samples/`.
 
 ## Maven Central installation after publication
 
-**Prepared instructions; not yet active.** Replace the Installation section in both
-README.md and README.java.md only after Central publication and independent remote
-consumer verification succeed. Java apps may use the same Kotlin DSL configuration:
+Version 0.2.0 is published and independently verified. Both READMEs now use this
+configuration. Java apps may use the same Kotlin DSL configuration:
 
 ```kotlin
 // settings.gradle.kts
@@ -238,18 +237,17 @@ dependencyResolutionManagement {
 ```kotlin
 // App module build.gradle.kts
 dependencies {
-    implementation("co.featbit:featbit-client-android:0.1.0")
+    implementation("co.featbit:featbit-client-android:0.2.0")
 }
 ```
 
-Retain the Java 11 bytecode and integration-guide guidance. Replace the publication-pending
-banner with a release link only after download verification. No local Maven repository or
-SDK project substitution should appear in the published installation instructions.
+For future versions, activate their installation instructions only after public-download
+verification. Local development instructions remain a separate optional section.
 
-## 0.2.0 release handoff
+## 0.2.0 publication
 
-- Prepared [release notes and migration guidance](./release-notes-0.2.0.md).
-  Intended coordinate: `co.featbit:featbit-client-android:0.2.0`; tag: `v0.2.0`.
+- Published [release notes and migration guidance](./release-notes-0.2.0.md).
+  Coordinate: `co.featbit:featbit-client-android:0.2.0`; tag: `v0.2.0`.
 - Runtime and sample source baseline: `c0d7323b9e9959e4b52d4b20379d83d5fc9e51fb`.
   [Hosted CI](https://github.com/featbit/featbit-android-client-sdk/actions/runs/37487716423)
   passed for this commit. Subsequent release preparation changes are documentation only.
@@ -259,11 +257,13 @@ SDK project substitution should appear in the published installation instruction
   2.2.10 consumers (Debug, Release/R8, unit tests and Release lint). This run did not
   repeat live-service or device checks. Tooling tests passed (35 total, five POSIX-only
   skips on Windows), and `spotlessCheck` passed.
-- Before tagging, commit the release documentation and obtain successful hosted CI for
-  that final commit. Dispatch **Publish Android SDK to Maven Central** with version
-  `0.2.0` on `v0.2.0`, then verify public downloads after `PUBLISHED`.
-- This preparation does not itself publish artifacts. Do not activate 0.2.0 installation
-  instructions or mark its notes published until remote verification passes.
+- Tag `v0.2.0` identifies `7210251fbe5e3f9f452ef15e370da265f1009702`; both
+  [commit CI](https://github.com/featbit/featbit-android-client-sdk/actions/runs/37489448132)
+  and [tag CI](https://github.com/featbit/featbit-android-client-sdk/actions/runs/37489866694) passed.
+- [Publication workflow](https://github.com/featbit/featbit-android-client-sdk/actions/runs/37489895116)
+  completed successfully; Central deployment `8b28e24c-20ad-49d1-b921-4b2fa4312cff`
+  reached `PUBLISHED`. Public artifact/signature comparison and fresh Java/Kotlin
+  consumption passed. See [evidence](./verification.md#maven-central-020-publication--2026-10-06).
 
 ## 0.1.0 release handoff (historical)
 

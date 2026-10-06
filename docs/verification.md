@@ -1,5 +1,41 @@
 # Verification record
 
+## Maven Central 0.2.0 publication — 2026-10-06
+
+Published `co.featbit:featbit-client-android:0.2.0`; tag `v0.2.0` points to
+`7210251fbe5e3f9f452ef15e370da265f1009702`.
+[Commit CI](https://github.com/featbit/featbit-android-client-sdk/actions/runs/37489448132),
+[tag CI](https://github.com/featbit/featbit-android-client-sdk/actions/runs/37489866694), and
+[publication](https://github.com/featbit/featbit-android-client-sdk/actions/runs/37489895116)
+all succeeded. The release workflow repeated all four Java/Kotlin consumer rows before signing.
+Central deployment `8b28e24c-20ad-49d1-b921-4b2fa4312cff` reached `PUBLISHED` with no errors.
+
+Public AAR, POM, Gradle metadata, sources and Javadoc were independently downloaded from
+[Maven Central](https://repo.maven.apache.org/maven2/co/featbit/featbit-client-android/0.2.0/).
+All bytes match the workflow bundle, including signatures and MD5/SHA-1 sidecars.
+GPG verified all five signatures against fingerprint
+`615BFA905D697043815235B258BC085A1E90EE12`.
+Bundle SHA-256: `2877dda436d96504773b6c2c26b98a75e5689ebe4d3e5593a7f3af7e8b124e4b`.
+AAR SHA-256: `fb30670ec396c0440456e16d64caacb15ece1d546d4ae2e0073f7fdf8f89970b`.
+
+A standalone Java/Kotlin consumer uses only Google/Maven Central repositories, a fresh
+Gradle dependency cache, and no build cache or SDK source substitution. Version 0.2.0 POM,
+module and AAR downloads from `repo.maven.apache.org` are recorded in the build log.
+Both languages passed Debug, Release/R8, SDK-version/model unit tests (one per language),
+Release lint (zero errors; 17 Java and 22 Kotlin warnings), and Spotless. All 182 tasks
+executed successfully in 2m 34s. Toolchain: JDK 17, Gradle 8.7, AGP 8.5.2, Kotlin 1.9.25.
+
+Local evidence: `build/central-0.2.0/publication-report.json`, `artifact-verification.json`,
+`consumer-result.json`, `consumer-verification.log`, and signed bundle/result ZIPs in
+the same directory. Local versioned acceptance is also recorded in
+`build/acceptance/20261006-173158-a072baab/report.json` (155 SDK tests and all four rows).
+The initial toolchain-only warmup failed because PowerShell split an unquoted version
+argument; the quoted rerun succeeded. No SDK or consumer source change was required.
+
+This final public-download verification did not repeat device or live-service execution.
+The earlier same-runtime live/emulator and sample evidence below remains separate;
+it is not a new physical-device or deployed database/MQ acceptance claim.
+
 ## Full live acceptance after typed-read migration — 2026-10-06
 
 The reported run `20261006-164447-76c6b30b` failed in

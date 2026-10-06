@@ -11,16 +11,38 @@ The SDK is implemented in Kotlin with Java-compatible public APIs and supports A
 API 21 and later. It is intended for a single-user context: FeatBit evaluates targeting
 rules on the server, and your app reads the synchronized flag values locally.
 
-> **Publication pending:** Version `0.1.0` has passed the recorded local and hosted
-> checks, with physical-device and deployed-service validation confirmed by the maintainer.
-> Maven Central publication and fresh-download verification remain pending. The local
-> development build defaults to `0.1.0-SNAPSHOT`; use the local installation below for now.
-> See the [0.1.0 release notes](./docs/release-notes-0.1.0.md) and
-> [prepared Central installation instructions](./docs/release.md#maven-central-installation-after-publication).
+> Version `0.2.0` is available from Maven Central. See the
+> [release notes and migration guidance](./docs/release-notes-0.2.0.md).
 
 ## Get Started
 
 ### Installation
+
+Add Maven Central to your app's `settings.gradle.kts`:
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+```
+
+Add the dependency to your app module's `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation("co.featbit:featbit-client-android:0.2.0")
+}
+```
+
+The SDK uses Java 11 bytecode. Java apps can use the same Gradle Kotlin DSL
+configuration. See the [integration guide](./docs/integration.md) for manifest,
+lifecycle, and consumer setup details.
+
+<details>
+<summary>Build and consume a local development version</summary>
 
 Build and publish the SDK to a local Maven repository using JDK 17 and Android SDK 34:
 
@@ -54,6 +76,8 @@ dependencies {
 
 The SDK uses Java 11 bytecode. See the [integration guide](./docs/integration.md)
 for Android manifest, lifecycle, and consumer setup details.
+
+</details>
 
 ### Prerequisite
 
