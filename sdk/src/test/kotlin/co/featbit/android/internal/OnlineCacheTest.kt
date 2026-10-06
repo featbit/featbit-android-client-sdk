@@ -102,6 +102,7 @@ public class OnlineCacheTest {
         worker.drain()
         ticker.action()
         client.identify(user("B"), 1000)
+        worker.drain()
         diskWorker.drain()
         assertEquals("fallback", client.stringVariation("flag", "fallback"))
         client.setOnline(1000)

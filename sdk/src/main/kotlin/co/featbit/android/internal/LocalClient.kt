@@ -267,26 +267,8 @@ internal class LocalClient(
             else readyWait(timeoutMillis)
         }
 
-    override fun identify(user: User, timeoutMillis: Long): Operation<ReadyResult> {
-        if (!validTimeout(timeoutMillis)) return done(Outcome.invalid("invalid_timeout"))
-        val prepared = enrich(user)
-        if (!prepared.isSuccess) return done(Outcome.failure(prepared.code, prepared.diagnostic))
-        val key = contextKey(prepared.value!!)
-        return synchronized(gate) {
-            if (closed) return@synchronized done(Outcome.failure(OutcomeCode.CLOSED, null))
-            if (waits.size + events.waiting >= 256)
-                return@synchronized done(
-                    Outcome.failure(OutcomeCode.CAPACITY_EXCEEDED, Diagnostic("operation_capacity"))
-                )
-            identityId++
-            waits
-                .filter { it.kind == "identity" }
-                .toList()
-                .forEach { it.finish(OutcomeCode.SUPERSEDED) }
-            adopt(prepared.value, key)
-            readyWait(timeoutMillis)
-        }
-    }
+    override fun identify(user: User, timeoutMillis: Long): Operation<ReadyResult> =
+        prepareIdentity(false, timeoutMillis, user, ::completeIdentityWhenReady)
 
     private fun adopt(next: User, key: String) {
         val before = view
@@ -313,14 +295,46 @@ internal class LocalClient(
     override fun resetAnonymousIdentity(timeoutMillis: Long): Operation<ReadyResult> =
         anonymous(true, timeoutMillis)
 
-    private fun anonymous(reset: Boolean, timeout: Long): Operation<ReadyResult> {
+    override fun identifyContext(user: User, timeoutMillis: Long): Operation<IdentityReceipt> =
+        prepareIdentity(false, timeoutMillis, user) { op, _ ->
+            op.settle(Outcome.success(IdentityReceipt(generation)))
+        }
+
+    override fun identifyAnonymousContext(timeoutMillis: Long): Operation<IdentityReceipt> =
+        prepareIdentity(false, timeoutMillis, null) { op, _ ->
+            op.settle(Outcome.success(IdentityReceipt(generation)))
+        }
+
+    private fun anonymous(reset: Boolean, timeout: Long): Operation<ReadyResult> =
+        prepareIdentity(reset, timeout, null, ::completeIdentityWhenReady)
+
+    /** Identity preparation and data readiness share the original request's deadline. */
+    private fun completeIdentityWhenReady(op: ResultOperation<ReadyResult>, deadline: Long) {
+        val ready = readiness()
+        if (clock.elapsed() >= deadline) op.settle(Outcome.failure(OutcomeCode.TIMED_OUT, null))
+        else if (terminal && !offline)
+            op.settle(Outcome.failure(OutcomeCode.TERMINAL_FAILURE, failure))
+        else if (ready != null) op.settle(Outcome.success(ready))
+        else waits.add(Wait(op, deadline, "ready", generation, modeId) { readiness()!! })
+    }
+
+    /** Shared preparation/adoption path. Completion runs under gate immediately after adopt. */
+    private fun <T : Any> prepareIdentity(
+        reset: Boolean,
+        timeout: Long,
+        namedUser: User?,
+        completeAdoption: (ResultOperation<T>, Long) -> Unit,
+    ): Operation<T> {
         if (!validTimeout(timeout)) return done(Outcome.invalid("invalid_timeout"))
+        val deadline = clock.deadlineAfter(timeout)
         synchronized(gate) { if (closed) return done(Outcome.failure(OutcomeCode.CLOSED, null)) }
-        if (!options.anonymousEnabled) return unavailable("anonymous_disabled")
-        val repository = anonymous ?: return unavailable("anonymous_persistence_unavailable")
-        val op = operation<ReadyResult>()
+        if (namedUser == null) {
+            if (!options.anonymousEnabled) return unavailable("anonymous_disabled")
+            if (anonymous == null) return unavailable("anonymous_persistence_unavailable")
+        }
+        val op = operation<T>()
         val id: Long
-        val wait: Wait<ReadyResult>
+        val wait: Wait<T>
         synchronized(gate) {
             if (closed) return done(Outcome.failure(OutcomeCode.CLOSED, null))
             if (waits.size + events.waiting >= 256)
@@ -332,60 +346,67 @@ internal class LocalClient(
                 .filter { it.kind == "identity" }
                 .toList()
                 .forEach { it.finish(OutcomeCode.SUPERSEDED) }
+            // Identity waits are settled explicitly at adoption, never by readiness().
             wait =
-                Wait(op, clock.deadlineAfter(timeout), "identity", generation, modeId) {
-                    readiness()!!
-                }
+                Wait(op, deadline, "identity", generation, modeId) { error("identity_not_adopted") }
             waits.add(wait)
+        }
+        fun prepared(result: Outcome<User>, identity: AnonymousIdentity?) {
+            val enriched = result.value?.let(enrich)
+            val key = enriched?.value?.let(::contextKey)
+            synchronized(gate) {
+                if (id != identityId || closed || wait !in waits) return
+                if (clock.elapsed() >= deadline) {
+                    wait.finish(OutcomeCode.TIMED_OUT)
+                    return
+                }
+                if (!result.isSuccess || enriched?.isSuccess != true) {
+                    op.settle(
+                        Outcome.failure(
+                            enriched?.code ?: result.code,
+                            Diagnostic("identity_preparation_failed"),
+                        )
+                    )
+                    waits.remove(wait)
+                    return
+                }
+                val commit = {
+                    // Anonymous revision arbitration may have waited for the repository lock.
+                    if (clock.elapsed() >= deadline) wait.finish(OutcomeCode.TIMED_OUT)
+                    else {
+                        waits.remove(wait)
+                        adopt(enriched.value!!, key!!)
+                        // After adoption, callback delay must never rewrite a successful receipt.
+                        completeAdoption(op, deadline)
+                    }
+                }
+                if (identity == null) commit()
+                else if (!anonymous!!.withCurrent(identity, commit))
+                    wait.finish(OutcomeCode.SUPERSEDED)
+            }
         }
         if (
             !workers.execute {
                 try {
-                    repository.prepare(reset) { result ->
-                        if (!result.isSuccess) diagnostics.report("anonymous_storage_failed")
-                        val prepared =
-                            result.value?.let {
-                                enrich(User.builder(it.key).name("Anonymous").build().value!!)
+                    // Avoid preparing/persisting identities for work that already lost admission.
+                    val active = synchronized(gate) { !closed && id == identityId && wait in waits }
+                    if (active) {
+                        if (namedUser != null) prepared(Outcome.success(namedUser), null)
+                        else
+                            anonymous!!.prepare(reset) { result ->
+                                if (!result.isSuccess)
+                                    diagnostics.report("anonymous_storage_failed")
+                                val candidate =
+                                    result.value?.let {
+                                        User.builder(it.key).name("Anonymous").build()
+                                    } ?: Outcome.failure(result.code, result.diagnostic)
+                                prepared(candidate, result.value)
                             }
-                        val key = prepared?.value?.let(::contextKey)
-                        synchronized(gate) {
-                            if (id != identityId || closed || wait !in waits) return@synchronized
-                            if (clock.elapsed() >= wait.deadline) {
-                                wait.finish(OutcomeCode.TIMED_OUT)
-                                return@synchronized
-                            }
-                            if (!result.isSuccess || prepared?.isSuccess != true) {
-                                op.settle(
-                                    Outcome.failure(
-                                        prepared?.code ?: result.code,
-                                        Diagnostic("identity_preparation_failed"),
-                                    )
-                                )
-                                waits.remove(wait)
-                            } else if (
-                                !repository.withCurrent(result.value) {
-                                    waits.remove(wait)
-                                    adopt(prepared.value!!, key!!)
-                                    val ready = readiness()
-                                    if (terminal && !offline)
-                                        op.settle(
-                                            Outcome.failure(OutcomeCode.TERMINAL_FAILURE, failure)
-                                        )
-                                    else if (ready != null) op.settle(Outcome.success(ready))
-                                    else
-                                        waits.add(
-                                            Wait(op, wait.deadline, "ready", generation, modeId) {
-                                                readiness()!!
-                                            }
-                                        )
-                                }
-                            )
-                                wait.finish(OutcomeCode.SUPERSEDED)
-                        }
                     }
                 } catch (_: Exception) {
                     synchronized(gate) {
-                        wait.finish(OutcomeCode.STORAGE_FAILED, "identity_preparation_failed")
+                        if (wait in waits)
+                            wait.finish(OutcomeCode.STORAGE_FAILED, "identity_preparation_failed")
                     }
                 }
             }

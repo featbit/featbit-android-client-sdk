@@ -4,6 +4,14 @@
 
 ## 当前进度
 
+2026-10-06：新增 `FeatBitClient.identifyContext` / `identifyAnonymousContext`，
+返回 `IdentityReceipt`，仅确认身份采用，不等待 flag readiness。
+两个方法直接属于 `FeatBitClient`；已移除额外能力接口，调用方无需类型转换。
+同日后续按用户要求统一 `identify` 与 `identifyAnonymous`：均在 worker 准备和采用身份，
+随后等待 readiness 才报告成功；不能再假设 identify 返回 Operation 时用户已经切换。
+具名与匿名新入口共用 worker 准备/采用流程；文档与示例见 [identity-adoption](./identity-adoption.md)。
+本次验证范围见 verification.md 的对应记录。
+
 阶段 1–6 代码及阶段 7 验收工具已实现。0.1.0 完整本地验收和四组 hosted CI 已通过；
 用户已确认真机行为、真实部署事件落库、EndUser 更新和实验归因验证通过。
 当前进入签名与 Central 发布准备；尚未发布。最新证据及手动验证范围见

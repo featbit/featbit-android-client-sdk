@@ -25,9 +25,49 @@ public interface FeatBitClient {
 
     public fun awaitReady(timeoutMillis: Long): Operation<ReadyResult>
 
+    /**
+     * Prepares and adopts a named user on the worker, then waits for flag readiness (or the
+     * offline/local readiness policy). Receiving the Operation does not mean the user has changed;
+     * reads may still use the previous user until adoption. Wait for SUCCESS before using new data.
+     * Unlike [identifyContext], completion includes readiness, not just adoption. The timeout
+     * includes worker queueing, preparation and readiness. Expiry before adoption prevents this
+     * request from adopting later; expiry afterwards does not roll back the user or stop
+     * synchronization. A failed result alone does not prove whether adoption occurred.
+     */
     public fun identify(user: User, timeoutMillis: Long): Operation<ReadyResult>
 
+    /**
+     * Prepares and adopts the persisted anonymous user on the worker, then waits for flag
+     * readiness. Like [identify], receiving the Operation does not mean the user has changed, and
+     * the timeout includes worker queueing, preparation and readiness. Unlike
+     * [identifyAnonymousContext], a timeout may happen before adoption or while waiting for data
+     * afterwards. Use the split APIs when that distinction matters; do not infer adoption from a
+     * timeout. This does not reset the anonymous key.
+     */
     public fun identifyAnonymous(timeoutMillis: Long): Operation<ReadyResult>
+
+    /**
+     * Prepares and adopts [user] asynchronously, without waiting for flag data.
+     *
+     * Unlike [FeatBitClient.identify], SUCCESS confirms only identity adoption. Call
+     * [FeatBitClient.awaitReady] afterwards to wait for data. Receiving the Operation does not
+     * confirm adoption. A failed operation cannot later adopt its target identity.
+     *
+     * [timeoutMillis] covers queued preparation and adoption, not remote readiness. Detaching an
+     * observer or timing out an external coroutine wait does not cancel this operation: inspect its
+     * retained result. A later identity request can supersede this one.
+     */
+    public fun identifyContext(user: User, timeoutMillis: Long): Operation<IdentityReceipt>
+
+    /**
+     * Prepares the persisted anonymous identity and adopts it, without waiting for flag data.
+     *
+     * Unlike [FeatBitClient.identifyAnonymous], SUCCESS means only that the identity was adopted;
+     * use [FeatBitClient.awaitReady] separately. The completion, timeout and supersession rules of
+     * [identifyContext] apply. This does not reset the persisted anonymous key. Preparation may
+     * persist a key even if adoption is subsequently superseded or times out.
+     */
+    public fun identifyAnonymousContext(timeoutMillis: Long): Operation<IdentityReceipt>
 
     public fun resetAnonymousIdentity(timeoutMillis: Long): Operation<ReadyResult>
 

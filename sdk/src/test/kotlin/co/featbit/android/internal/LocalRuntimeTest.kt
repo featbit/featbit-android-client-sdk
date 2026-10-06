@@ -562,6 +562,8 @@ public class LocalRuntimeTest {
         val h = Harness(source)
         source.sinks[0].full(record("f", "A"))
         val b = h.client.identify(user("B"), 100)
+        assertEquals("A", h.client.stringVariation("f", "fallback"))
+        h.workers.drain()
         assertEquals(
             EvaluationReason.CLIENT_NOT_READY,
             h.client.stringVariationDetail("f", "fallback").reason,
@@ -569,6 +571,7 @@ public class LocalRuntimeTest {
         assertEquals(SourceUpdateCode.INACTIVE, source.sinks[0].full(record("f", "old A")).code)
         h.workers.drain()
         val a = h.client.identify(user("A", "new"), 100)
+        h.workers.drain()
         assertEquals(OutcomeCode.SUPERSEDED, b.getResult()!!.code)
         h.workers.drain()
         assertEquals(SourceUpdateCode.INACTIVE, source.sinks[1].full(record("f", "old B")).code)
@@ -601,10 +604,9 @@ public class LocalRuntimeTest {
         h.workers.drain()
         assertTrue(offline.getResult()!!.isSuccess)
         assertEquals("fresh", h.client.stringVariation("f", "fallback"))
-        assertEquals(
-            ReadyResult.OFFLINE_LOCAL,
-            h.client.identify(user("C"), 100).getResult()!!.value,
-        )
+        val identified = h.client.identify(user("C"), 100)
+        h.workers.drain()
+        assertEquals(ReadyResult.OFFLINE_LOCAL, identified.getResult()!!.value)
         assertEquals("fallback", h.client.stringVariation("f", "fallback"))
         h.close()
     }
@@ -762,10 +764,9 @@ public class LocalRuntimeTest {
         assertNull(statuses.last().failure!!.field)
         h.client.setOffline(100)
         h.workers.drain()
-        assertEquals(
-            ReadyResult.OFFLINE_LOCAL,
-            h.client.identify(user("offline-terminal"), 100).getResult()!!.value,
-        )
+        val identified = h.client.identify(user("offline-terminal"), 100)
+        h.workers.drain()
+        assertEquals(ReadyResult.OFFLINE_LOCAL, identified.getResult()!!.value)
         h.client.setOnline(100)
         h.workers.drain()
         assertEquals(1, source.sinks.size)

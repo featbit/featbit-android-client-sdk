@@ -327,6 +327,8 @@ public interface co.featbit.android.api.FeatBitClient {
   public abstract co.featbit.android.api.Operation<co.featbit.android.api.ReadyResult> awaitReady(long);
   public abstract co.featbit.android.api.Operation<co.featbit.android.api.ReadyResult> identify(co.featbit.android.api.User, long);
   public abstract co.featbit.android.api.Operation<co.featbit.android.api.ReadyResult> identifyAnonymous(long);
+  public abstract co.featbit.android.api.Operation<co.featbit.android.api.IdentityReceipt> identifyContext(co.featbit.android.api.User, long);
+  public abstract co.featbit.android.api.Operation<co.featbit.android.api.IdentityReceipt> identifyAnonymousContext(long);
   public abstract co.featbit.android.api.Operation<co.featbit.android.api.ReadyResult> resetAnonymousIdentity(long);
   public abstract co.featbit.android.api.Operation<co.featbit.android.api.ModeResult> setOffline(long);
   public abstract co.featbit.android.api.Operation<co.featbit.android.api.ModeResult> setOnline(long);
@@ -366,6 +368,11 @@ public final class co.featbit.android.api.FlushResult extends java.lang.Enum<co.
   public static co.featbit.android.api.FlushResult[] values();
   public static co.featbit.android.api.FlushResult valueOf(java.lang.String);
   public static kotlin.enums.EnumEntries<co.featbit.android.api.FlushResult> getEntries();
+}
+
+public final class co.featbit.android.api.IdentityReceipt {
+  public co.featbit.android.api.IdentityReceipt(long);
+  public final long getGeneration();
 }
 
 public final class co.featbit.android.api.LogLevel extends java.lang.Enum<co.featbit.android.api.LogLevel> {

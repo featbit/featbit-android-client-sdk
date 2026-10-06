@@ -1,5 +1,80 @@
 # Verification record
 
+## Identity methods moved onto FeatBitClient — 2026-10-06
+
+Removed `StrictClientCapabilities`; `identifyContext` and `identifyAnonymousContext` are now
+direct abstract methods on `FeatBitClient`. `IdentityReceipt` and runtime completion semantics
+are unchanged. Custom client implementations must implement these methods. API comments,
+Java/Kotlin examples and the Java published-AAR contract test now use the client directly.
+Earlier entries describing the optional interface are historical.
+
+Spotless apply/check and whitespace checks passed. Full `tools/acceptance.py` evidence is in
+`build/acceptance/20261006-161053-5bf84f3e/report.json`: 153 SDK tests passed, SDK Debug/Release,
+lint, Dokka, isolated local publication and the reviewed 79-type API/Java 11 bytecode check passed.
+Java and Kotlin 1.9.24/1.9.25/2.2.10 consumers each passed Debug, Release/R8, unit tests and lint
+against the new artifact. No device/live-server tests or remote publication were performed.
+
+## Consumer compiler matrix rerun — 2026-10-06
+
+Ran `python tools/acceptance.py` against the current working tree after unified asynchronous
+Identify. Evidence: `build/acceptance/20261006-160004-8642e964/report.json`, including source
+hashes, publication hashes, command logs, dependency trees and plugin versions.
+The runner built and published a fresh `0.1.0-SNAPSHOT` into its isolated local Maven repository;
+all four independent consumers used that artifact.
+
+| Consumer | Kotlin compiler | AGP | Gradle | Debug / Release R8 / unit tests / Release lint |
+| --- | --- | --- | --- | --- |
+| Java | N/A | 8.5.2 | 8.7 | Passed |
+| Kotlin | 1.9.24 | 8.1.0 | 8.1.1 | Passed |
+| Kotlin | 1.9.25 | 8.1.0 | 8.1.1 | Passed |
+| Kotlin | 2.2.10 | 8.10.1 | 8.11.1 | Passed |
+
+All 153 SDK unit tests and five consumer unit tests passed without failures or skips.
+SDK Debug/Release assembly, Release lint, API/Java 11 bytecode verification and publication
+artifact checks also passed. The SDK itself remains compiled with Kotlin 1.9.25; the matrix
+checks consumer compiler compatibility. No emulator, physical-device, live-server or remote
+publication checks were run. This supersedes the earlier same-day matrix-not-rerun notes below.
+
+## Unified asynchronous Identify — 2026-10-06
+
+Named `identify` now shares worker preparation/adoption and readiness completion with
+`identifyAnonymous`. Returning the Operation does not guarantee adoption. Queueing, preparation
+and readiness share one deadline; a timeout before adoption prevents a later switch, while a
+timeout after adoption does not roll back the user or stop synchronization.
+
+Windows/JDK 17 verification passed:
+
+- 153 SDK unit tests, including four new named-Identify tests for deferred adoption, readiness,
+  pre-adoption timeout, a shared queue/readiness deadline, supersession and close. Existing
+  source/cache tests now explicitly advance the adoption worker before testing late responses.
+- Spotless apply/check, Release AAR, Release lint, Dokka and local Maven publication.
+- Unchanged public API baseline and Java 11 bytecode check (80 public JVM types).
+- Independent Java and Kotlin 1.9.25 consumer tests (three total) and both Release/R8 builds.
+
+No device or live-server runs, remote publication or additional Kotlin compiler matrix were
+performed for this change.
+
+## Identity adoption operations — 2026-10-06
+
+Implemented the optional StrictClientCapabilities identity methods and IdentityReceipt;
+existing FeatBitClient method signatures remain unchanged. Both new methods prepare on the
+worker and complete at adoption, independently of remote readiness. API KDoc and
+[integration examples](./identity-adoption.md) explain the difference from identify/identifyAnonymous.
+
+Windows/JDK 17 verification passed:
+
+- 149 SDK unit tests, including 10 new adoption tests: readiness separation, delayed callbacks,
+  queue/deadline expiry, anonymous revision-lock deadline, old-source rejection, supersession
+  by both old and new APIs, storage failure, close and detached observation.
+- Release AAR assembly, Release lint, Dokka generation and local Maven publication.
+- Spotless apply/check and git diff whitespace checks.
+- Reviewed public API baseline update; Java 11 bytecode and 80 public JVM types verified.
+- Independent local-Maven Java and Kotlin 1.9.25 consumers: three unit tests total and both
+  Release/R8 builds passed. Java checks the additive capability and unchanged FeatBitClient.
+
+No emulator/physical-device or live-server tests were run for this change. No remote publication
+or Kotlin 2.2.10 matrix rerun was performed.
+
 ## Automatic Central publication tooling — 2026-10-05
 
 The release workflow now uploads the signed version bundle with AUTOMATIC publishing,

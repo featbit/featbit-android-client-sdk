@@ -1,5 +1,9 @@
 # Android integration
 
+For separate identity-adoption and flag-readiness operations, see
+[Identity adoption and readiness](./identity-adoption.md), including Kotlin/Java examples and
+the difference from `identify` / `identifyAnonymous`.
+
 This is a Kotlin implementation with Java-compatible public APIs. The local development
 artifact is `co.featbit:featbit-client-android:0.1.0-SNAPSHOT`; it is not a published Central
 release. Use the isolated Maven repository printed by `tools/acceptance.py` for

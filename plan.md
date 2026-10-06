@@ -329,7 +329,7 @@ physical-device acceptance remain separate from that protocol result.
 - Built-in updates follow ordinary validation, session isolation and atomic commit rules without Flag size/count rejection or size-specific recovery. Retain request deadlines, concurrency limits and backoff for transport failures.
 - Add explicit background Polling scheduling and source transitions. Controlled lifecycle tests cover background creation/Identify completion, foreground mode restoration, retained fallback state, and stale-response isolation.
 - Implement the fallback/recovery state machine using Polling, isolated candidate Streaming, baseline validation, and atomic takeover. Status reports effective mode; candidates cannot publish data before takeover. Late invalidated Streaming/Polling callbacks cannot overwrite data, change state, or revive connections.
-- Switch context immediately on accepted Identify; reject old responses for same-key attribute changes and A→B→A.
+- Prepare and adopt context asynchronously for both named and anonymous Identify; report success after readiness. Reject old responses after adoption for same-key attribute changes and A→B→A.
 - Replace synchronization sessions under the agreed design, binding generation/session identifiers to connections, requests, and callbacks. Do not send a new Identify on the old WebSocket. Preserve independent results for each wait and explicitly settle superseded calls.
 - Distinguish local data availability, current-context synchronization, pause, Stale, failure, and closure.
 
