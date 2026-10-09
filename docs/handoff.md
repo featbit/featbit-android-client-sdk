@@ -29,7 +29,9 @@ JSON 专用入口要求 json。数值继续使用 Double，不承诺 Long 全精
 [verification.md](./verification.md#release-readiness--2026-10-04)。
 本次补齐独立 Maven/AAR 消费者构建、版本一致性、StrictMode 读取、自动属性与诊断测试，
 以及 Dokka 文档产物。2026-10-05 发布工作流已扩展为签名、Central 上传、验证后自动发布，
-仅收到 `PUBLISHED` 才成功；四个 release 环境 Secret 和失败重跑说明见 [release.md](./release.md)。
+仅收到 `PUBLISHED` 才成功。
+Release credentials now use four organization Actions secrets shared with the provider repository;
+the `release` environment retains approval/tag rules. See [release.md](./release.md) for access and retry instructions.
 自动发布路径已在 0.1.0 和 0.2.0 实际执行成功。真机结果由用户确认，未提供逐设备、逐场景报告，不能扩展为完整设备矩阵证据。
 阶段 7 已提交为 `f5932e8`，后续审核修复已提交为 `416110e`；这不代表已完成远程发布。
 相邻规范和服务端源码未修改。提交与工作区状态应以当前 Git 记录为准。

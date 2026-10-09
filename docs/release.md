@@ -172,10 +172,16 @@ same Gradle version as the publication. Public API/Java 11 checks inspect the ac
 
 The `release-candidate.yml` workflow is displayed as **Publish Android SDK to Maven Central**.
 It accepts a version only on its matching `v<version>` tag, reruns the artifact matrix,
-stages a signed repository, then uploads and automatically publishes it. The `release`
-environment requires four **Secrets** (not plain environment Variables): `SIGNING_KEY`,
-`SIGNING_PASSWORD`, `CENTRAL_TOKEN_USERNAME` and `CENTRAL_TOKEN_PASSWORD`. The latter pair
-comes from a Central Portal user token. Ordinary builds do not need credentials.
+stages a signed repository, then uploads and automatically publishes it. Keep the `release`
+environment for reviewer/tag protection rules. Configure four **organization Actions Secrets**:
+`SIGNING_KEY`, `SIGNING_PASSWORD`, `CENTRAL_TOKEN_USERNAME` and `CENTRAL_TOKEN_PASSWORD`.
+Under organization Settings > Secrets and variables > Actions, use selected-repository access
+and authorize both `featbit-android-client-sdk` and `openfeature-provider-android-client`.
+Remove same-name repository and `release` environment secrets to avoid overriding the
+organization values. These are Secrets, not Variables. The standard `secrets` context has no
+organization-only selector. Environment approval protects this release job, but organization
+secrets are also available to other eligible workflows in authorized repositories.
+The token pair comes from a Central Portal user token. Ordinary builds do not need credentials.
 After signing, the workflow also creates `featbit-client-android-<version>-central-bundle.zip`
 and uploads it as the `maven-central-bundle` artifact. It checks that the AAR, POM, module,
 sources and documentation each have signatures and required checksums, and verifies that
@@ -271,7 +277,7 @@ verification. Local development instructions remain a separate optional section.
 - [Current evidence](./verification.md#release-readiness--2026-10-04) separates automated
   checks from maintainer-confirmed device/deployment validation.
 - Complete this documentation commit and its hosted CI before creating the release tag.
-- Configure all four `release` environment secrets and run **Publish Android SDK to Maven Central**
+- Configure all four organization Actions secrets and grant this repository access and run **Publish Android SDK to Maven Central**
   on the matching tag. This dispatch authorizes automatic publication after validation.
 - Retain the signed artifact hashes, Central deployment report and workflow URL. After
   `PUBLISHED`, verify fresh downloads before activating the README instructions above
