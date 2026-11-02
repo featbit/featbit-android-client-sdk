@@ -6,6 +6,20 @@ consumer projects. Public API signatures are unchanged.
 
 ## Implemented behavior
 
+- Built-in synchronization requests a full snapshot (`timestamp=0`) on startup and each
+  accepted Identify, even when a valid cache exists. Cached values remain readable until
+  a response commits. After each committed full snapshot, another full refresh is due in
+  24 hours with ±10% jitter, measured using elapsed time. Streaming reconnects for the
+  refresh; Polling requests it on the next eligible attempt. Both modes and fallback share
+  the same deadline. Patches and `304` do not postpone the deadline; a request requiring
+  full data ignores early Streaming patches while keeping the original request deadline.
+  Polling patches and unmatched `304` responses trigger retries. Refresh deadlines preserve
+  existing retry backoff and server Retry-After waits. Failed refreshes
+  retain cached values. Offline/background/execution restrictions still apply, and an
+  overdue refresh resumes when synchronization is permitted. Full replacement removes
+  omitted remote flags and archive records without resurrecting displaced bootstrap values.
+  The refresh interval is currently internal, not a public configuration option.
+
 - `SyncProtocol` builds client-key tokens, prefix-preserving URLs, raw-key HTTP authorization,
   user JSON, data-sync messages and application-level ping. Wire timestamps are parsed as
   exact nonnegative `Long` values, without a Double intermediate. Unknown messages are ignored;

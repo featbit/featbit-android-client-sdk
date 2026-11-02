@@ -16,11 +16,102 @@ import org.junit.runner.RunWith
 /** Test-only instrumentation: no exported probe or behavior overrides in the sample APK. */
 @RunWith(AndroidJUnit4::class)
 class SampleDeviceTest {
+    @Test
+    fun liveServerSynchronization() {
+        val args = InstrumentationRegistry.getArguments()
+        val key = args.getString("liveSdkKey")
+        org.junit.Assume.assumeTrue(
+            "Requires liveSdkKey instrumentation argument",
+            !key.isNullOrBlank(),
+        )
+        val base = args.getString("liveBaseUrl") ?: "http://10.0.2.2:5100"
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            lateinit var session: SampleSession
+            scenario.onActivity { session = it.session }
+            waitFor { session.state.value.available }
+            for (mode in
+                listOf(
+                    co.featbit.android.api.SyncMode.STREAMING,
+                    co.featbit.android.api.SyncMode.POLLING,
+                )) {
+                scenario.onActivity {
+                    session.draft.local = false
+                    session.draft.key = key!!
+                    session.draft.streaming = base.replaceFirst("http", "ws")
+                    session.draft.polling = base
+                    session.draft.events = false
+                    session.draft.mode = mode
+                    session.draft.pollingFallback = false
+                    session.connect()
+                }
+                waitFor {
+                    !session.state.value.local &&
+                        session.state.value.available &&
+                        session.state.value.status?.remoteConfirmed == true &&
+                        session.state.value.busy == null
+                }
+                val keys = session.state.value.snapshot.keys.toSet()
+                assertTrue("Expected live flags", keys.isNotEmpty())
+                scenario.onActivity {
+                    session.destination = "Flags"
+                    session.formOpen = false
+                    session.detailKey = null
+                    session.filter = ""
+                    it.navigate()
+                }
+                capture("live-${mode.name.lowercase()}-flags")
+                for (user in listOf(1, 0)) {
+                    scenario.onActivity { session.identify(user) }
+                    waitFor {
+                        session.state.value.user == user &&
+                            session.state.value.available &&
+                            session.state.value.status?.remoteConfirmed == true &&
+                            session.state.value.busy == null
+                    }
+                }
+                scenario.onActivity { session.offline(true) }
+                waitFor {
+                    session.state.value.status?.pauseReasons?.contains(PauseReason.OFFLINE) ==
+                        true && session.state.value.busy == null
+                }
+                assertEquals(keys, session.state.value.snapshot.keys)
+                scenario.onActivity { session.offline(false) }
+                waitFor {
+                    session.state.value.status?.remoteConfirmed == true &&
+                        session.state.value.busy == null
+                }
+                // Accelerate only the private timer in the test APK; use the real sample client
+                // and transport to request and commit the full response.
+                fun field(target: Any, name: String) =
+                    target.javaClass.getDeclaredField(name).apply { isAccessible = true }
+                val client = field(session, "client").get(session)!!
+                val gate = field(client, "gate").get(client)!!
+                val online = field(client, "online").get(client)!!
+                val next = field(online, "nextFullAt")
+                synchronized(gate) { next.setLong(online, 0) }
+                waitFor(45000) {
+                    synchronized(gate) {
+                        next.getLong(online) > android.os.SystemClock.elapsedRealtime()
+                    }
+                }
+                assertEquals(keys, session.state.value.snapshot.keys)
+                scenario.recreate()
+                scenario.onActivity { assertSame(session, it.session) }
+                waitFor { session.state.value.available }
+                capture("live-${mode.name.lowercase()}-recreated")
+                android.util.Log.i(
+                    "FeatBitSampleLive",
+                    "PASS $mode flags=${keys.size} identify-A-B-A offline-online accelerated-full recreation",
+                )
+            }
+        }
+    }
+
     private val instrumentation
         get() = InstrumentationRegistry.getInstrumentation()
 
-    private fun waitFor(check: () -> Boolean) {
-        val until = System.currentTimeMillis() + 15000
+    private fun waitFor(timeoutMillis: Long = 15000, check: () -> Boolean) {
+        val until = System.currentTimeMillis() + timeoutMillis
         while (System.currentTimeMillis() < until) {
             var ready = false
             instrumentation.runOnMainSync { ready = check() }
@@ -30,7 +121,7 @@ class SampleDeviceTest {
             }
             Thread.sleep(80)
         }
-        fail("Sample state did not settle within 15 seconds")
+        fail("Sample state did not settle within $timeoutMillis ms")
     }
 
     private fun capture(name: String) {

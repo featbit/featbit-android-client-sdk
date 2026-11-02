@@ -41,7 +41,8 @@ internal class OnlineSync(
     private var recoveryFailures = 0
     private var stableSince: Long? = null
     private var resumeFirst = false
-    private var forceFull = false
+    private var forceFull = true
+    private var nextFullAt = Long.MAX_VALUE
     private var active: Attempt? = null
     private var transport: SyncTransport? = null
     private var cleanupDone = false
@@ -61,6 +62,7 @@ internal class OnlineSync(
         var candidate: Boolean,
         val context: SourceSessionContext,
     ) {
+        val requiresFull = forceFull || candidate
         var baseline = context.baseline
         var valid = true
         var dispatched = false
@@ -119,6 +121,12 @@ internal class OnlineSync(
         nextAt = clock.elapsed()
         failureSince = null
         stableSince = null
+    }
+
+    /** A new identity must reconcile even when its cache has a valid remote cursor. */
+    fun identityChanged() {
+        forceFull = true
+        nextFullAt = Long.MAX_VALUE
     }
 
     fun permissions(enabled: Boolean, isForeground: Boolean) {
@@ -186,6 +194,13 @@ internal class OnlineSync(
     fun tick() {
         if (!allowed || stopped) return
         val now = clock.elapsed()
+        if (!forceFull && now >= nextFullAt && (foreground || options.backgroundPolling)) {
+            forceFull = true
+            // Replace a healthy stream to request a bounded full synchronization. An in-flight
+            // polling request may finish first; the next request will still ask for a full.
+            if (active?.streaming == true) revoke()
+            nextAt = maxOf(nextAt, now)
+        }
         if (stableSince?.let { now - it >= 60_000 } == true) {
             recoveryFailures = 0
             stableSince = null
@@ -387,6 +402,14 @@ internal class OnlineSync(
         }
 
     private fun accept(a: Attempt, update: SourceUpdate) {
+        synchronized(gate) {
+            if (a.requiresFull && !a.synchronized && update !is FullUpdate) {
+                // Broadcast patches can precede the initial full on a stream. Keep waiting
+                // within the original request deadline without confirming or changing data.
+                if (!a.streaming || update !is PatchUpdate) failed(a, "sync_expected_full", false)
+                return
+            }
+        }
         val accepted =
             commit(
                 update,
@@ -398,7 +421,11 @@ internal class OnlineSync(
             ) { baseline ->
                 a.baseline = baseline
                 a.synchronized = true
-                forceFull = false
+                if (update is FullUpdate) {
+                    forceFull = false
+                    nextFullAt =
+                        clock.deadlineAfter((86_400_000L * (0.9 + random() * 0.2)).toLong())
+                }
                 resumeFirst = false
                 failures = 0
                 failureSince = null

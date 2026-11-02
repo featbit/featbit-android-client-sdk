@@ -275,6 +275,7 @@ internal class LocalClient(
         generation++
         user = next
         cacheKey = key
+        online?.identityChanged()
         loadId++
         localPending = false
         invalidate()
