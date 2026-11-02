@@ -98,6 +98,57 @@ internal class EventHarness(
 
 public class EventsTest {
     @Test
+    public fun insightsControlsFullAndPatchEvaluationsButNotTrack() {
+        val h = EventHarness()
+        try {
+            listOf("false", "true", "false", null, "false").forEachIndexed { index, setting ->
+                val field = setting?.let { ",\"insightsEnabled\":$it" } ?: ""
+                val kind = if (index == 0) "full" else "patch"
+                val raw =
+                    """{"messageType":"data-sync","data":{"eventType":"$kind","userKeyId":"A","featureFlags":[{"id":"flag","variation":"true","variationType":"boolean","timestamp":${index + 1}$field,"variationOptions":[{"id":"11111111-1111-1111-1111-111111111111","value":"true"}]}]}}"""
+                val decoded = SyncProtocol.decode(raw, "A") as WireMessage.Update
+                assertEquals(0, decoded.skipped)
+                h.source.sinks.last().submit(decoded.update)
+                assertTrue(h.client.boolVariation("flag", false))
+                val wait = h.flush()
+                if (setting == "false") {
+                    assertEquals(FlushResult.EMPTY, wait.getResult()!!.value)
+                } else {
+                    assertTrue(h.last.request.payload().contains("variations"))
+                    h.reply()
+                    assertEquals(FlushResult.ALL_DELIVERED, wait.getResult()!!.value)
+                }
+            }
+            assertEquals(TrackResult.ACCEPTED, h.client.track("custom").value)
+            val wait = h.flush()
+            assertTrue(h.last.request.payload().contains("metrics"))
+            assertFalse(h.last.request.payload().contains("variations"))
+            h.reply()
+            assertEquals(FlushResult.ALL_DELIVERED, wait.getResult()!!.value)
+            assertTrue(h.diagnostics.lossCounts().isEmpty())
+        } finally {
+            h.close()
+        }
+    }
+
+    @Test
+    public fun disabledInsightsSkipsMetadataValidation() {
+        val h = EventHarness()
+        h.source.sinks
+            .last()
+            .full(
+                FlagRecord.builder("flag", "true", "boolean", 1)
+                    .insightsEnabled(false)
+                    .build()
+                    .value!!
+            )
+        assertTrue(h.client.boolVariation("flag", false))
+        assertEquals(FlushResult.EMPTY, h.flush().getResult()!!.value)
+        assertTrue(h.diagnostics.lossCounts().isEmpty())
+        h.close()
+    }
+
+    @Test
     public fun requestConstructionFailureHasFiniteBudgetAndDoesNotLogCredentials() {
         val h = EventHarness(configure = { it.sdkKey("invalid\ncredential") })
         h.client.track("one")

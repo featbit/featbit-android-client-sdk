@@ -97,6 +97,51 @@ private class CachedClient(
 
 public class PersistenceTest {
     @Test
+    public fun insightsSurvivesRestartAndLegacyCacheDefaultsToEnabled() {
+        val h = DiskHarness()
+        h.save(
+            user("A"),
+            FlagRecord.builder("flag", "true", "boolean", 1).insightsEnabled(false).build().value!!,
+        )
+        h.worker.drain()
+        assertFalse(
+            DiskHarness(h.storage, h.clock)
+                .load(user("A"))!!
+                .records
+                .getValue("flag")
+                .insightsEnabled
+        )
+        // Exact v1 layout, independent of the current encoder.
+        val bytes = java.io.ByteArrayOutputStream()
+        java.io.DataOutputStream(bytes).use { out ->
+            fun text(value: String) {
+                out.writeInt(value.length)
+                value.forEach { out.writeChar(it.code) }
+            }
+            out.writeInt(0x46424331)
+            out.writeInt(1)
+            out.writeInt(1)
+            text(contextKey(user("A")))
+            out.writeLong(h.clock.wall())
+            out.writeLong(h.clock.wall())
+            text("REMOTE")
+            out.writeLong(1)
+            out.writeInt(1)
+            text("flag")
+            text("true")
+            text("boolean")
+            out.writeLong(1)
+            out.writeBoolean(false)
+            out.writeBoolean(false)
+            out.writeInt(-1)
+        }
+        h.storage.bytes = bytes.toByteArray()
+        val legacy = DiskHarness(h.storage, h.clock).load(user("A"))!!
+        assertTrue(legacy.records.getValue("flag").insightsEnabled)
+        assertEquals("true", legacy.records.getValue("flag").variation)
+    }
+
+    @Test
     public fun completeContextAndNamespaceIsolation() {
         val a =
             User.builder("A")

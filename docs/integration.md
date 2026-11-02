@@ -72,6 +72,11 @@ JSON null, while `jsonTextVariation` returns raw text without syntax validation.
 finite Double values and do not guarantee full Long precision. Type/parse failures return the
 unchanged fallback and WRONG_TYPE, but eligible confirmed remote reads can still record the
 selected remote variation event. The event protocol does not carry a local error reason.
+
+Per-flag `insightsEnabled: false` suppresses evaluation events without changing evaluation results
+or custom `track()` metrics. An omitted property defaults to `true` for older servers. Global
+event suppression still applies. Custom sources can use `FlagRecord.Builder.insightsEnabled(false)`.
+
 `allVariations` returns an immutable snapshot and does not collect evaluation events.
 
 ```java

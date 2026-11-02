@@ -93,7 +93,7 @@ internal class Events(
     }
 
     fun evaluation(user: User, record: FlagRecord) {
-        if (!collect()) return
+        if (!collect() || !record.insightsEnabled) return
         val event = EventProtocol.evaluation(record)
         if (event == null) {
             diagnostics.loss("event_invalid_metadata")

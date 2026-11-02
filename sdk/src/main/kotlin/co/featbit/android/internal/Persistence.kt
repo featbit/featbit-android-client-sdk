@@ -163,7 +163,7 @@ private object CacheCodec {
         val bytes = ByteArrayOutputStream()
         DataOutputStream(bytes).use { out ->
             out.writeInt(0x46424331)
-            out.writeInt(1)
+            out.writeInt(2)
             out.writeInt(entries.size)
             entries.forEach { (key, entry) ->
                 out.text(key)
@@ -178,6 +178,7 @@ private object CacheCodec {
                     out.text(r.variationType)
                     out.writeLong(r.timestamp)
                     out.writeBoolean(r.archived)
+                    out.writeBoolean(r.insightsEnabled)
                     out.optional(r.reason)
                     out.writeInt(r.variationOptions?.size ?: -1)
                     r.variationOptions?.forEach {
@@ -192,7 +193,9 @@ private object CacheCodec {
 
     fun decode(bytes: ByteArray): LinkedHashMap<String, CacheEntry> {
         val input = DataInputStream(ByteArrayInputStream(bytes))
-        require(input.readInt() == 0x46424331 && input.readInt() == 1)
+        require(input.readInt() == 0x46424331)
+        val version = input.readInt()
+        require(version in 1..2)
         val count = input.readInt()
         require(count in 0..CACHE_CONTEXTS)
         val result = LinkedHashMap<String, CacheEntry>()
@@ -213,6 +216,7 @@ private object CacheCodec {
                 val type = input.text()
                 val time = input.readLong()
                 val archived = input.readBoolean()
+                val insightsEnabled = if (version >= 2) input.readBoolean() else true
                 val reason = input.optional()
                 val optionsCount = input.readInt()
                 require(optionsCount >= -1 && optionsCount <= input.available() / 8)
@@ -222,6 +226,7 @@ private object CacheCodec {
                 val record =
                     FlagRecord.builder(k, value, type, time)
                         .archived(archived)
+                        .insightsEnabled(insightsEnabled)
                         .reason(reason)
                         .variationOptions(options)
                         .build()

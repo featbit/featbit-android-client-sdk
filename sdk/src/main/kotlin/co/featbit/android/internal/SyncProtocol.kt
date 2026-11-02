@@ -183,6 +183,7 @@ internal object SyncProtocol {
                             FlagRecord.builder(id, value, type, time)
                                 .reason(reason)
                                 .archived(reason == "flag archived")
+                                .insightsEnabled(flag["insightsEnabled"] != JsonPrimitive(false))
                                 .variationOptions(
                                     options?.takeIf { list -> list.none { it == null } }
                                 )
