@@ -75,7 +75,7 @@ API 检查读取上一步生成的 release AAR，需要 Python。出现 API 差�
 预期 `BUILD SUCCESSFUL`。产物位于 `build\test-repository`，消费者使用坐标：
 
 ```text
-co.featbit:featbit-client-android:0.1.0-SNAPSHOT
+co.featbit:featbit-client-android:0.3.0
 ```
 
 这是项目内的测试仓库，不是 Maven Central，也不会上传任何产物。以后修改 SDK 源码后，需要重新执行此步骤，消费者才能使用新的 AAR。

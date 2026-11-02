@@ -5,7 +5,7 @@ For separate identity-adoption and flag-readiness operations, see
 the difference from `identify` / `identifyAnonymous`.
 
 This is a Kotlin implementation with Java-compatible public APIs. The local development
-artifact is `co.featbit:featbit-client-android:0.1.0-SNAPSHOT`; it is not a published Central
+artifact is `co.featbit:featbit-client-android:0.3.0`; it is not a published Central
 release. Use the isolated Maven repository printed by `tools/acceptance.py` for
 local integration. Android API 21+ and Java 11 bytecode are required. Preserve the merged
 AndroidX Startup process-lifecycle initializer. INTERNET and ACCESS_NETWORK_STATE are
@@ -15,7 +15,7 @@ ordinary manifest permissions. No foreground service, wake lock or battery exemp
 
 ```kotlin
 repositories { maven { url = uri("/absolute/path/to/acceptance/repository") }; google(); mavenCentral() }
-dependencies { implementation("co.featbit:featbit-client-android:0.1.0-SNAPSHOT") }
+dependencies { implementation("co.featbit:featbit-client-android:0.3.0") }
 ```
 
 Retain an application-scoped client. Do not construct one per evaluation or Activity rotation.

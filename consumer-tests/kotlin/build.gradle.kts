@@ -11,7 +11,7 @@ android {
         buildConfigField(
             "String",
             "EXPECTED_SDK_VERSION",
-            "\"${providers.gradleProperty("sdkVersion").getOrElse("0.1.0-SNAPSHOT")}\"",
+            "\"${providers.gradleProperty("sdkVersion").getOrElse("0.3.0")}\"",
         )
     }
     sourceSets.getByName("main").java.srcDir("../shared")
@@ -43,7 +43,7 @@ android {
 
 dependencies {
     implementation(
-        "co.featbit:featbit-client-android:${providers.gradleProperty("sdkVersion").getOrElse("0.1.0-SNAPSHOT")}"
+        "co.featbit:featbit-client-android:${providers.gradleProperty("sdkVersion").getOrElse("0.3.0")}"
     )
     testImplementation("junit:junit:4.13.2")
 }

@@ -239,7 +239,7 @@ Debug/R8/JUnit/lint 通过，六次 Kotlin 平台检查通过。修正首帧启�
 JDK `C:\Program Files\Microsoft\jdk-17.0.11.9-hotspot`；Android SDK
 `C:\Users\Falcon\AppData\Local\Android\Sdk`；Gradle 8.7 / AGP 8.5.2，
 SDK Kotlin 1.9.25，Java 11 字节码，minSdk 21 / compileSdk 34。
-本地 Maven 坐标 `co.featbit:featbit-client-android:0.1.0-SNAPSHOT`，输出到 `build/test-repository`。
+本地 Maven 坐标 `co.featbit:featbit-client-android:0.3.0`，输出到 `build/test-repository`。
 阶段 7 最终矩阵用 `-PsdkVersion=0.1.0-phase7` 验证非默认版本，并发布到每次验收独立的 Maven 目录。
 
 ## 下一步：补齐发布验收

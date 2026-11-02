@@ -142,7 +142,7 @@ Existing SDK publication command from repository root on Windows:
 ```
 
 This produces local Maven artifacts under `build/test-repository`; it is not a remote release.
-Both samples must resolve `co.featbit:featbit-client-android:0.1.0-SNAPSHOT` there by default,
+Both samples must resolve `co.featbit:featbit-client-android:0.3.0` there by default,
 with shared `sdkVersion` and `testRepository` Gradle properties for alternate local artifacts.
 The SDK version used for publication must equal the version consumed by both apps.
 
