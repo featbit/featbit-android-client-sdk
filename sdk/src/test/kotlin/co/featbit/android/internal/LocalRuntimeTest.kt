@@ -104,6 +104,8 @@ internal class Harness(
     bootstrap: List<BootstrapFlag>? = null,
     anonymous: AnonymousRepository? = null,
     anonymousEnabled: Boolean = false,
+    maxCachedUsers: Int = 5,
+    userCacheTtlMillis: Long = 604_800_000,
 ) {
     val clock = FakeClock()
     val dispatch = ManualDispatch()
@@ -116,6 +118,8 @@ internal class Harness(
             .offline(offline)
             .disableEvents(true)
             .cacheEnabled(false)
+            .maxCachedUsers(maxCachedUsers)
+            .userCacheTtlMillis(userCacheTtlMillis)
             .anonymousEnabled(anonymousEnabled)
             .closeTimeoutMillis(100)
             .apply { if (bootstrap != null) bootstrap(bootstrap) }
@@ -616,10 +620,9 @@ public class LocalRuntimeTest {
         val h = Harness(null, true)
         assertEquals(OutcomeCode.INVALID, h.client.setOnline(10).getResult()!!.code)
         assertTrue(h.client.isOffline())
-        assertEquals(
-            OutcomeCode.DISABLED,
-            h.client.clearCache(CacheScope.NAMESPACE, 10).getResult()!!.code,
-        )
+        val cleared = h.client.clearCache(CacheScope.NAMESPACE, 10)
+        h.workers.drain()
+        assertEquals(OutcomeCode.SUCCESS, cleared.getResult()!!.code)
         assertEquals(TrackResult.SUPPRESSED, h.client.track("metric").value)
         assertEquals(OutcomeCode.DISABLED, h.client.flush().getResult()!!.code)
         h.close()

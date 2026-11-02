@@ -18,7 +18,7 @@ consumer projects. Public API signatures are unchanged.
   retain cached values. Offline/background/execution restrictions still apply, and an
   overdue refresh resumes when synchronization is permitted. Full replacement removes
   omitted remote flags and archive records without resurrecting displaced bootstrap values.
-  The refresh interval is currently internal, not a public configuration option.
+  Configure the positive interval with `fullSyncIntervalMillis`; the default remains 24 hours.
 
 - `SyncProtocol` builds client-key tokens, prefix-preserving URLs, raw-key HTTP authorization,
   user JSON, data-sync messages and application-level ping. Wire timestamps are parsed as

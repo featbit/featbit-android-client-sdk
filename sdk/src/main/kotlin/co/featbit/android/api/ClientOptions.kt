@@ -20,6 +20,9 @@ public class ClientOptions private constructor(builder: Builder) {
     public val backgroundPolling: Boolean = builder.backgroundPolling
     public val pollingFallback: Boolean = builder.pollingFallback
     public val cacheEnabled: Boolean = builder.cacheEnabled
+    public val maxCachedUsers: Int = builder.maxCachedUsers
+    public val userCacheTtlMillis: Long = builder.userCacheTtlMillis
+    public val fullSyncIntervalMillis: Long = builder.fullSyncIntervalMillis
     public val transitionFlush: Boolean = builder.transitionFlush
     public val flushIntervalMillis: Long = builder.flushIntervalMillis
     public val eventCapacity: Int = builder.eventCapacity
@@ -57,6 +60,9 @@ public class ClientOptions private constructor(builder: Builder) {
         @get:JvmSynthetic @set:JvmSynthetic internal var backgroundPolling: Boolean = false
         @get:JvmSynthetic @set:JvmSynthetic internal var pollingFallback: Boolean = false
         @get:JvmSynthetic @set:JvmSynthetic internal var cacheEnabled: Boolean = true
+        @get:JvmSynthetic @set:JvmSynthetic internal var maxCachedUsers: Int = 5
+        @get:JvmSynthetic @set:JvmSynthetic internal var userCacheTtlMillis: Long = 604_800_000
+        @get:JvmSynthetic @set:JvmSynthetic internal var fullSyncIntervalMillis: Long = 86_400_000
         @get:JvmSynthetic @set:JvmSynthetic internal var transitionFlush: Boolean = false
         @get:JvmSynthetic @set:JvmSynthetic internal var flushIntervalMillis: Long = 30_000
         @get:JvmSynthetic @set:JvmSynthetic internal var eventCapacity: Int = 10_000
@@ -111,7 +117,16 @@ public class ClientOptions private constructor(builder: Builder) {
 
         public fun pollingFallback(value: Boolean): Builder = apply { pollingFallback = value }
 
+        /** Disables disk persistence only; per-client user snapshots remain available in memory. */
         public fun cacheEnabled(value: Boolean): Builder = apply { cacheEnabled = value }
+
+        public fun maxCachedUsers(value: Int): Builder = apply { maxCachedUsers = value }
+
+        public fun userCacheTtlMillis(value: Long): Builder = apply { userCacheTtlMillis = value }
+
+        public fun fullSyncIntervalMillis(value: Long): Builder = apply {
+            fullSyncIntervalMillis = value
+        }
 
         public fun transitionFlush(value: Boolean): Builder = apply { transitionFlush = value }
 
@@ -200,7 +215,10 @@ public class ClientOptions private constructor(builder: Builder) {
         public fun build(): Outcome<ClientOptions> {
             if (invalid) return Outcome.invalid("invalid_configuration")
             if (
-                flushIntervalMillis < 1_000 ||
+                maxCachedUsers < 1 ||
+                    userCacheTtlMillis < 1 ||
+                    fullSyncIntervalMillis < 1 ||
+                    flushIntervalMillis < 1_000 ||
                     eventCapacity !in 1..100_000 ||
                     startupWaitMillis < 1 ||
                     requestTimeoutMillis < 1 ||

@@ -60,6 +60,7 @@ internal class OnlineHarness(
     bootstrap: Boolean = false,
     initial: PlatformState = PlatformState(foreground = true),
     cached: Map<User, List<FlagRecord>> = emptyMap(),
+    fullSyncInterval: Long = 86_400_000,
 ) {
     val clock = FakeClock()
     val workers = ManualWorkers()
@@ -95,6 +96,7 @@ internal class OnlineHarness(
             .disableEvents(true)
             .cacheEnabled(false)
             .requestTimeoutMillis(5_000)
+            .fullSyncIntervalMillis(fullSyncInterval)
             .synchronizationHeader("X-Gateway", "sync-only")
             .eventHeader("X-Event", "event-only")
             .apply { if (bootstrap) bootstrap(listOf(flag("flag", "bootstrap"))) }
@@ -142,6 +144,24 @@ internal class OnlineHarness(
 }
 
 public class OnlineSyncTest {
+    @Test
+    public fun configuredFullSyncIntervalIsUsedByBothModes() {
+        for (mode in listOf(SyncMode.STREAMING, SyncMode.POLLING)) {
+            val h = OnlineHarness(mode, fullSyncInterval = 60_000)
+            h.last.data(time = 10)
+            h.advance(30_000)
+            if (mode == SyncMode.STREAMING) h.last.listener.message("pong")
+            else h.last.listener.response(304, "", null)
+            h.advance(29_999)
+            val previous = h.last
+            h.advance(1)
+            assertNotSame(previous, h.last)
+            assertFullRequest(h.last)
+            h.last.data(time = 1)
+            h.close()
+        }
+    }
+
     private fun assertFullRequest(exchange: FakeTransport.Exchange) {
         if (exchange.streaming) assertTrue(exchange.sent.single().contains("\"timestamp\":0"))
         else assertEquals("0", exchange.request.url.queryParameter("timestamp"))

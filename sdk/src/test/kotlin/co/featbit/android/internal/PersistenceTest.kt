@@ -236,13 +236,11 @@ public class PersistenceTest {
         val restarted = DiskHarness(h.storage, h.clock)
         val loaded = restarted.load(user("A"))!!
         assertEquals(9L, loaded.cursor)
-        assertEquals("future", loaded.records.getValue("flag").variationType)
-        assertEquals("reason", loaded.records.getValue("flag").reason)
+        assertEquals("", loaded.records.getValue("flag").variationType)
+        assertEquals("", loaded.records.getValue("flag").variation)
+        assertEquals("flag archived", loaded.records.getValue("flag").reason)
         assertTrue(loaded.records.getValue("flag").archived)
-        assertEquals(
-            listOf(VariationOption("id", "x")),
-            loaded.records.getValue("flag").variationOptions,
-        )
+        assertNull(loaded.records.getValue("flag").variationOptions)
         restarted.save(user("A"), record("flag", "lower", 1))
         restarted.worker.drain()
         assertEquals(1L, DiskHarness(h.storage, h.clock).load(user("A"))!!.cursor)
@@ -347,7 +345,9 @@ public class PersistenceTest {
         h.save(user("B"))
         h.worker.drain()
         val c = CachedClient(h, bootstrap = listOf(flag("f", "bootstrap")), offline = true)
-        assertEquals("bootstrap", c.client.stringVariation("f", "fallback"))
+        assertEquals("fallback", c.client.stringVariation("f", "fallback"))
+        h.worker.drain()
+        assertEquals("cached", c.client.stringVariation("f", "fallback"))
         c.client.identify(user("A"), 100)
         c.worker.drain()
         assertEquals("fallback", c.client.stringVariation("f", "fallback"))
@@ -481,15 +481,14 @@ public class PersistenceTest {
     }
 
     @Test
-    public fun cacheSurvivesAgeClockRollbackAndSubsequentWrites() {
+    public fun cacheExpiresAfterInactivityButSurvivesClockRollback() {
         val h = DiskHarness()
         h.save(user("A"), record("f", "cached"))
         h.worker.drain()
         h.clock.utc += 365L * 24 * 60 * 60 * 1000
-        assertEquals(
-            "cached",
-            DiskHarness(h.storage, h.clock).load(user("A"))!!.records.getValue("f").variation,
-        )
+        assertNull(DiskHarness(h.storage, h.clock).load(user("A")))
+        h.save(user("A"), record("f", "fresh"))
+        h.worker.drain()
         h.save(user("B"), record("f", "other"))
         h.worker.drain()
         assertNotNull(DiskHarness(h.storage, h.clock).load(user("A")))

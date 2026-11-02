@@ -424,7 +424,11 @@ internal class OnlineSync(
                 if (update is FullUpdate) {
                     forceFull = false
                     nextFullAt =
-                        clock.deadlineAfter((86_400_000L * (0.9 + random() * 0.2)).toLong())
+                        clock.deadlineAfter(
+                            (options.fullSyncIntervalMillis * (0.9 + random() * 0.2))
+                                .toLong()
+                                .coerceAtLeast(1)
+                        )
                 }
                 resumeFirst = false
                 failures = 0

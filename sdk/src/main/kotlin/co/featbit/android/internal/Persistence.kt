@@ -54,6 +54,31 @@ internal class AndroidStorage(private val path: File, private val limit: Int? = 
 
 internal const val CACHE_CONTEXTS: Int = 5
 
+internal data class CachePolicy(val maxUsers: Int = 5, val ttlMillis: Long = 604_800_000) {
+    fun expired(accessed: Long, now: Long): Boolean = now >= accessed && now - accessed >= ttlMillis
+}
+
+/** Per-client fallback; no file I/O and no sharing across client lifetimes. */
+internal class VolatileStorage : AtomicStorage {
+    private var bytes: ByteArray? = null
+
+    override fun read(): ByteArray? = bytes
+
+    override fun replace(bytes: ByteArray) {
+        this.bytes = bytes
+    }
+}
+
+internal fun FlagRecord.compactArchive(): FlagRecord =
+    if (!archived) this
+    else
+        FlagRecord.builder(key, "", "", timestamp)
+            .archived(true)
+            .insightsEnabled(false)
+            .reason("flag archived")
+            .build()
+            .value!!
+
 private class LimitedBytes(private val limit: Int) : ByteArrayOutputStream() {
     override fun write(b: Int) {
         check(count < limit)
@@ -163,7 +188,7 @@ private object CacheCodec {
         val bytes = ByteArrayOutputStream()
         DataOutputStream(bytes).use { out ->
             out.writeInt(0x46424331)
-            out.writeInt(2)
+            out.writeInt(3)
             out.writeInt(entries.size)
             entries.forEach { (key, entry) ->
                 out.text(key)
@@ -172,12 +197,13 @@ private object CacheCodec {
                 out.text(Provenance.REMOTE.name)
                 out.writeLong(entry.snapshot.cursor)
                 out.writeInt(entry.snapshot.records.size)
-                entry.snapshot.records.values.forEach { r ->
+                entry.snapshot.records.values.forEach record@{ r ->
                     out.text(r.key)
-                    out.text(r.variation)
-                    out.text(r.variationType)
                     out.writeLong(r.timestamp)
                     out.writeBoolean(r.archived)
+                    if (r.archived) return@record
+                    out.text(r.variation)
+                    out.text(r.variationType)
                     out.writeBoolean(r.insightsEnabled)
                     out.optional(r.reason)
                     out.writeInt(r.variationOptions?.size ?: -1)
@@ -195,27 +221,49 @@ private object CacheCodec {
         val input = DataInputStream(ByteArrayInputStream(bytes))
         require(input.readInt() == 0x46424331)
         val version = input.readInt()
-        require(version in 1..2)
+        require(version in 1..3)
         val count = input.readInt()
-        require(count in 0..CACHE_CONTEXTS)
+        require(count >= 0 && count <= input.available() / 4)
         val result = LinkedHashMap<String, CacheEntry>()
         repeat(count) {
             val key = input.text()
             require(key.matches(Regex("[a-f0-9]{64}")) && key !in result)
             val saved = input.readLong()
             val accessed = input.readLong()
+            require(saved >= 0 && accessed >= 0)
             require(input.text() == Provenance.REMOTE.name)
             val cursor = input.readLong()
             require(cursor >= 0)
             val records = LinkedHashMap<String, FlagRecord>()
             val n = input.readInt()
-            require(n >= 0 && n <= input.available() / 25)
-            repeat(n) {
+            require(n >= 0 && n <= input.available() / 13)
+            repeat(n) record@{
                 val k = input.text()
-                val value = input.text()
-                val type = input.text()
-                val time = input.readLong()
-                val archived = input.readBoolean()
+                val value: String
+                val type: String
+                val time: Long
+                val archived: Boolean
+                if (version >= 3) {
+                    time = input.readLong()
+                    archived = input.readBoolean()
+                    if (archived) {
+                        require(k.isNotEmpty() && k !in records && time in 0..cursor)
+                        records[k] =
+                            FlagRecord.builder(k, "", "", time)
+                                .archived(true)
+                                .build()
+                                .value!!
+                                .compactArchive()
+                        return@record
+                    }
+                    value = input.text()
+                    type = input.text()
+                } else {
+                    value = input.text()
+                    type = input.text()
+                    time = input.readLong()
+                    archived = input.readBoolean()
+                }
                 val insightsEnabled = if (version >= 2) input.readBoolean() else true
                 val reason = input.optional()
                 val optionsCount = input.readInt()
@@ -232,7 +280,7 @@ private object CacheCodec {
                         .build()
                         .value
                 require(record != null && k !in records && time <= cursor)
-                records[k] = record
+                records[k] = record.compactArchive()
             }
             result[key] = CacheEntry(CachedSnapshot(frozen(records), cursor), saved, accessed)
         }
@@ -259,6 +307,7 @@ internal class DiskCoordinator(
         val sequence: Long,
         val snapshot: CachedSnapshot,
         val report: (String) -> Unit,
+        val policy: CachePolicy,
     )
 
     private val pending = LinkedHashMap<String, Write>()
@@ -325,16 +374,31 @@ internal class DiskCoordinator(
         expected: Long,
         report: (String) -> Unit,
         completion: (CachedSnapshot?) -> Unit,
+    ): Boolean = loadWithPolicy(key, expected, report, CachePolicy(), completion)
+
+    fun loadWithPolicy(
+        key: String,
+        expected: Long,
+        report: (String) -> Unit,
+        policy: CachePolicy,
+        completion: (CachedSnapshot?) -> Unit,
     ): Boolean =
         synchronized(metadata) {
             enqueue {
                 if (synchronized(metadata) { epoch != expected }) completion(null)
                 else {
                     val data = readEntries(report)
-                    val entry = data[key]
                     val now = clock.wall()
-                    if (entry != null) {
-                        data[key] = entry.copy(accessed = now)
+                    val entry = data[key]?.takeUnless { policy.expired(it.accessed, now) }
+                    val previousSize = data.size
+                    if (entry != null) data[key] = entry.copy(accessed = now) else data.remove(key)
+                    prune(data, key, now, policy)
+                    // Touches and legacy compaction must survive process restart, even offline.
+                    try {
+                        if (entry != null || data.size != previousSize)
+                            storage.replace(CacheCodec.encode(data))
+                    } catch (_: Exception) {
+                        report("cache_write_failed")
                     }
                     completion(entry?.snapshot)
                 }
@@ -343,13 +407,21 @@ internal class DiskCoordinator(
 
     /** Called at logical commit, before root publication. No serialization or I/O here. */
     fun commit(key: String, snapshot: CachedSnapshot, report: (String) -> Unit): Boolean =
+        commitWithPolicy(key, snapshot, CachePolicy(), report)
+
+    fun commitWithPolicy(
+        key: String,
+        snapshot: CachedSnapshot,
+        policy: CachePolicy,
+        report: (String) -> Unit,
+    ): Boolean =
         synchronized(metadata) {
-            val write = Write(epoch, ++sequence, snapshot, report)
+            val write = Write(epoch, ++sequence, snapshot, report, policy)
             if (pending.containsKey(key)) {
                 pending[key] = write
                 return true
             }
-            if (pending.size >= CACHE_CONTEXTS) return false
+            if (pending.size >= 64) return false
             pending[key] = write
             if (
                 !enqueue {
@@ -367,19 +439,36 @@ internal class DiskCoordinator(
             true
         }
 
+    private fun prune(
+        data: MutableMap<String, CacheEntry>,
+        key: String,
+        now: Long,
+        policy: CachePolicy,
+    ) {
+        data.entries.removeAll { it.key != key && policy.expired(it.value.accessed, now) }
+        while (data.size > policy.maxUsers) {
+            val victim =
+                data.filterKeys { it != key }.minByOrNull { it.value.accessed }?.key ?: break
+            data.remove(victim)
+        }
+    }
+
     private fun persist(key: String, write: Write) {
         val now = clock.wall()
         val data = LinkedHashMap(readEntries(write.report))
         if ((data[key]?.sequence ?: 0) >= write.sequence) return
-        data[key] = CacheEntry(write.snapshot, now, now, write.sequence)
-        try {
-            while (data.size > CACHE_CONTEXTS) data.remove(
-                data.filterKeys { it != key }.minBy { it.value.accessed }.key
+        val compact =
+            CachedSnapshot(
+                frozen(write.snapshot.records.mapValues { it.value.compactArchive() }),
+                write.snapshot.cursor,
             )
+        data[key] = CacheEntry(compact, now, now, write.sequence)
+        try {
+            prune(data, key, now, write.policy)
             val bytes = CacheCodec.encode(data)
             if (synchronized(metadata) { write.epoch != epoch }) return
-            storage.replace(bytes)
             entries = data
+            storage.replace(bytes)
         } catch (_: Exception) {
             write.report("cache_write_failed")
         }

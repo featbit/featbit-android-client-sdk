@@ -155,10 +155,19 @@ and use `adapters.await` in Kotlin. No hardware-derived identifier or inferred a
 
 Cache and anonymous files live under `noBackupFilesDir`; ordinary Android backup excludes them.
 They are not encrypted by this SDK. Cache defaults on, matches the complete context/environment,
-and retains five contexts per namespace using LRU. There is no byte cap or age expiry. Bootstrap
-wins at creation; target-context cache wins after Identify. Neither confirms online readiness.
-`clearCache(CURRENT_CONTEXT or NAMESPACE, timeout)` preserves current memory and anonymous identity;
-later valid commits may repopulate disk. Disable with `cacheEnabled(false)`.
+and defaults to five contexts per namespace using LRU, expiring historical snapshots after seven
+days without selection or update. Valid cache (including empty or archived snapshots) takes
+precedence over bootstrap at startup and Identify. Bootstrap is used only on a cache miss.
+Neither confirms online readiness. `cacheEnabled(false)` disables disk persistence while keeping
+per-client user snapshots in memory with the same retention policy. Expiry never changes the
+currently active evaluation snapshot. `clearCache(CURRENT_CONTEXT or NAMESPACE, timeout)` preserves
+current evaluation data and anonymous identity; later remote commits may repopulate the cache.
+
+Configure positive values with `maxCachedUsers(5)`, `userCacheTtlMillis(604800000L)` and
+`fullSyncIntervalMillis(86400000L)`. Built-in synchronization requests full data on startup and
+Identify, then at the configured interval with ±10% jitter. Archived records retain only their
+key/version marker; unarchiving requires a valid new record. Cache format v3 reads and compacts
+existing v1/v2 snapshots on access; older SDK versions cannot read v3 and will treat it as a miss.
 
 Enable `automaticAttributes(true)` explicitly. It adds string attributes under `featbit.sdk.`:
 
