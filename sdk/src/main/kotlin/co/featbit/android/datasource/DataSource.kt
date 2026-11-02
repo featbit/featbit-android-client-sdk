@@ -104,6 +104,8 @@ private constructor(
     /** Last flag change time in Unix milliseconds. */
     public val timestamp: Long,
     public val archived: Boolean,
+    /** Controls evaluation event collection; defaults to true for older servers and sources. */
+    public val insightsEnabled: Boolean,
     public val reason: String?,
     variationOptions: List<VariationOption>?,
 ) {
@@ -118,11 +120,14 @@ private constructor(
         private val timestamp: Long,
     ) {
         private var archived: Boolean = false
+        private var insightsEnabled: Boolean = true
         private var reason: String? = null
         private var variationOptions: List<VariationOption>? = null
         private var invalidOptions = false
 
         public fun archived(value: Boolean): Builder = apply { archived = value }
+
+        public fun insightsEnabled(value: Boolean): Builder = apply { insightsEnabled = value }
 
         public fun reason(value: String?): Builder = apply { reason = value }
 
@@ -148,6 +153,7 @@ private constructor(
                         variationType,
                         timestamp,
                         archived,
+                        insightsEnabled,
                         reason,
                         variationOptions,
                     )

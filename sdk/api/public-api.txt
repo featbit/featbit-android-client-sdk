@@ -568,15 +568,17 @@ public final class co.featbit.android.datasource.FlagRecord {
   public final java.lang.String getVariationType();
   public final long getTimestamp();
   public final boolean getArchived();
+  public final boolean getInsightsEnabled();
   public final java.lang.String getReason();
   public final java.util.List<co.featbit.android.datasource.VariationOption> getVariationOptions();
   public static final co.featbit.android.datasource.FlagRecord$Builder builder(java.lang.String, java.lang.String, java.lang.String, long);
-  public co.featbit.android.datasource.FlagRecord(java.lang.String, java.lang.String, java.lang.String, long, boolean, java.lang.String, java.util.List, kotlin.jvm.internal.DefaultConstructorMarker);
+  public co.featbit.android.datasource.FlagRecord(java.lang.String, java.lang.String, java.lang.String, long, boolean, boolean, java.lang.String, java.util.List, kotlin.jvm.internal.DefaultConstructorMarker);
 }
 
 public final class co.featbit.android.datasource.FlagRecord$Builder {
   public co.featbit.android.datasource.FlagRecord$Builder(java.lang.String, java.lang.String, java.lang.String, long);
   public final co.featbit.android.datasource.FlagRecord$Builder archived(boolean);
+  public final co.featbit.android.datasource.FlagRecord$Builder insightsEnabled(boolean);
   public final co.featbit.android.datasource.FlagRecord$Builder reason(java.lang.String);
   public final co.featbit.android.datasource.FlagRecord$Builder variationOptions(java.util.List<co.featbit.android.datasource.VariationOption>);
   public final co.featbit.android.api.Outcome<co.featbit.android.datasource.FlagRecord> build();
