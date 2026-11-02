@@ -88,6 +88,9 @@ public final class co.featbit.android.api.ClientOptions {
   public final boolean getBackgroundPolling();
   public final boolean getPollingFallback();
   public final boolean getCacheEnabled();
+  public final int getMaxCachedUsers();
+  public final long getUserCacheTtlMillis();
+  public final long getFullSyncIntervalMillis();
   public final boolean getTransitionFlush();
   public final long getFlushIntervalMillis();
   public final int getEventCapacity();
@@ -137,6 +140,12 @@ public final class co.featbit.android.api.ClientOptions$Builder {
   public final void setPollingFallback$sdk_release(boolean);
   public final boolean getCacheEnabled$sdk_release();
   public final void setCacheEnabled$sdk_release(boolean);
+  public final int getMaxCachedUsers$sdk_release();
+  public final void setMaxCachedUsers$sdk_release(int);
+  public final long getUserCacheTtlMillis$sdk_release();
+  public final void setUserCacheTtlMillis$sdk_release(long);
+  public final long getFullSyncIntervalMillis$sdk_release();
+  public final void setFullSyncIntervalMillis$sdk_release(long);
   public final boolean getTransitionFlush$sdk_release();
   public final void setTransitionFlush$sdk_release(boolean);
   public final long getFlushIntervalMillis$sdk_release();
@@ -181,6 +190,9 @@ public final class co.featbit.android.api.ClientOptions$Builder {
   public final co.featbit.android.api.ClientOptions$Builder backgroundPolling(boolean);
   public final co.featbit.android.api.ClientOptions$Builder pollingFallback(boolean);
   public final co.featbit.android.api.ClientOptions$Builder cacheEnabled(boolean);
+  public final co.featbit.android.api.ClientOptions$Builder maxCachedUsers(int);
+  public final co.featbit.android.api.ClientOptions$Builder userCacheTtlMillis(long);
+  public final co.featbit.android.api.ClientOptions$Builder fullSyncIntervalMillis(long);
   public final co.featbit.android.api.ClientOptions$Builder transitionFlush(boolean);
   public final co.featbit.android.api.ClientOptions$Builder flushIntervalMillis(long);
   public final co.featbit.android.api.ClientOptions$Builder eventCapacity(int);

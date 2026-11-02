@@ -63,7 +63,7 @@ public class OnlineCacheTest {
     }
 
     @Test
-    public fun cacheArrivingBeforeNewIdentifyRequestProvidesPairedCursorAnd304Confirmation() {
+    public fun cachedIdentifyStillRequiresFullBeforeRemoteConfirmation() {
         val clock = FakeClock()
         val diskWorker = ManualWorkers()
         val disk = DiskCoordinator(MemoryStorage(), diskWorker, clock)
@@ -110,6 +110,12 @@ public class OnlineCacheTest {
         val wait = client.awaitReady(1000)
         assertNull(wait.getResult())
         transport.requests.last().listener.response(304, "", null)
+        assertNull(wait.getResult())
+        clock.now += 500
+        ticker.action()
+        worker.drain()
+        assertEquals("0", transport.requests.last().request.url.queryParameter("timestamp"))
+        transport.requests.last().data(user = "B")
         assertEquals(ReadyResult.REMOTE_CONFIRMED, wait.getResult()!!.value)
         client.close()
         worker.drain()

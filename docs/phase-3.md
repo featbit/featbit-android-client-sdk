@@ -34,25 +34,25 @@ only. Cache fingerprints are isolation keys, not encryption, and are never logge
 
 Context matching includes key, name and all effective attributes, including opt-in
 automatic attributes. Ordering of attributes is irrelevant; absent, omitted, null and
-empty values remain distinct. Snapshots retain raw records, archives, reasons,
-variation options, REMOTE provenance and their paired cursor. Bootstrap is never persisted.
+empty values remain distinct. Snapshots retain active raw records, reasons, variation options,
+compact archive markers, REMOTE provenance and their paired cursor. Bootstrap is never persisted.
 
-- Creation: configured Bootstrap, including explicitly empty, takes precedence.
+- Creation: valid cache, including empty snapshots and archive markers, takes precedence over Bootstrap.
 - Identify/anonymous transitions: asynchronously look up the target complete context;
   reads use their caller's fallback while unresolved. Valid empty cache is a hit.
-- Miss, corruption, unavailable/disabled cache: use configured Bootstrap or an
+- Miss, expiry, corruption or unavailable cache: use configured Bootstrap or an
   empty view. Bootstrap never fills individual keys missing from a valid cache.
 - Cache supplies local values and a baseline, never remote confirmation. Offline
   Identify completes the local context transition without waiting for disk I/O.
 - Final publication holds the client gate and the namespace metadata gate together.
   Remote commits, newer identities, namespace epoch changes and Close fence old loads
-  and miss-triggered Bootstrap. Cache reads never write data back.
+  and miss-triggered Bootstrap. Cache hits persist their access time and compact legacy archive records.
 
 ## Ordering, bounds and clearing
 
 `Persistence.kt` owns the internal repositories. One process-wide coordinator per
 namespace assigns epoch/sequence at the in-memory commit, before publishing the new
-view. Immutable snapshots enter a five-entry coalescing pending map. Serialization and
+view. Immutable snapshots enter a bounded 64-entry coalescing pending map. Serialization and
 physical replacement both run on the serial disk worker, so serialization cannot
 finish in reverse order and submit an older image after a newer durable one. Equal
 timestamps and lower-cursor full updates follow logical commit order. Counters are
@@ -60,16 +60,22 @@ process-local and never persisted/recovered. Weak registry entries can disappear
 after clients and admitted work release their coordinator; closing a client cannot
 reset outstanding write ordering.
 
-The disk format is one versioned namespace image with up to five coherent context
-entries. An Android `AtomicFile` replacement atomically updates that image, including
-clear operations, without recursive directory removal or a separate index transaction.
-Updated 2026-10-02: it retains at most **5 contexts per namespace**, with LRU eviction.
-Flag caches have no SDK-imposed byte limit or time-based expiry. Atomic replacement
-can temporarily require space for both the previous and replacement image. Access
-recency is tracked in process and saved on the next successful data/clear write;
-reads alone never create write authority. Clock rollback does not invalidate cached data.
-Actual storage failures report a safe diagnostic and may leave the last coherent durable
-snapshot available after restart. The existing disk schema is unchanged.
+The disk format is one versioned namespace image. Android `AtomicFile` replacement atomically
+updates that image, including clear operations. Format v3 encodes archives using only key,
+timestamp and an archive bit; full evaluation data is discarded. Formats v1/v2 remain readable
+and are compacted on load. Older SDKs treat v3 as an unsupported cache miss.
+
+Retention defaults to **5 contexts and 7 days of inactivity**, configurable through
+`maxCachedUsers` and `userCacheTtlMillis`. Selection and accepted record updates refresh access time; unchanged confirmations and ignored patches do not;
+cache hits persist the touch so offline use also survives process restart. Expiry is checked
+before touching an entry; pruning removes expired historical contexts and then least recently
+used contexts. Clock rollback does not itself expire a snapshot. Active evaluations are never
+removed by historical cache eviction. There is no flag-byte cap.
+
+Disk failure reports a diagnostic while retaining the newest context in memory. Disabling disk
+persistence keeps a per-client in-memory repository with the same retention rules. Valid cache,
+including an empty snapshot or archive marker, wins over configured bootstrap both at creation
+and after Identify. Missing, expired, corrupt or unavailable cache falls back to bootstrap.
 
 `clearCache(CURRENT_CONTEXT, timeout)` erases only the captured context;
 `clearCache(NAMESPACE, timeout)` erases all contexts shared by that namespace's clients.

@@ -46,13 +46,20 @@ internal class LocalClient(
     private val anonymous: AnonymousRepository? = null,
     private val enrich: (User) -> Outcome<User> = { Outcome.success(it) },
     private val releaseBinding: () -> Unit = {},
-    private val cache: DiskCoordinator? = null,
+    cache: DiskCoordinator? = null,
     transportFactory: () -> SyncTransport = { OkHttpSyncTransport() },
     random: () -> Double = { kotlin.random.Random.nextDouble() },
     eventTransportFactory: () -> SyncTransport = { OkHttpSyncTransport(readResponseBody = false) },
     initialPlatformState: PlatformState = PlatformState(foreground = true),
     private val releasePlatform: () -> Unit = {},
 ) : FeatBitClient, CloseAware {
+    private val persistentCache = cache
+    private val cache =
+        cache
+            ?: if (capabilities == null || capabilities.provenance == Provenance.REMOTE)
+                DiskCoordinator(VolatileStorage(), workers, clock)
+            else null
+    private val cachePolicy = CachePolicy(options.maxCachedUsers, options.userCacheTtlMillis)
     private val gate = Any()
     private val callbacks = CallbackBudget()
     private val closeCallbacks = CallbackBudget(32)
@@ -86,7 +93,9 @@ internal class LocalClient(
     private var cleanupSettled = false
     private val bootstrapRecords =
         frozen(BootstrapRecords.create(options.bootstrap ?: emptyList())!!.associateBy { it.key })
-    @Volatile private var view = initialView()
+    @Volatile
+    private var view =
+        if (persistentCache != null) View(emptyMap(), emptyMap(), offline) else initialView()
     private val online =
         if (options.source != null) null
         else
@@ -116,7 +125,7 @@ internal class LocalClient(
         ticker.start(::tick)
         synchronized(gate) {
             events.permissions(offline, foreground, network, executionAllowed)
-            if (options.bootstrap == null) loadCache()
+            loadCache()
             reconcile()
         }
     }
@@ -127,7 +136,8 @@ internal class LocalClient(
         val expected = repository.epoch()
         localPending = true
         if (
-            !repository.load(cacheKey, expected, diagnostics::report) { snapshot ->
+            !repository.loadWithPolicy(cacheKey, expected, diagnostics::report, cachePolicy) {
+                snapshot ->
                 synchronized(gate) {
                     if (closed || id != loadId || !localPending) return@synchronized
                     repository.withEpoch(expected) {
@@ -275,6 +285,7 @@ internal class LocalClient(
         generation++
         user = next
         cacheKey = key
+        online?.identityChanged()
         loadId++
         localPending = false
         invalidate()
@@ -671,7 +682,7 @@ internal class LocalClient(
                         skipped++
                         continue
                     }
-                    newRecords[record.key] = record
+                    newRecords[record.key] = record.compactArchive()
                     defaults.remove(record.key)
                     accepted++
                 }
@@ -700,11 +711,13 @@ internal class LocalClient(
                 localPending = false
                 if (
                     remote &&
+                        (update is FullUpdate || accepted > 0) &&
                         after.baseline != null &&
                         cache != null &&
-                        !cache.commit(
+                        !cache.commitWithPolicy(
                             cacheKey,
                             CachedSnapshot(after.records, after.baseline.cursor),
+                            cachePolicy,
                             diagnostics::report,
                         )
                 )

@@ -76,6 +76,20 @@ class SmokeActivity : Activity() {
     }
 
     private fun runChecks() {
+        if (intent.getBooleanExtra("liveSync", false)) {
+            result.text = "Checking live synchronization..."
+            LiveSyncSmoke.verify(
+                applicationContext,
+                intent.getStringExtra("sdkKey")!!,
+                intent.getStringExtra("baseUrl")!!,
+            ) { message ->
+                runOnUiThread {
+                    result.text = message
+                    Log.i("FeatBitConsumer", message)
+                }
+            }
+            return
+        }
         if (intent.getBooleanExtra("phase5", false)) {
             result.text = "Checking event delivery..."
             EventSmoke.verify(applicationContext) { message ->
