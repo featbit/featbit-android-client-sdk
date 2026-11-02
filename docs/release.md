@@ -24,7 +24,7 @@ This wrapper checks JDK 17, Python 3.8+, Android platform 34/build-tools 34.0.0 
 35.0.0, the existing debug keystore, .NET SDK 10 and the adjacent
 `featbit/modules/evaluation-server` checkout. It uses environment settings or common
 Windows installation paths; override with `-JavaHome`, `-AndroidHome`, `-DotnetPath`
-or `-Python` if needed. `-Version` defaults to `0.1.0-SNAPSHOT`.
+or `-Python` if needed. `-Version` defaults to `0.3.0`.
 
 The wrapper builds and starts its own Fake/None server on port 5189, then runs all
 four consumer rows through `acceptance.py --live --serial`. It rejects an occupied
@@ -62,7 +62,7 @@ The Bash 3.2-compatible entry point invokes `tools/run_live_acceptance.py` using
 .NET SDK 10, Android platform 34 and build-tools 34.0.0/35.0.0 are required.
 Set `JAVA_HOME`, `ANDROID_HOME` (or `ANDROID_SDK_ROOT`) and optionally
 `DOTNET_HOST_PATH`; command options `--java-home`, `--android-home`, `--dotnet`
-override them. `--version` defaults to `0.1.0-SNAPSHOT`.
+override them. `--version` defaults to `0.3.0`.
 Linux defaults to `~/Android/Sdk`; macOS defaults to `~/Library/Android/sdk` and
 uses `/usr/libexec/java_home -v 17` when JAVA_HOME is absent. Use an emulator image
 matching the host architecture, including ARM64 on Apple Silicon.
@@ -227,8 +227,9 @@ Java and Kotlin sample apps are implemented under `samples/`.
 
 ## Maven Central installation after publication
 
-Version 0.2.0 is published and independently verified. Both READMEs now use this
-configuration. Java apps may use the same Kotlin DSL configuration:
+Version 0.3.0 is being prepared for publication. Use the following configuration only
+after publication and public-download verification. Until then, use the local Maven
+repository. Java apps may use the same Kotlin DSL configuration:
 
 ```kotlin
 // settings.gradle.kts
@@ -243,7 +244,7 @@ dependencyResolutionManagement {
 ```kotlin
 // App module build.gradle.kts
 dependencies {
-    implementation("co.featbit:featbit-client-android:0.2.0")
+    implementation("co.featbit:featbit-client-android:0.3.0")
 }
 ```
 

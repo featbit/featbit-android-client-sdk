@@ -2,7 +2,7 @@
 
 Kotlin implementation with Java-compatible public APIs, targeting Android API 21+.
 
-**Current state: 0.1.0 publication preparation.** The project builds debug/release AARs with
+**Current state: 0.3.0 publication preparation.** The project builds debug/release AARs with
 local evaluation, Bootstrap, TestData/Custom sources, Identify, online/offline intent,
 subscriptions, coroutine adapters, bounded Close, persistent cache and anonymous identity.
 Built-in Streaming/Polling, reconnect, Identify isolation, optional fallback/recovery and
@@ -10,9 +10,10 @@ platform-aware background polling are implemented. Evaluation/Track events, priv
 bounded queues/retries, Flush and final Close delivery are implemented. Configure `eventsUrl`
 for enabled analytics. Process lifecycle, connectivity and device-idle observers are connected;
 physical-device behavior and deployed event persistence, EndUser updates and experiment attribution
-were confirmed by the maintainer. Signing, Central publication and fresh-download verification
-remain outstanding. See the [current evidence](./docs/verification.md#release-readiness--2026-10-04)
-for automated results and the scope of manual confirmation. The local snapshot is not a published release.
+were confirmed by the maintainer for earlier versions. Version 0.3.0 still requires release
+validation, signing, Central publication and fresh-download verification. See the
+[verification history](./docs/verification.md) for earlier results and the scope of manual
+confirmation. The local 0.3.0 build is not yet a published release.
 
 - [Implementation plan](./plan.md)
 - [Java/Kotlin integration and configuration](./docs/integration.md)
@@ -54,7 +55,7 @@ bash gradlew -p consumer-tests :java:assembleRelease :java:testDebugUnitTest :ko
 
 On Windows use `.\gradlew.bat`. Outputs are under `sdk/build/outputs/aar/` and
 the local test Maven repository `build/test-repository/`. The Maven coordinates are
-`co.featbit:featbit-client-android`; the local development version is `0.1.0-SNAPSHOT`.
+`co.featbit:featbit-client-android`; the local development version is `0.3.0`.
 Nothing is published remotely by these commands.
 
 For the isolated Java/Kotlin compiler matrix, use `python tools/acceptance.py`.

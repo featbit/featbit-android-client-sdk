@@ -10,7 +10,7 @@ plugins {
 
 group = "co.featbit"
 
-version = providers.gradleProperty("sdkVersion").getOrElse("0.1.0-SNAPSHOT")
+version = providers.gradleProperty("sdkVersion").getOrElse("0.3.0")
 
 android {
     namespace = "co.featbit.android"

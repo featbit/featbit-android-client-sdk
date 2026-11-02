@@ -56,7 +56,7 @@ def main():
     parser.add_argument("--rows", nargs="+", choices=MATRIX, default=list(MATRIX))
     parser.add_argument("--serial", help="Explicit emulator serial; runs debug and signed R8 APKs")
     parser.add_argument("--live", action="store_true", help="Require target service on port 5189")
-    parser.add_argument("--version", default="0.1.0-SNAPSHOT")
+    parser.add_argument("--version", default="0.3.0")
     args = parser.parse_args()
     if not re.fullmatch(r"\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?", args.version):
         parser.error("Invalid artifact version")

@@ -11,7 +11,8 @@ The SDK is implemented in Kotlin with Java-compatible public APIs and supports A
 API 21 and later. It is intended for a single-user context: FeatBit evaluates targeting
 rules on the server, and your app reads the synchronized flag values locally.
 
-> Version `0.2.0` is available from Maven Central. See the
+> Version `0.3.0` is being prepared for release; use the local repository below until publication.
+> The previous release is `0.2.0`. See its
 > [release notes and migration guidance](./docs/release-notes-0.2.0.md).
 
 ## Get Started
@@ -29,11 +30,11 @@ dependencyResolutionManagement {
 }
 ```
 
-Add the dependency to your app module's `build.gradle.kts`:
+After `0.3.0` is published to Maven Central, add the dependency to your app module's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("co.featbit:featbit-client-android:0.2.0")
+    implementation("co.featbit:featbit-client-android:0.3.0")
 }
 ```
 
@@ -71,7 +72,7 @@ Then add the dependency to your app module's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("co.featbit:featbit-client-android:0.1.0-SNAPSHOT")
+    implementation("co.featbit:featbit-client-android:0.3.0")
 }
 ```
 

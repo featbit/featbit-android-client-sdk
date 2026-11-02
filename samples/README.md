@@ -42,7 +42,7 @@ From the repository root (`featbit-android-client-sdk/`), run:
 bash gradlew :sdk:publishReleasePublicationToLocalTestRepository
 ```
 
-The sample resolves the default SDK version, `0.1.0-SNAPSHOT`, from
+The sample resolves the default SDK version, `0.3.0`, from
 `build/test-repository/`. Repeat this publication step after changing the SDK.
 
 ### 2. Open the sample in Android Studio

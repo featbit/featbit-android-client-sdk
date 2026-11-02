@@ -18,7 +18,7 @@ param(
     [string]$AndroidHome = $env:ANDROID_HOME,
     [string]$DotnetPath = $env:DOTNET_HOST_PATH,
     [string]$Python = 'python',
-    [string]$Version = '0.1.0-SNAPSHOT',
+    [string]$Version = '0.3.0',
     [switch]$CheckOnly
 )
 
